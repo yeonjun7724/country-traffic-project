@@ -719,18 +719,12 @@ _MAP_LAYOUT = dict(
         font=dict(size=11, color="#f0f2f8"),
         x=0.01, y=0.99, xanchor="left", yanchor="top",
     ),
-    geo=dict(
-        bgcolor="#f0f4fa",
-        showland=True, landcolor="#eef1f7",
-        showocean=True, oceancolor="#d6e4f7",
-        showlakes=True, lakecolor="#c5d9f0",
-        showcountries=True, countrycolor="#b0bcd4",
-        showcoastlines=True, coastlinecolor="#b0bcd4",
-        showsubunits=True, subunitcolor="#c8d3e8",
-        projection_type="mercator",
-        center=dict(lat=36.5, lon=127.8),
-        lataxis_range=[33.5, 38.8],
-        lonaxis_range=[124.5, 131.0],
+    # ── 실제 지도 타일 (MapLibre · 토큰 불필요) ──
+    # carto-positron 스타일 = 밝은 실사 지도. 울릉도·독도 포함 한반도 전역 표시.
+    map=dict(
+        style="carto-positron",
+        center=dict(lat=36.6, lon=129.1),
+        zoom=5.55,
     ),
 )
 
@@ -784,7 +778,7 @@ def make_gis_map(impact_df, selected_routes=None, map_mode="impact"):
     # ── 등급별 레이어 ──
     for grade in df[grade_col].dropna().unique():
         gdf = df[df[grade_col] == grade]
-        fig.add_trace(go.Scattergeo(
+        fig.add_trace(go.Scattermap(
             lat=gdf["lat"], lon=gdf["lon"],
             mode="markers",
             name=str(grade),
@@ -792,28 +786,33 @@ def make_gis_map(impact_df, selected_routes=None, map_mode="impact"):
                 size=gdf["_msize"],
                 color=color_map.get(grade, "#4e5468"),
                 opacity=0.85,
-                line=dict(width=0.5, color="#08090c"),
             ),
             text=gdf["_hover"],
             hovertemplate="%{text}<extra></extra>",
             customdata=gdf[["unitName","routeName","vulnerability_score","impact_score_mean"]].values,
         ))
 
-    # ── 상위 10개 영업소 링 강조 ──
+    # ── 상위 10개 영업소 강조 (반투명 헤일로 + 라벨) ──
     top10 = df.nlargest(10, score_col)
-    fig.add_trace(go.Scattergeo(
+    fig.add_trace(go.Scattermap(
         lat=top10["lat"], lon=top10["lon"],
-        mode="markers+text",
+        mode="markers",
         name="Top 10",
         marker=dict(
-            size=top10["_msize"] + 8,
-            color="rgba(0,0,0,0)",
-            line=dict(width=2, color="#f05252"),
+            size=top10["_msize"] + 12,
+            color="rgba(240,82,82,0.30)",
         ),
+        hoverinfo="skip",
+    ))
+    fig.add_trace(go.Scattermap(
+        lat=top10["lat"], lon=top10["lon"],
+        mode="text",
+        name="Top 10 라벨",
         text=top10["unitName"],
         textposition="top center",
-        textfont=dict(size=10, color="#0f1117", family="DM Sans"),
+        textfont=dict(size=11, color="#0f1117"),
         hoverinfo="skip",
+        showlegend=False,
     ))
 
     fig.update_layout(**_MAP_LAYOUT)
@@ -826,7 +825,7 @@ def make_heatmap_map(impact_df):
     w = df["impact_score_mean"] / df["impact_score_mean"].max()
 
     fig = go.Figure()
-    fig.add_trace(go.Scattergeo(
+    fig.add_trace(go.Scattermap(
         lat=df["lat"], lon=df["lon"],
         mode="markers",
         name="화물 집중도",
@@ -850,7 +849,6 @@ def make_heatmap_map(impact_df):
                 bordercolor="#1c1e27", borderwidth=1,
                 x=1.01,
             ),
-            line=dict(width=0),
         ),
         text=df["unitName"] + "<br>" + df["routeName"],
         hovertemplate="%{text}<extra></extra>",
@@ -870,50 +868,49 @@ def make_arc_map2d(impact_df):
 
     # 연결선
     for _, row in hh.iterrows():
-        fig.add_trace(go.Scattergeo(
+        fig.add_trace(go.Scattermap(
             lat=[cy, row["lat"], None],
             lon=[cx, row["lon"], None],
             mode="lines",
-            line=dict(width=1.2, color="rgba(240,82,82,0.35)"),
+            line=dict(width=1.5, color="rgba(240,82,82,0.45)"),
             showlegend=False,
             hoverinfo="skip",
         ))
 
+    # 나머지 영업소 (배경)
+    others = impact_df[impact_df["lisa_cluster"] != "High-High"]
+    fig.add_trace(go.Scattermap(
+        lat=others["lat"], lon=others["lon"],
+        mode="markers",
+        name="기타",
+        marker=dict(size=5, color="#9aa0b4", opacity=0.5),
+        hoverinfo="skip",
+    ))
+
     # HH 포인트
-    fig.add_trace(go.Scattergeo(
+    fig.add_trace(go.Scattermap(
         lat=hh["lat"], lon=hh["lon"],
         mode="markers",
         name="High-High",
-        marker=dict(
-            size=12, color="#f05252", opacity=0.85,
-            line=dict(width=1, color="#08090c"),
-        ),
+        marker=dict(size=12, color="#f05252", opacity=0.9),
         text=hh["unitName"] + "<br>" + hh["routeName"] +
              "<br>Impact: " + hh["impact_score_mean"].round(4).astype(str),
         hovertemplate="%{text}<extra></extra>",
     ))
 
-    # 중심점
-    fig.add_trace(go.Scattergeo(
+    # 중심점 (star symbol 미지원 → 큰 헤일로 + 코어)
+    fig.add_trace(go.Scattermap(
         lat=[cy], lon=[cx],
         mode="markers",
         name="클러스터 중심",
-        marker=dict(
-            size=18, color="#5b6af0", opacity=0.9,
-            symbol="star",
-            line=dict(width=1, color="#f0f2f8"),
-        ),
+        marker=dict(size=26, color="rgba(91,106,240,0.35)"),
         hovertemplate="클러스터 중심<extra></extra>",
     ))
-
-    # 나머지 영업소 (배경)
-    others = impact_df[impact_df["lisa_cluster"] != "High-High"]
-    fig.add_trace(go.Scattergeo(
-        lat=others["lat"], lon=others["lon"],
+    fig.add_trace(go.Scattermap(
+        lat=[cy], lon=[cx],
         mode="markers",
-        name="기타",
-        marker=dict(size=5, color="#1c1e27", opacity=0.5,
-                    line=dict(width=0)),
+        marker=dict(size=12, color="#5b6af0"),
+        showlegend=False,
         hoverinfo="skip",
     ))
 
@@ -2288,7 +2285,7 @@ def main():
     <div style="text-align:center;font-size:10px;color:var(--text-3);padding:4px 0 12px;
                  letter-spacing:.04em">
       LogisRisk &nbsp;·&nbsp; Model A (Prophet + LSTM) &nbsp;·&nbsp; Model B (Vulnerability)
-      &nbsp;·&nbsp; GIS: Plotly Scattergeo 2D &nbsp;·&nbsp; 한국도로공사 TCS · 오피넷 · Investing.com
+      &nbsp;·&nbsp; GIS: Plotly Scattermap (CARTO) &nbsp;·&nbsp; 한국도로공사 TCS · 오피넷 · Investing.com
     </div>
     """, unsafe_allow_html=True)
 
