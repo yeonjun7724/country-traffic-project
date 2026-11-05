@@ -1,0 +1,4 @@
+﻿warehouse_id,name,lat,lon,region,daily_capacity_orders
+WH-A,DEMO 수도권센터,37.2636,127.0286,수도권,260
+WH-B,DEMO 중부센터,36.3504,127.3845,충청,140
+WH-C,DEMO 영남센터,35.8714,128.6014,영남,160

@@ -1,18 +1,56 @@
-# ct_contest — 실데이터 기반 (수정판)
+# LogisRisk Enterprise — Logistics & Distribution Intelligence Platform
 
-국가교통공모전 · 고속도로 물류 취약성 & 유류충격 분석 대시보드
+물류 담당자가 **자신의 주문·배송·차량·거점·재고 데이터를 업로드**해 실제 운송비·서비스 수준을 분석하고,
+배송 계획 대안과 유가·수요·센터 중단 시나리오를 비교해 보고서로 내보내는 운영 분석 플랫폼입니다.
+기존 공모전 분석(고속도로 영업소 취약성·유가 예측·교통량)은 **외부 위험 지표**로 통합되어 있습니다.
 
-## 변경 사항 (실데이터 검증/정비)
-- ❌ 모의(mock) 데이터 생성 함수 5종 완전 제거 (load_energy_data / build_forecast /
-  build_unit_data / build_impact_score / build_tcs_timeseries) — 약 500줄 삭제
-- ✅ 실데이터 CSV가 없으면 모의 생성 대신 **에러 안내 후 중단** (st.stop)
-- ✅ 누락돼 크래시 나던 `agent_think()` 를 **실데이터 규칙 기반 라우터**로 구현
-  (6개 도구 모두 로드된 실제 데이터프레임에서 실수치 산출 — 가짜 없음)
-- ✅ 데이터 탐색 경로에 `./output` 추가
+> 운영 데이터가 없으면 KPI 는 '계산 불가'로 표시되며, 가상의 성과를 보여주지 않습니다.
+> 체험은 사이드바의 **DEMO 워크스페이스**(가상 데이터, 모든 화면에 DEMO 표시)에서 할 수 있습니다.
+
+## 화면
+| | 화면 | 내용 |
+|---|---|---|
+| 01 | Control Tower | KPI 9종(정의·산식·분모·직전기간 비교·목표), 알림, 지도↔표 선택 동기화, 지연·비용초과 원장 드릴다운 |
+| 02 | Network Intelligence | 영업소 위험(외부)·센터·배송지·배송밀도 레이어, LISA, 가중치 재계산(시나리오 ID), 센터 주변 고위험 영업소 |
+| 03 | Transportation | Cost-to-Serve, 연료비·연비, CVRP 휴리스틱 배송 계획 대안 vs 현행, 승인 요청 저장 |
+| 04 | Demand & Inventory | 안전재고·재주문점·보충 추천(근거), 수요예측 모델 백테스트(WAPE/MAE/Bias/MAPE) |
+| 05 | Fuel & Risk | 경유가 민감도(기업 연료비), 외부 유가·예측(재가중, 최신성 경고), 기준 이벤트 전후 교통량, 데이터 감사 |
+| 06 | Scenario Lab | Baseline/A/B 비교, 원인 기여도, 민감도, 센터 중단, 저장·복제·승인·Excel |
+| 07 | AI Copilot | OpenAI 도구 호출(읽기 전용) + 키 없음·오류 시 규칙 기반 폴백, 근거 도구 결과 표시 |
+| 08 | Data Hub | CSV/Excel 업로드, 자동 컬럼 매핑, 검증·오류 행 다운로드, 원자적 저장, 버전·롤백, 품질 |
+| 09 | Reports & Alerts | Excel 리포트, 경영진 요약(HTML→PDF 인쇄), 알림 규칙, 조치 워크플로 |
+| 10 | Settings | KPI 목표, 역할·권한, 시스템 상태, 감사 로그 |
 
 ## 실행
 ```bash
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run streamlit_app.py      # 신규 플랫폼
+streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ```
-실데이터 CSV는 `app.py` 와 같은 폴더 또는 `./output/` 에 두면 됩니다.
+- 선택: `OPENAI_API_KEY` 환경변수 또는 `.streamlit/secrets.toml` (`.env.example` 참고). 없으면 규칙 기반 모드.
+- 데이터는 `data/logisrisk.db`(SQLite)에 저장됩니다. `DATABASE_URL` 로 PostgreSQL 사용 가능.
+
+## 빠른 시작 (DEMO)
+1. 사이드바 워크스페이스 → **DEMO 워크스페이스 (가상 데이터)**
+2. 08 Data Hub → **DEMO 데이터 전체 불러오기**
+3. 01 Control Tower 에서 KPI·지도, 06 Scenario Lab 에서 시나리오, 07 AI Copilot 에서 질의
+
+## 내 데이터로 시작
+08 Data Hub → 템플릿·스키마 탭에서 양식 확인 → 센터 → 배송지 → SKU → 차량 → 주문 → 주문상세 → 배송 순서로 업로드.
+한글/영문 컬럼명은 자동 매핑되며, 오류 행은 행번호·사유와 함께 다운로드할 수 있습니다.
+
+## 테스트
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q
+```
+검증·KPI(손계산)·운송비·경로 제약·재고 공식·외부 산출물 재현성·권한/워크스페이스 격리·원자적 롤백·
+AI 폴백(키 없음/쿼터/Rate limit/인증/타임아웃)·인수 시나리오 E2E·10개 화면 렌더링 스모크.
+
+## 배포 (Railway)
+시작 파일이 `streamlit_app.py` 로 바뀌었습니다. 업로드 데이터를 유지하려면 Volume(`LOGISRISK_DATA_DIR=/data`) 또는
+PostgreSQL 이 필요합니다. 상세: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+
+## 데이터 원칙
+관측·모델 예측·시뮬레이션·가정 기반 추정·DEMO 를 구분 표기하고, 외부 지표(고속도로·전국 유가)를 기업 실적으로
+사용하지 않습니다. 상세 규칙: [AGENTS.md](AGENTS.md)

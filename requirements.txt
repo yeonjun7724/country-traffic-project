@@ -1,6 +1,9 @@
-streamlit>=1.35.0
-pandas>=2.0.0
-numpy>=1.24.0
+streamlit>=1.45.0,<2
+pandas>=2.2.0
+numpy>=1.26.0
 plotly>=5.24.0
-openai>=1.0.0
+openpyxl>=3.1.0
+SQLAlchemy>=2.0.0
+openai>=1.40.0
+# 레거시 app.py 의 선택적 웹 검색 (신규 앱은 사용하지 않음)
 duckduckgo_search>=6.0.0

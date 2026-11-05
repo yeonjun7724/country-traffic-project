@@ -2,6 +2,8 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"
+# 신규 LogisRisk Enterprise 앱. 레거시 대시보드로 되돌리려면 streamlit_app.py → app.py
+startCommand = "streamlit run streamlit_app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"
+healthcheckPath = "/_stcore/health"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 10
