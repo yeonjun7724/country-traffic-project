@@ -1,0 +1,4056 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "LogisRisk Enterprise API",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/health": {
+   "get": {
+    "summary": "Health",
+    "operationId": "health_api_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/status": {
+   "get": {
+    "summary": "Auth Status",
+    "operationId": "auth_status_api_auth_status_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AuthStatus"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/login": {
+   "post": {
+    "summary": "Login",
+    "operationId": "login_api_auth_login_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/LoginIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AuthStatus"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/auth/logout": {
+   "post": {
+    "summary": "Logout",
+    "operationId": "logout_api_auth_logout_post",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AuthStatus"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/me": {
+   "get": {
+    "summary": "Me",
+    "operationId": "me_api_me_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MeOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/filters": {
+   "get": {
+    "summary": "Filter Meta",
+    "operationId": "filter_meta_api_filters_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/FilterMeta"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/search": {
+   "get": {
+    "summary": "Search",
+    "operationId": "search_api_search_get",
+    "parameters": [
+     {
+      "name": "q",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Q"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/SearchGroup"
+         },
+         "title": "Response Search Api Search Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/overview": {
+   "get": {
+    "summary": "Overview",
+    "operationId": "overview_api_control_tower_overview_get",
+    "parameters": [
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/OverviewOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/daily": {
+   "get": {
+    "summary": "Daily",
+    "operationId": "daily_api_control_tower_daily_get",
+    "parameters": [
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/DailyPoint"
+         },
+         "title": "Response Daily Api Control Tower Daily Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/network": {
+   "get": {
+    "summary": "Network",
+    "operationId": "network_api_control_tower_network_get",
+    "parameters": [
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/NetworkOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/cost-to-serve": {
+   "get": {
+    "summary": "Cost To Serve",
+    "operationId": "cost_to_serve_api_control_tower_cost_to_serve_get",
+    "parameters": [
+     {
+      "name": "dim",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "carrier",
+        "warehouse_id",
+        "region",
+        "customer_group"
+       ],
+       "type": "string",
+       "default": "carrier",
+       "title": "Dim"
+      }
+     },
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/CtsRow"
+         },
+         "title": "Response Cost To Serve Api Control Tower Cost To Serve Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/ledger": {
+   "get": {
+    "summary": "Ledger",
+    "operationId": "ledger_api_control_tower_ledger_get",
+    "parameters": [
+     {
+      "name": "kind",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "late",
+        "cost",
+        "all"
+       ],
+       "type": "string",
+       "default": "late",
+       "title": "Kind"
+      }
+     },
+     {
+      "name": "selected",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Selected"
+      }
+     },
+     {
+      "name": "limit",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 20000,
+       "minimum": 1,
+       "default": 2000,
+       "title": "Limit"
+      }
+     },
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LedgerOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/ledger.csv": {
+   "get": {
+    "summary": "Ledger Csv",
+    "operationId": "ledger_csv_api_control_tower_ledger_csv_get",
+    "parameters": [
+     {
+      "name": "kind",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "enum": [
+        "late",
+        "cost",
+        "all"
+       ],
+       "type": "string",
+       "default": "late",
+       "title": "Kind"
+      }
+     },
+     {
+      "name": "selected",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Selected"
+      }
+     },
+     {
+      "name": "start",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Start"
+      }
+     },
+     {
+      "name": "end",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "format": "date"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "End"
+      }
+     },
+     {
+      "name": "warehouses",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Warehouses"
+      }
+     },
+     {
+      "name": "regions",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Regions"
+      }
+     },
+     {
+      "name": "carriers",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Carriers"
+      }
+     },
+     {
+      "name": "vehicles",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Vehicles"
+      }
+     },
+     {
+      "name": "categories",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Categories"
+      }
+     },
+     {
+      "name": "stores",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "array",
+       "items": {
+        "type": "string"
+       },
+       "default": [],
+       "title": "Stores"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/control-tower/external": {
+   "get": {
+    "summary": "External",
+    "operationId": "external_api_control_tower_external_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ExternalSummary"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/entities": {
+   "get": {
+    "summary": "Entities",
+    "operationId": "entities_api_data_entities_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/EntityStatus"
+         },
+         "title": "Response Entities Api Data Entities Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/schemas/{entity}": {
+   "get": {
+    "summary": "Schema",
+    "operationId": "schema_api_data_schemas__entity__get",
+    "parameters": [
+     {
+      "name": "entity",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Entity"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SchemaOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/templates/{entity}.csv": {
+   "get": {
+    "summary": "Template",
+    "operationId": "template_api_data_templates__entity__csv_get",
+    "parameters": [
+     {
+      "name": "entity",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Entity"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads": {
+   "post": {
+    "summary": "Upload",
+    "operationId": "upload_api_data_uploads_post",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_upload_api_data_uploads_post"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UploadOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads/{upload_id}/sheet": {
+   "put": {
+    "summary": "Change Sheet",
+    "operationId": "change_sheet_api_data_uploads__upload_id__sheet_put",
+    "parameters": [
+     {
+      "name": "upload_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Upload Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MappingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/UploadOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads/{upload_id}/validate": {
+   "post": {
+    "summary": "Validate",
+    "operationId": "validate_api_data_uploads__upload_id__validate_post",
+    "parameters": [
+     {
+      "name": "upload_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Upload Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MappingIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ValidationOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads/{upload_id}/errors.csv": {
+   "get": {
+    "summary": "Error Rows",
+    "operationId": "error_rows_api_data_uploads__upload_id__errors_csv_get",
+    "parameters": [
+     {
+      "name": "upload_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Upload Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads/{upload_id}/commit": {
+   "post": {
+    "summary": "Commit",
+    "operationId": "commit_api_data_uploads__upload_id__commit_post",
+    "parameters": [
+     {
+      "name": "upload_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Upload Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CommitIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CommitOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/uploads/{upload_id}": {
+   "delete": {
+    "summary": "Discard",
+    "operationId": "discard_api_data_uploads__upload_id__delete",
+    "parameters": [
+     {
+      "name": "upload_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Upload Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/demo": {
+   "post": {
+    "summary": "Load Demo",
+    "operationId": "load_demo_api_data_demo_post",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/DemoLoadOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/datasets": {
+   "get": {
+    "summary": "Datasets",
+    "operationId": "datasets_api_data_datasets_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/DatasetOut"
+         },
+         "title": "Response Datasets Api Data Datasets Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/datasets/{dataset_id}/activate": {
+   "post": {
+    "summary": "Activate",
+    "operationId": "activate_api_data_datasets__dataset_id__activate_post",
+    "parameters": [
+     {
+      "name": "dataset_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "Dataset Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/entities/{entity}/deactivate": {
+   "post": {
+    "summary": "Deactivate",
+    "operationId": "deactivate_api_data_entities__entity__deactivate_post",
+    "parameters": [
+     {
+      "name": "entity",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Entity"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/quality": {
+   "get": {
+    "summary": "Quality",
+    "operationId": "quality_api_data_quality_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/QualityOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/data/integrations": {
+   "get": {
+    "summary": "Integrations",
+    "operationId": "integrations_api_data_integrations_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/IntegrationsOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AlertOut": {
+    "properties": {
+     "severity": {
+      "type": "string",
+      "enum": [
+       "high",
+       "medium",
+       "low"
+      ],
+      "title": "Severity"
+     },
+     "rule": {
+      "type": "string",
+      "title": "Rule"
+     },
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     }
+    },
+    "type": "object",
+    "required": [
+     "severity",
+     "rule",
+     "message",
+     "source"
+    ],
+    "title": "AlertOut"
+   },
+   "AuthStatus": {
+    "properties": {
+     "access_code_required": {
+      "type": "boolean",
+      "title": "Access Code Required"
+     },
+     "authenticated": {
+      "type": "boolean",
+      "title": "Authenticated"
+     },
+     "locked": {
+      "type": "boolean",
+      "title": "Locked",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "access_code_required",
+     "authenticated"
+    ],
+    "title": "AuthStatus"
+   },
+   "Body_upload_api_data_uploads_post": {
+    "properties": {
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "file": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "File"
+     },
+     "sheet": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sheet"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entity",
+     "file"
+    ],
+    "title": "Body_upload_api_data_uploads_post"
+   },
+   "ColumnQuality": {
+    "properties": {
+     "field": {
+      "type": "string",
+      "title": "Field"
+     },
+     "missing": {
+      "type": "integer",
+      "title": "Missing"
+     },
+     "missing_rate": {
+      "type": "number",
+      "title": "Missing Rate"
+     },
+     "unique": {
+      "type": "integer",
+      "title": "Unique"
+     }
+    },
+    "type": "object",
+    "required": [
+     "field",
+     "missing",
+     "missing_rate",
+     "unique"
+    ],
+    "title": "ColumnQuality"
+   },
+   "CommitIn": {
+    "properties": {
+     "acknowledge_excluded_rows": {
+      "type": "boolean",
+      "title": "Acknowledge Excluded Rows",
+      "default": false
+     }
+    },
+    "type": "object",
+    "title": "CommitIn"
+   },
+   "CommitOut": {
+    "properties": {
+     "dataset_id": {
+      "type": "integer",
+      "title": "Dataset Id"
+     },
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Version"
+     },
+     "rows": {
+      "type": "integer",
+      "title": "Rows"
+     }
+    },
+    "type": "object",
+    "required": [
+     "dataset_id",
+     "entity",
+     "version",
+     "rows"
+    ],
+    "title": "CommitOut"
+   },
+   "ConnectorOut": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "system": {
+      "type": "string",
+      "title": "System"
+     },
+     "configured": {
+      "type": "boolean",
+      "title": "Configured"
+     },
+     "detail": {
+      "type": "string",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "system",
+     "configured",
+     "detail"
+    ],
+    "title": "ConnectorOut"
+   },
+   "CtsRow": {
+    "properties": {
+     "key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Key"
+     },
+     "shipments": {
+      "type": "integer",
+      "title": "Shipments"
+     },
+     "orders": {
+      "type": "integer",
+      "title": "Orders"
+     },
+     "cost": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost"
+     },
+     "cost_per_order": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost Per Order"
+     },
+     "cost_per_kg": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost Per Kg"
+     },
+     "late_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Late Rate"
+     }
+    },
+    "type": "object",
+    "required": [
+     "key",
+     "shipments",
+     "orders",
+     "cost",
+     "cost_per_order",
+     "cost_per_kg",
+     "late_rate"
+    ],
+    "title": "CtsRow"
+   },
+   "DailyPoint": {
+    "properties": {
+     "date": {
+      "type": "string",
+      "title": "Date"
+     },
+     "cost": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost"
+     },
+     "shipments": {
+      "type": "integer",
+      "title": "Shipments"
+     },
+     "late_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Late Rate"
+     }
+    },
+    "type": "object",
+    "required": [
+     "date",
+     "cost",
+     "shipments",
+     "late_rate"
+    ],
+    "title": "DailyPoint"
+   },
+   "DatasetOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "version": {
+      "type": "integer",
+      "title": "Version"
+     },
+     "is_active": {
+      "type": "boolean",
+      "title": "Is Active"
+     },
+     "filename": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Filename"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "uploaded_by": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Uploaded By"
+     },
+     "uploaded_at": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Uploaded At"
+     },
+     "row_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Row Count"
+     },
+     "input_rows": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Input Rows"
+     },
+     "rejected_rows": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rejected Rows"
+     },
+     "is_demo": {
+      "type": "boolean",
+      "title": "Is Demo"
+     },
+     "period_start": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period Start"
+     },
+     "period_end": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period End"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "entity",
+     "label",
+     "version",
+     "is_active",
+     "filename",
+     "source",
+     "uploaded_by",
+     "uploaded_at",
+     "row_count",
+     "input_rows",
+     "rejected_rows",
+     "is_demo",
+     "period_start",
+     "period_end"
+    ],
+    "title": "DatasetOut"
+   },
+   "DemoLoadOut": {
+    "properties": {
+     "entities": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Entities"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entities"
+    ],
+    "title": "DemoLoadOut"
+   },
+   "DieselOut": {
+    "properties": {
+     "date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "price": {
+      "type": "number",
+      "title": "Price"
+     },
+     "change_30d_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Change 30D Pct"
+     }
+    },
+    "type": "object",
+    "required": [
+     "date",
+     "price",
+     "change_30d_pct"
+    ],
+    "title": "DieselOut"
+   },
+   "EntityQuality": {
+    "properties": {
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "rows": {
+      "type": "integer",
+      "title": "Rows"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     },
+     "columns": {
+      "items": {
+       "$ref": "#/components/schemas/ColumnQuality"
+      },
+      "type": "array",
+      "title": "Columns"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entity",
+     "label",
+     "rows",
+     "warnings",
+     "columns"
+    ],
+    "title": "EntityQuality"
+   },
+   "EntityStatus": {
+    "properties": {
+     "order": {
+      "type": "integer",
+      "title": "Order"
+     },
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "loaded": {
+      "type": "boolean",
+      "title": "Loaded"
+     },
+     "version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Version"
+     },
+     "rows": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rows"
+     },
+     "period": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period"
+     },
+     "uploaded_at": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Uploaded At"
+     },
+     "demo": {
+      "type": "boolean",
+      "title": "Demo"
+     },
+     "required_refs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Required Refs"
+     }
+    },
+    "type": "object",
+    "required": [
+     "order",
+     "entity",
+     "label",
+     "loaded",
+     "version",
+     "rows",
+     "period",
+     "uploaded_at",
+     "demo",
+     "required_refs"
+    ],
+    "title": "EntityStatus"
+   },
+   "ErrorSummary": {
+    "properties": {
+     "column": {
+      "type": "string",
+      "title": "Column"
+     },
+     "message": {
+      "type": "string",
+      "title": "Message"
+     },
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     }
+    },
+    "type": "object",
+    "required": [
+     "column",
+     "message",
+     "count"
+    ],
+    "title": "ErrorSummary"
+   },
+   "ExternalSummary": {
+    "properties": {
+     "available": {
+      "type": "boolean",
+      "title": "Available"
+     },
+     "units": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Units"
+     },
+     "lisa_hh": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lisa Hh"
+     },
+     "diesel": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/DieselOut"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "audit_warnings": {
+      "type": "integer",
+      "title": "Audit Warnings"
+     }
+    },
+    "type": "object",
+    "required": [
+     "available",
+     "units",
+     "lisa_hh",
+     "diesel",
+     "audit_warnings"
+    ],
+    "title": "ExternalSummary"
+   },
+   "FieldSpecOut": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "type": {
+      "type": "string",
+      "title": "Type"
+     },
+     "required": {
+      "type": "boolean",
+      "title": "Required"
+     },
+     "unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unit",
+      "default": ""
+     },
+     "allowed": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Allowed"
+     },
+     "min": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Min"
+     },
+     "max": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max"
+     },
+     "aliases": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Aliases"
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "label",
+     "type",
+     "required"
+    ],
+    "title": "FieldSpecOut"
+   },
+   "FilterMeta": {
+    "properties": {
+     "bounds": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Bounds"
+     },
+     "default": {
+      "anyOf": [
+       {
+        "additionalProperties": {
+         "type": "string"
+        },
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Default"
+     },
+     "options": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/components/schemas/Option"
+       },
+       "type": "array"
+      },
+      "type": "object",
+      "title": "Options"
+     }
+    },
+    "type": "object",
+    "required": [
+     "bounds",
+     "default",
+     "options"
+    ],
+    "title": "FilterMeta"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "IntegrationsOut": {
+    "properties": {
+     "connectors": {
+      "items": {
+       "$ref": "#/components/schemas/ConnectorOut"
+      },
+      "type": "array",
+      "title": "Connectors"
+     },
+     "external": {
+      "items": {
+       "$ref": "#/components/schemas/ProvenanceOut"
+      },
+      "type": "array",
+      "title": "External"
+     },
+     "missing": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Missing"
+     }
+    },
+    "type": "object",
+    "required": [
+     "connectors",
+     "external",
+     "missing"
+    ],
+    "title": "IntegrationsOut"
+   },
+   "LedgerOut": {
+    "properties": {
+     "rows": {
+      "items": {
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Rows"
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total"
+     },
+     "rule": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rule"
+     },
+     "available": {
+      "type": "boolean",
+      "title": "Available"
+     },
+     "reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "rows",
+     "total",
+     "rule",
+     "available",
+     "reason"
+    ],
+    "title": "LedgerOut"
+   },
+   "LinkageCheck": {
+    "properties": {
+     "check": {
+      "type": "string",
+      "title": "Check"
+     },
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total"
+     }
+    },
+    "type": "object",
+    "required": [
+     "check",
+     "count",
+     "total"
+    ],
+    "title": "LinkageCheck"
+   },
+   "LoginIn": {
+    "properties": {
+     "code": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Code"
+     }
+    },
+    "type": "object",
+    "required": [
+     "code"
+    ],
+    "title": "LoginIn"
+   },
+   "MappingIn": {
+    "properties": {
+     "mapping": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Mapping"
+     },
+     "sheet": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sheet"
+     }
+    },
+    "type": "object",
+    "required": [
+     "mapping"
+    ],
+    "title": "MappingIn"
+   },
+   "MeOut": {
+    "properties": {
+     "user_id": {
+      "type": "string",
+      "title": "User Id"
+     },
+     "display_name": {
+      "type": "string",
+      "title": "Display Name"
+     },
+     "role": {
+      "type": "string",
+      "title": "Role"
+     },
+     "role_label": {
+      "type": "string",
+      "title": "Role Label"
+     },
+     "permissions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Permissions"
+     },
+     "workspace": {
+      "$ref": "#/components/schemas/WorkspaceOut"
+     },
+     "workspaces": {
+      "items": {
+       "$ref": "#/components/schemas/WorkspaceOut"
+      },
+      "type": "array",
+      "title": "Workspaces"
+     },
+     "has_ops_data": {
+      "type": "boolean",
+      "title": "Has Ops Data"
+     },
+     "is_demo": {
+      "type": "boolean",
+      "title": "Is Demo"
+     },
+     "data_updated_at": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Data Updated At"
+     },
+     "app_version": {
+      "type": "string",
+      "title": "App Version"
+     },
+     "calc_version": {
+      "type": "string",
+      "title": "Calc Version"
+     },
+     "ai_enabled": {
+      "type": "boolean",
+      "title": "Ai Enabled"
+     }
+    },
+    "type": "object",
+    "required": [
+     "user_id",
+     "display_name",
+     "role",
+     "role_label",
+     "permissions",
+     "workspace",
+     "workspaces",
+     "has_ops_data",
+     "is_demo",
+     "data_updated_at",
+     "app_version",
+     "calc_version",
+     "ai_enabled"
+    ],
+    "title": "MeOut"
+   },
+   "MetricOut": {
+    "properties": {
+     "key": {
+      "type": "string",
+      "title": "Key"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "value": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value"
+     },
+     "unit": {
+      "type": "string",
+      "title": "Unit",
+      "default": ""
+     },
+     "definition": {
+      "type": "string",
+      "title": "Definition",
+      "default": ""
+     },
+     "formula": {
+      "type": "string",
+      "title": "Formula",
+      "default": ""
+     },
+     "numerator": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Numerator"
+     },
+     "denominator": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Denominator"
+     },
+     "n": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "N"
+     },
+     "period": {
+      "type": "string",
+      "title": "Period",
+      "default": ""
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "observed",
+       "forecast",
+       "simulated",
+       "assumption",
+       "derived",
+       "demo"
+      ],
+      "title": "Kind",
+      "default": "observed"
+     },
+     "kind_label": {
+      "type": "string",
+      "title": "Kind Label",
+      "default": ""
+     },
+     "status": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "not_computable"
+      ],
+      "title": "Status",
+      "default": "ok"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason",
+      "default": ""
+     },
+     "previous": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Previous"
+     },
+     "target": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Target"
+     },
+     "higher_is_better": {
+      "type": "boolean",
+      "title": "Higher Is Better",
+      "default": true
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     },
+     "delta_pct": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Delta Pct"
+     },
+     "ok": {
+      "type": "boolean",
+      "title": "Ok"
+     }
+    },
+    "type": "object",
+    "required": [
+     "key",
+     "label",
+     "value",
+     "ok"
+    ],
+    "title": "MetricOut"
+   },
+   "NetworkOut": {
+    "properties": {
+     "stores": {
+      "items": {
+       "$ref": "#/components/schemas/StorePoint"
+      },
+      "type": "array",
+      "title": "Stores"
+     },
+     "idle_stores": {
+      "items": {
+       "$ref": "#/components/schemas/StorePoint"
+      },
+      "type": "array",
+      "title": "Idle Stores"
+     },
+     "warehouses": {
+      "items": {
+       "$ref": "#/components/schemas/WarehousePoint"
+      },
+      "type": "array",
+      "title": "Warehouses"
+     }
+    },
+    "type": "object",
+    "required": [
+     "stores",
+     "idle_stores",
+     "warehouses"
+    ],
+    "title": "NetworkOut"
+   },
+   "Option": {
+    "properties": {
+     "value": {
+      "type": "string",
+      "title": "Value"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     }
+    },
+    "type": "object",
+    "required": [
+     "value",
+     "label"
+    ],
+    "title": "Option"
+   },
+   "OverviewOut": {
+    "properties": {
+     "kpis": {
+      "items": {
+       "$ref": "#/components/schemas/MetricOut"
+      },
+      "type": "array",
+      "title": "Kpis"
+     },
+     "alerts": {
+      "items": {
+       "$ref": "#/components/schemas/AlertOut"
+      },
+      "type": "array",
+      "title": "Alerts"
+     },
+     "period": {
+      "type": "string",
+      "title": "Period"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kpis",
+     "alerts",
+     "period"
+    ],
+    "title": "OverviewOut"
+   },
+   "ProvenanceOut": {
+    "properties": {
+     "key": {
+      "type": "string",
+      "title": "Key"
+     },
+     "source": {
+      "type": "string",
+      "title": "Source"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "kind_label": {
+      "type": "string",
+      "title": "Kind Label"
+     },
+     "period_start": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period Start"
+     },
+     "period_end": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Period End"
+     },
+     "n": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "N"
+     },
+     "method": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Method"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     }
+    },
+    "type": "object",
+    "required": [
+     "key",
+     "source",
+     "kind",
+     "kind_label",
+     "period_start",
+     "period_end",
+     "n",
+     "method",
+     "warnings"
+    ],
+    "title": "ProvenanceOut"
+   },
+   "QualityOut": {
+    "properties": {
+     "entities": {
+      "items": {
+       "$ref": "#/components/schemas/EntityQuality"
+      },
+      "type": "array",
+      "title": "Entities"
+     },
+     "linkage": {
+      "items": {
+       "$ref": "#/components/schemas/LinkageCheck"
+      },
+      "type": "array",
+      "title": "Linkage"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entities",
+     "linkage"
+    ],
+    "title": "QualityOut"
+   },
+   "SchemaOut": {
+    "properties": {
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "description": {
+      "type": "string",
+      "title": "Description"
+     },
+     "primary_key": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Primary Key"
+     },
+     "foreign_keys": {
+      "items": {
+       "additionalProperties": {
+        "type": "string"
+       },
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Foreign Keys"
+     },
+     "fields": {
+      "items": {
+       "$ref": "#/components/schemas/FieldSpecOut"
+      },
+      "type": "array",
+      "title": "Fields"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entity",
+     "label",
+     "description",
+     "primary_key",
+     "foreign_keys",
+     "fields"
+    ],
+    "title": "SchemaOut"
+   },
+   "SearchGroup": {
+    "properties": {
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/SearchItem"
+      },
+      "type": "array",
+      "title": "Items"
+     }
+    },
+    "type": "object",
+    "required": [
+     "entity",
+     "label",
+     "total",
+     "items"
+    ],
+    "title": "SearchGroup"
+   },
+   "SearchItem": {
+    "properties": {
+     "id": {
+      "title": "Id"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "subtitle": {
+      "anyOf": [
+       {},
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Subtitle"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "title"
+    ],
+    "title": "SearchItem"
+   },
+   "StorePoint": {
+    "properties": {
+     "store_id": {
+      "type": "string",
+      "title": "Store Id"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "region": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Region"
+     },
+     "lat": {
+      "type": "number",
+      "title": "Lat"
+     },
+     "lon": {
+      "type": "number",
+      "title": "Lon"
+     },
+     "shipments": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shipments"
+     },
+     "orders": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Orders"
+     },
+     "cost": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost"
+     },
+     "cost_per_order": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cost Per Order"
+     },
+     "late_rate": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Late Rate"
+     }
+    },
+    "type": "object",
+    "required": [
+     "store_id",
+     "lat",
+     "lon"
+    ],
+    "title": "StorePoint"
+   },
+   "UploadOut": {
+    "properties": {
+     "upload_id": {
+      "type": "string",
+      "title": "Upload Id"
+     },
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "filename": {
+      "type": "string",
+      "title": "Filename"
+     },
+     "sheets": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Sheets"
+     },
+     "sheet": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Sheet"
+     },
+     "n_rows": {
+      "type": "integer",
+      "title": "N Rows"
+     },
+     "columns": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Columns"
+     },
+     "preview": {
+      "items": {
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Preview"
+     },
+     "auto_mapping": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Auto Mapping"
+     }
+    },
+    "type": "object",
+    "required": [
+     "upload_id",
+     "entity",
+     "filename",
+     "sheets",
+     "sheet",
+     "n_rows",
+     "columns",
+     "preview",
+     "auto_mapping"
+    ],
+    "title": "UploadOut"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "ValidationOut": {
+    "properties": {
+     "upload_id": {
+      "type": "string",
+      "title": "Upload Id"
+     },
+     "entity": {
+      "type": "string",
+      "title": "Entity"
+     },
+     "ok": {
+      "type": "boolean",
+      "title": "Ok"
+     },
+     "n_input": {
+      "type": "integer",
+      "title": "N Input"
+     },
+     "n_valid": {
+      "type": "integer",
+      "title": "N Valid"
+     },
+     "n_error_rows": {
+      "type": "integer",
+      "title": "N Error Rows"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     },
+     "fatal": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Fatal"
+     },
+     "error_summary": {
+      "items": {
+       "$ref": "#/components/schemas/ErrorSummary"
+      },
+      "type": "array",
+      "title": "Error Summary"
+     },
+     "errors": {
+      "items": {
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Errors"
+     },
+     "clean_preview": {
+      "items": {
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Clean Preview"
+     },
+     "current_version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Current Version"
+     },
+     "validated_mapping": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Validated Mapping"
+     }
+    },
+    "type": "object",
+    "required": [
+     "upload_id",
+     "entity",
+     "ok",
+     "n_input",
+     "n_valid",
+     "n_error_rows",
+     "warnings",
+     "fatal",
+     "error_summary",
+     "errors",
+     "clean_preview",
+     "current_version",
+     "validated_mapping"
+    ],
+    "title": "ValidationOut"
+   },
+   "WarehousePoint": {
+    "properties": {
+     "warehouse_id": {
+      "type": "string",
+      "title": "Warehouse Id"
+     },
+     "name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Name"
+     },
+     "lat": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lat"
+     },
+     "lon": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lon"
+     }
+    },
+    "type": "object",
+    "required": [
+     "warehouse_id"
+    ],
+    "title": "WarehousePoint"
+   },
+   "WorkspaceOut": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "name": {
+      "type": "string",
+      "title": "Name"
+     },
+     "is_demo": {
+      "type": "boolean",
+      "title": "Is Demo"
+     },
+     "role": {
+      "type": "string",
+      "title": "Role"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "name",
+     "is_demo",
+     "role"
+    ],
+    "title": "WorkspaceOut"
+   }
+  }
+ }
+}

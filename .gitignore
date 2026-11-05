@@ -30,3 +30,6 @@ output/
 Thumbs.db
 .vscode/
 .idea/
+
+# ── 프런트엔드 작업 파일 ──────────────────────────────────────
+frontend/.tmp/

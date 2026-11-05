@@ -12,20 +12,17 @@ from ...data.schemas import ENTITIES, UPLOAD_ORDER, template_frame
 from ...data.validation import auto_map, read_table
 from ...security import PermissionDenied
 from ...reports.export import csv_bytes
+from ...views import data_hub as DV
 from .. import common as C
 
 NONE = "(매핑 안 함)"
 
 
 def _entity_status(wb) -> pd.DataFrame:
-    rows = []
-    for e in UPLOAD_ORDER:
-        v = wb.versions.get(e)
-        rows.append({"순서": UPLOAD_ORDER.index(e) + 1, "엔터티": ENTITIES[e].label, "코드": e,
-                     "상태": "적재됨" if v else "없음", "버전": v["version"] if v else None,
-                     "행수": v["rows"] if v else None, "기간": v["period"] if v and v["period"] != "~" else "",
-                     "업로드": v["uploaded_at"] if v else "", "DEMO": "예" if v and v["demo"] else ""})
-    return pd.DataFrame(rows)
+    return pd.DataFrame([{"순서": r["order"], "엔터티": r["label"], "코드": r["entity"],
+                          "상태": "적재됨" if r["loaded"] else "없음", "버전": r["version"], "행수": r["rows"],
+                          "기간": r["period"] or "", "업로드": r["uploaded_at"] or "", "DEMO": "예" if r["demo"] else ""}
+                         for r in DV.entity_status(wb)])
 
 
 def _upload_tab(wb):
@@ -184,14 +181,8 @@ def _quality_tab(wb):
     if wb.fact is not None:
         f = wb.fact
         C.section("배송 원장 연결 품질")
-        st.dataframe(pd.DataFrame([
-            {"점검": "주문 미연결 배송", "건수": int(f["store_id"].isna().sum())},
-            {"점검": "차량 미배정 배송", "건수": int(f["vehicle_id"].isna().sum())},
-            {"점검": "실제 배송일 없음", "건수": int(f["actual_delivery_date"].isna().sum())},
-            {"점검": "운송비 없음", "건수": int(f["cost"].isna().sum())},
-            {"점검": "운행거리 없음", "건수": int(f["distance_km"].isna().sum())},
-            {"점검": "주문중량 계산 불가", "건수": int(f["order_weight_kg"].isna().sum())},
-        ]), hide_index=True, use_container_width=True)
+        st.dataframe(pd.DataFrame([{"점검": r["check"], "건수": r["count"]} for r in DV.linkage_quality(f)]),
+                     hide_index=True, use_container_width=True)
 
 
 def _templates_tab():

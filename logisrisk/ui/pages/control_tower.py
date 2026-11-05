@@ -7,13 +7,12 @@ import streamlit as st
 
 from ...analytics import alerts, inventory, kpi
 from ...reports.export import csv_bytes
+from ...views import control_tower as V
 from .. import common as C
 from .. import nav, theme
 
-KPI_KEYS = ["orders", "shipments", "volume_kg", "cost", "cost_per_order", "late_rate", "otif", "load_factor", "cost_per_km"]
-LEDGER_COLS = ["shipment_id", "order_id", "ship_date", "planned_delivery_date", "actual_delivery_date", "delay_days",
-               "store_id", "store_name", "region", "warehouse_id", "carrier", "vehicle_id", "ordered_qty",
-               "delivered_qty", "load_kg_eff", "distance_km", "cost", "cost_source"]
+KPI_KEYS = V.KPI_KEYS
+LEDGER_COLS = V.LEDGER_COLS
 
 
 def _external_panel(wb):
@@ -106,12 +105,12 @@ def render():
         sel_map = [p["customdata"][0] for p in (ev.selection.points if ev and ev.selection else [])
                    if p.get("customdata") is not None and len(p["customdata"])]
     with right:
-        daily = kpi.apply_filters(wb.fact, flt).groupby("ship_date").agg(
-            cost=("cost", "sum"), shipments=("shipment_id", "count"),
-            late=("on_time", lambda s: float((s == 0).sum()) / s.notna().sum() if s.notna().any() else float("nan")))
+        daily = pd.DataFrame(V.daily(wb, flt))
+        if daily.empty:
+            daily = pd.DataFrame(columns=["date", "cost", "late_rate"])
         f2 = go.Figure()
-        f2.add_bar(x=daily.index, y=daily["cost"], name="운송비(원)", marker_color="#93c5fd")
-        f2.add_scatter(x=daily.index, y=daily["late"], name="지연율", yaxis="y2", line=dict(color="#dc2626", width=2))
+        f2.add_bar(x=daily["date"], y=daily["cost"], name="운송비(원)", marker_color="#93c5fd")
+        f2.add_scatter(x=daily["date"], y=daily["late_rate"], name="지연율", yaxis="y2", line=dict(color="#dc2626", width=2))
         lay = theme.plotly_layout(C.mode(), 230, "일별 운송비 · 지연율")
         lay["yaxis2"] = dict(overlaying="y", side="right", tickformat=".0%", showgrid=False)
         f2.update_layout(**lay)

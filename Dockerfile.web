@@ -1,0 +1,30 @@
+# LogisRisk Enterprise 웹 서비스: Next.js 정적 빌드 + FastAPI (단일 서비스, 도메인 1개)
+# Railway: 새 서비스의 Config file path 를 /railway.web.toml 로 지정 (기존 Streamlit 서비스는 그대로)
+
+# ── 1) 프런트엔드 빌드 ────────────────────────────────────────────────
+FROM node:24-slim AS web
+WORKDIR /src/frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci --no-audit --no-fund
+COPY frontend/ ./
+RUN npm run build
+
+# ── 2) 런타임 ─────────────────────────────────────────────────────────
+FROM python:3.13-slim
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    TZ=Asia/Seoul \
+    LOGISRISK_FRONTEND_DIR=/app/frontend/out
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY requirements-api.txt ./
+RUN pip install --no-cache-dir -r requirements-api.txt
+COPY logisrisk/ logisrisk/
+COPY backend/ backend/
+COPY output/ output/
+COPY fixtures/ fixtures/
+COPY --from=web /src/frontend/out /app/frontend/out
+RUN useradd --create-home --uid 10001 app && mkdir -p /app/data && chown -R app /app/data
+USER app
+EXPOSE 8000
+CMD ["sh", "-c", "uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-8000} --workers 1 --proxy-headers --forwarded-allow-ips='*'"]

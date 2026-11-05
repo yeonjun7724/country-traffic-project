@@ -104,3 +104,42 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 | 실적 없는 배송지를 지연율 0%(녹색)로 표시 | 오해 유발 | 회색 '배송 없음' 별도 표시 |
 | 공개 배포 시 접근 통제 없음 | 누구나 관리자 | 접근 코드 게이트 |
 | 대용량 성능 | 10만 건에서 2분 | 벡터화(5초) |
+
+## 10. Next.js 전환 — P0 (Control Tower · Data Hub)
+
+### 결정
+| 항목 | 결정 | 이유 |
+|---|---|---|
+| 배포 구조 | **A안: 단일 서비스** — FastAPI 가 Next.js 정적 빌드(`frontend/out`)를 같은 도메인에서 서빙 | 쿠키·CORS 문제 없음, 볼륨 1개, 비용 최소. SSR 불필요(로그인 뒤 대시보드) |
+| 병행 운영 | 기존 Streamlit 서비스(`railway.toml`) 유지, 신규는 새 Railway 서비스(`railway.web.toml`·`Dockerfile.web`) | 기능 동등성 확인 전 중단 없음 |
+| 계산 재사용 | `logisrisk/views/` 뷰 모델을 Streamlit·API 가 공유 | 화면별 값 불일치 방지. UI 에 있던 일별 집계 등을 이동 |
+| 프런트 스택 | Next.js 15 · Tailwind v4 · shadcn/ui(Radix) · TanStack Query/Table v8/Virtual · Recharts · MapLibre GL | TanStack Table 은 v9 API 변경이 커서 안정판 v8 고정 |
+| 지도 | MapLibre + CARTO Positron/Dark Matter. 센터 라벨은 HTML 마커(한글 글꼴 의존 없음). 로딩 실패 시 단순 배경 | 운영 단계에서 CARTO 이용 조건 확인 또는 자체 타일 |
+| 인증 | 서버 세션 쿠키(`lr_session`, 서명 키 `LOGISRISK_SESSION_SECRET`) + 접근 코드(세션 5회·IP 20회/15분 제한) | SSO 는 인터페이스만 — 접근 코드 통과자 = 로컬 사용자(관리자), Streamlit 과 동일 |
+| 권한 | 엔드포인트마다 `permission("...")` 의존성 → 기존 `security.require()` (fail-closed) | 워크스페이스는 `X-Workspace` 헤더 + 멤버십 확인(없으면 403) |
+| 업로드 | 원본은 서버 메모리에 1시간 임시 보관(매핑 변경 시 재검증), 저장 확정 시에만 DB 기록 | DB 스키마 변경 없음. 검증에 쓴 매핑으로만 저장 |
+
+### API (요약, 전체는 `/api/docs`)
+`/api/auth/{status,login,logout}` · `/api/me` · `/api/filters` · `/api/search` ·
+`/api/control-tower/{overview,daily,network,cost-to-serve,ledger,ledger.csv,external}` ·
+`/api/data/{entities,schemas/{e},templates/{e}.csv,uploads,uploads/{id}/(sheet|validate|commit|errors.csv),demo,datasets,datasets/{id}/activate,entities/{e}/deactivate,quality,integrations}`
+- 응답 지표는 `Metric` 구조 그대로(정의·산식·분자·분모·n·기간·kind·status). NaN/Inf → null.
+- Workbench 는 (워크스페이스·역할·데이터 버전·설정 리비전) 키로 프로세스 메모리 LRU(8). uvicorn 워커 1개(SQLite·캐시 일관성).
+
+### UX 원칙 적용
+- 필터는 상단 필터 바 + URL 쿼리(공유·새로고침 유지). 기간 프리셋은 '데이터 최신일 기준'.
+- KPI 9종은 서비스 수준·운송 비용·물동량 3개 패널의 지표 행 — 행을 누르면 정의·산식·분자/분모·경고 시트.
+- 지도↔표↔원장 선택은 클라이언트 상태로 즉시 동기화. 외부 지표는 violet 계열 + '기업 실적 아님' 배지로 분리.
+- 샘플 워크스페이스는 모든 화면에 '샘플 데이터' 배지·안내. 미구현 8개 화면은 '준비 중'으로 명시(버튼만 있는 기능 없음).
+
+### 검증
+- pytest 141 (API 21: 인증·잠금·워크스페이스 격리·조회자 거부·계산 불가·엔진 수치 동등성·업로드/검증/동의/롤백·Excel 시트).
+- vitest 11 (만/억·% 표기). Playwright 47: 10개 화면 × 샘플/빈 × 라이트/다크 렌더링(콘솔 오류 0) + 클릭 흐름 7종.
+- E2E 가 잡은 실제 결함: MapLibre 모듈 워커 로드 실패(정적 경로 + `.mjs` MIME), 지도 컨테이너 높이 0(MapLibre CSS 가
+  Tailwind 레이어보다 우선), 재검증 안내가 필수 필드 경고에 가려짐. 모두 수정.
+
+### 남은 한계 (P0 시점)
+- P1/P2 화면 8개는 새 UI 미구현(Streamlit 에서 사용). Copilot SSE 는 P2.
+- 업로드 임시 보관은 메모리 — 서버 재시작 시 진행 중 업로드는 다시 올려야 함.
+- Docker 이미지는 로컬에서 빌드해 보지 못함(Docker 없음). 동일 의존성만 설치한 venv 로 기동·계산 검증.
+- 빌드 도구 체인(next 내부 postcss)에 npm audit 경고 — 정적 export 라 런타임 노출은 없음, Next 패치 시 갱신.

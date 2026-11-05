@@ -1,0 +1,12 @@
+# 신규 웹 서비스(Next.js + FastAPI) 전용 설정.
+# Railway 대시보드 → 새 서비스 → Settings → Config-as-code → Config file path: /railway.web.toml
+# 기존 Streamlit 서비스는 railway.toml 을 그대로 사용한다 (병행 운영).
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.web"
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 10

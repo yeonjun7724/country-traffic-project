@@ -12,7 +12,10 @@ KPI·비용·배차 대안·시나리오를 계산하고, 기존 공모전 산�
   - `copilot/` AI 도구(읽기 전용)·에이전트·폴백
   - `reports/` Excel·HTML 리포트
   - `ui/` Streamlit 테마·공통 컴포넌트·10개 페이지
-- `streamlit_app.py` — 신규 엔트리. `app.py` — **레거시 공모전 대시보드(수정 금지, 독립 보존)**
+  - `views/` 화면용 뷰 모델 (Streamlit·API 공통, 계산 로직 없음)
+- `backend/` — FastAPI (logisrisk 를 HTTP 로 노출하는 얇은 계층, 계산 로직 금지)
+- `frontend/` — Next.js(App Router·정적 export)·Tailwind·shadcn/ui. 디자인 토큰은 `src/app/globals.css` 한 곳
+- `streamlit_app.py` — 기존 엔트리 (Next.js 기능 동등성 확인 전까지 병행). `app.py` — **레거시 공모전 대시보드(수정 금지, 독립 보존)**
 - `output/` — 기존 분석 산출물 CSV (읽기 전용 입력)
 - `fixtures/demo/` — DEMO(가상) 데이터. `scripts/generate_demo_data.py` 로 재생성
 - `templates/index.html` — 개인 포트폴리오. 앱과 무관, 수정·삭제 금지
@@ -43,6 +46,9 @@ python -m pytest -q          # 전체 테스트 (UI 스모크 포함)
 python -m pyflakes logisrisk streamlit_app.py scripts tests
 streamlit run streamlit_app.py
 ```
+- 프런트: `cd frontend && npm run typecheck && npx eslint . && npm test`, 화면 변경 시 `npm run build` 후 E2E(`npm run test:e2e`)로
+  **실제 브라우저 스크린샷을 직접 확인**한다 (테스트 통과만으로 화면 정상을 단정하지 않는다).
+- API 스키마 변경 시 `npm run gen:api` 로 프런트 타입 재생성.
 - 계산 로직 변경 시 `logisrisk/__init__.py` 의 `CALC_VERSION` 을 올린다 (저장 시나리오에 기록됨).
 - 스키마 변경 시 `data/schemas.py` 한 곳만 수정. 기존 DB 와 호환되지 않는 변경은 마이그레이션 계획을 먼저 승인받는다.
 - 새 KPI/도구에는 손계산 가능한 단위 테스트를 함께 추가한다.

@@ -1,0 +1,233 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ───────────────────────── LogisRisk design tokens ─────────────────────────
+   - 중립: slate / 강조: blue 하나 / 의미색: success·warning·danger·info
+   - 데이터 성격(kind) 6색 + 외부 지표(external) 전용색 — 기업 실적과 시각적으로 분리
+   - 모든 색은 라이트/다크 두 세트. 컴포넌트는 토큰만 사용한다. */
+
+@theme inline {
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  --font-heading: var(--font-sans);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-canvas: var(--canvas);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-subtle-foreground: var(--subtle-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-external: var(--external);
+
+  --color-kind-observed: var(--kind-observed);
+  --color-kind-derived: var(--kind-derived);
+  --color-kind-forecast: var(--kind-forecast);
+  --color-kind-simulated: var(--kind-simulated);
+  --color-kind-assumption: var(--kind-assumption);
+  --color-kind-demo: var(--kind-demo);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-grid: var(--chart-grid);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) * 0.5);
+  --radius-md: calc(var(--radius) * 0.75);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.5);
+  --radius-2xl: calc(var(--radius) * 2);
+  --radius-3xl: calc(var(--radius) * 2.5);
+  --radius-4xl: calc(var(--radius) * 3);
+
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.04), 0 1px 1px 0 rgb(15 23 42 / 0.02);
+  --shadow-pop: 0 10px 30px -10px rgb(15 23 42 / 0.25), 0 2px 6px -2px rgb(15 23 42 / 0.08);
+}
+
+:root {
+  --radius: 0.5rem;
+
+  --canvas: oklch(0.984 0.003 247.858);        /* 페이지 바탕 (slate-50) */
+  --background: oklch(0.984 0.003 247.858);
+  --foreground: oklch(0.208 0.042 265.755);    /* slate-900 */
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.208 0.042 265.755);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.208 0.042 265.755);
+  --primary: oklch(0.546 0.245 262.881);       /* blue-600 */
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.968 0.007 247.896);
+  --secondary-foreground: oklch(0.279 0.041 260.031);
+  --muted: oklch(0.968 0.007 247.896);         /* slate-100 */
+  --muted-foreground: oklch(0.446 0.043 257.281); /* slate-600 — AA 대비 */
+  --subtle-foreground: oklch(0.554 0.046 257.417); /* slate-500 — 보조 라벨 */
+  --accent: oklch(0.968 0.007 247.896);
+  --accent-foreground: oklch(0.208 0.042 265.755);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.929 0.013 255.508);        /* slate-200 */
+  --border-strong: oklch(0.869 0.022 252.894); /* slate-300 */
+  --input: oklch(0.929 0.013 255.508);
+  --ring: oklch(0.623 0.214 259.815);
+
+  --success: oklch(0.596 0.145 163.225);       /* emerald-600 */
+  --warning: oklch(0.666 0.179 58.318);        /* amber-600 */
+  --danger: oklch(0.577 0.245 27.325);         /* red-600 */
+  --info: oklch(0.546 0.245 262.881);
+  --external: oklch(0.541 0.281 293.009);      /* violet-600 — 외부 지표 전용 */
+
+  --kind-observed: oklch(0.596 0.145 163.225);
+  --kind-derived: oklch(0.546 0.245 262.881);
+  --kind-forecast: oklch(0.541 0.281 293.009);
+  --kind-simulated: oklch(0.609 0.126 221.723);
+  --kind-assumption: oklch(0.666 0.179 58.318);
+  --kind-demo: oklch(0.646 0.222 41.116);
+
+  --chart-1: oklch(0.623 0.214 259.815);       /* blue-500 */
+  --chart-2: oklch(0.637 0.237 25.331);        /* red-500 */
+  --chart-3: oklch(0.696 0.17 162.48);         /* emerald-500 */
+  --chart-4: oklch(0.769 0.188 70.08);         /* amber-500 */
+  --chart-5: oklch(0.606 0.25 292.717);        /* violet-500 */
+  --chart-grid: oklch(0.929 0.013 255.508);
+
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.372 0.044 257.287);
+  --sidebar-primary: oklch(0.546 0.245 262.881);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.929 0.013 255.508 / 70%);
+  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.623 0.214 259.815);
+}
+
+.dark {
+  --canvas: oklch(0.155 0.012 264);
+  --background: oklch(0.155 0.012 264);
+  --foreground: oklch(0.968 0.007 247.896);
+  --card: oklch(0.195 0.016 264);
+  --card-foreground: oklch(0.968 0.007 247.896);
+  --popover: oklch(0.215 0.018 264);
+  --popover-foreground: oklch(0.968 0.007 247.896);
+  --primary: oklch(0.623 0.214 259.815);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.255 0.02 264);
+  --secondary-foreground: oklch(0.929 0.013 255.508);
+  --muted: oklch(0.235 0.018 264);
+  --muted-foreground: oklch(0.769 0.03 256);
+  --subtle-foreground: oklch(0.65 0.035 256);
+  --accent: oklch(0.255 0.02 264);
+  --accent-foreground: oklch(0.968 0.007 247.896);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 9%);
+  --border-strong: oklch(1 0 0 / 16%);
+  --input: oklch(1 0 0 / 12%);
+  --ring: oklch(0.707 0.165 254.624);
+
+  --success: oklch(0.765 0.177 163.223);
+  --warning: oklch(0.828 0.189 84.429);
+  --danger: oklch(0.704 0.191 22.216);
+  --info: oklch(0.707 0.165 254.624);
+  --external: oklch(0.702 0.183 293.541);
+
+  --kind-observed: oklch(0.765 0.177 163.223);
+  --kind-derived: oklch(0.707 0.165 254.624);
+  --kind-forecast: oklch(0.702 0.183 293.541);
+  --kind-simulated: oklch(0.789 0.154 211.53);
+  --kind-assumption: oklch(0.828 0.189 84.429);
+  --kind-demo: oklch(0.75 0.183 55.934);
+
+  --chart-1: oklch(0.707 0.165 254.624);
+  --chart-2: oklch(0.704 0.191 22.216);
+  --chart-3: oklch(0.765 0.177 163.223);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.702 0.183 293.541);
+  --chart-grid: oklch(1 0 0 / 8%);
+
+  --sidebar: oklch(0.175 0.014 264);
+  --sidebar-foreground: oklch(0.82 0.025 256);
+  --sidebar-primary: oklch(0.623 0.214 259.815);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(1 0 0 / 7%);
+  --sidebar-accent-foreground: oklch(0.968 0.007 247.896);
+  --sidebar-border: oklch(1 0 0 / 8%);
+  --sidebar-ring: oklch(0.707 0.165 254.624);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    font-feature-settings: "ss01", "ss03", "cv11";
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-canvas text-foreground text-sm;
+    letter-spacing: -0.005em;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* MapLibre 컨트롤을 토큰에 맞춤 */
+.maplibregl-ctrl-group {
+  @apply !rounded-md !border !border-border !bg-card !shadow-sm;
+}
+.maplibregl-ctrl-group button + button {
+  @apply !border-t-border;
+}
+.dark .maplibregl-ctrl-group button .maplibregl-ctrl-icon {
+  filter: invert(1);
+}
+.maplibregl-ctrl-attrib {
+  @apply !bg-card/80 !text-[10px] !text-muted-foreground;
+}
+.maplibregl-popup-content {
+  @apply !rounded-lg !border !border-border !bg-popover !p-0 !text-popover-foreground !shadow-lg;
+}
+.maplibregl-popup-tip {
+  display: none;
+}

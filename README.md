@@ -22,9 +22,21 @@
 | 10 | Settings | KPI 목표, 역할·권한, 시스템 상태, 감사 로그 |
 
 ## 실행
+
+### 신규 웹 앱 (Next.js + FastAPI) — 전환 중 (P0: Control Tower · Data Hub)
+```bash
+pip install -r requirements-api.txt
+cd frontend && npm ci && npm run build && cd ..        # 정적 빌드 → frontend/out
+python -m uvicorn backend.main:app --port 8000          # API + 화면을 한 서버에서 → http://localhost:8000
+```
+개발 모드(핫 리로드): API 를 `LOGISRISK_CORS_ORIGINS=http://localhost:3000` 로 띄우고
+`cd frontend && NEXT_PUBLIC_API_BASE=http://localhost:8000 npm run dev`.
+API 문서: `/api/docs`. 나머지 8개 화면은 새 UI 에서 '준비 중'으로 표시되며 기존 Streamlit 앱에서 사용합니다.
+
+### 기존 Streamlit 앱 (기능 동등성 확인 전까지 병행 유지)
 ```bash
 pip install -r requirements.txt
-streamlit run streamlit_app.py      # 신규 플랫폼
+streamlit run streamlit_app.py      # 10개 화면 전체
 streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ```
 - 선택: `OPENAI_API_KEY` 환경변수 또는 `.streamlit/secrets.toml` (`.env.example` 참고). 없으면 규칙 기반 모드.
@@ -45,13 +57,20 @@ streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ## 테스트
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q
+python -m pytest -q                      # 계산·검증·저장·권한·API(141)
+cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위
+npm run build && (cd .. && python -m uvicorn backend.main:app --port 8600 &) && npm run test:e2e
+# E2E: 10개 화면 × 샘플/빈 워크스페이스 × 라이트/다크 렌더링 + 클릭 흐름 7종, 스크린샷은 frontend/e2e-screens/
 ```
 검증·KPI(손계산)·운송비·경로 제약·재고 공식·외부 산출물 재현성·권한/워크스페이스 격리·원자적 롤백·
 AI 폴백(키 없음/쿼터/Rate limit/인증/타임아웃)·인수 시나리오 E2E·10개 화면 렌더링 스모크.
 
 ## 배포 (Railway)
-시작 파일이 `streamlit_app.py` 로 바뀌었습니다. 배포 전 필수:
+- 기존 서비스: `railway.toml` → `streamlit_app.py` (변경 없음)
+- 신규 웹 서비스: 같은 저장소로 **새 서비스**를 만들고 Config file path 를 `/railway.web.toml` 로 지정
+  (`Dockerfile.web`: Next.js 빌드 + FastAPI, 헬스체크 `/api/health`). Variables 에 `LOGISRISK_SESSION_SECRET` 고정값 필요.
+
+배포 전 필수 (두 서비스 공통):
 - **`LOGISRISK_ACCESS_CODE` 설정** — 미설정 시 URL 을 아는 누구나 관리자 권한으로 접근합니다.
 - 업로드 데이터 유지: Volume(`LOGISRISK_DATA_DIR=/data`) 또는 PostgreSQL.
 
