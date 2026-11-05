@@ -23,7 +23,7 @@
 
 ## 실행
 
-### 신규 웹 앱 (Next.js + FastAPI) — 전환 중 (P0: Control Tower · Data Hub)
+### 웹 앱 (Next.js + FastAPI) — 10개 화면 전체
 ```bash
 pip install -r requirements-api.txt
 cd frontend && npm ci && npm run build && cd ..        # 정적 빌드 → frontend/out
@@ -31,9 +31,9 @@ python -m uvicorn backend.main:app --port 8000          # API + 화면을 한 �
 ```
 개발 모드(핫 리로드): API 를 `LOGISRISK_CORS_ORIGINS=http://localhost:3000` 로 띄우고
 `cd frontend && NEXT_PUBLIC_API_BASE=http://localhost:8000 npm run dev`.
-API 문서: `/api/docs`. 나머지 8개 화면은 새 UI 에서 '준비 중'으로 표시되며 기존 Streamlit 앱에서 사용합니다.
+API 문서: `/api/docs`. 운영: https://logisrisk-web-production.up.railway.app (로그인 없음, 첫 화면은 샘플 워크스페이스)
 
-### 기존 Streamlit 앱 (기능 동등성 확인 전까지 병행 유지)
+### 기존 Streamlit 앱 (로컬 전용 — 배포 서비스 삭제됨, 모든 기능이 웹 앱으로 이전됨. 코드 제거는 사용자 확인 후)
 ```bash
 pip install -r requirements.txt
 streamlit run streamlit_app.py      # 10개 화면 전체
@@ -57,22 +57,23 @@ streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ## 테스트
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q                      # 계산·검증·저장·권한·API(141)
+python -m pytest -q                      # 계산·검증·저장·권한·API(149)
 cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위
 npm run build && (cd .. && python -m uvicorn backend.main:app --port 8600 &) && npm run test:e2e
-# E2E: 10개 화면 × 샘플/빈 워크스페이스 × 라이트/다크 렌더링 + 클릭 흐름 7종, 스크린샷은 frontend/e2e-screens/
+# E2E 55: 10개 화면 × 샘플/빈 × 라이트/다크 렌더링 + 클릭 흐름 15종, 스크린샷은 frontend/e2e-screens/
 ```
 검증·KPI(손계산)·운송비·경로 제약·재고 공식·외부 산출물 재현성·권한/워크스페이스 격리·원자적 롤백·
 AI 폴백(키 없음/쿼터/Rate limit/인증/타임아웃)·인수 시나리오 E2E·10개 화면 렌더링 스모크.
 
 ## 배포 (Railway)
-- 기존 서비스: `railway.toml` → `streamlit_app.py` (변경 없음)
-- 신규 웹 서비스: 같은 저장소로 **새 서비스**를 만들고 Config file path 를 `/railway.web.toml` 로 지정
-  (`Dockerfile.web`: Next.js 빌드 + FastAPI, 헬스체크 `/api/health`). Variables 에 `LOGISRISK_SESSION_SECRET` 고정값 필요.
-
-배포 전 필수 (두 서비스 공통):
-- **`LOGISRISK_ACCESS_CODE` 설정** — 미설정 시 URL 을 아는 누구나 관리자 권한으로 접근합니다.
-- 업로드 데이터 유지: Volume(`LOGISRISK_DATA_DIR=/data`) 또는 PostgreSQL.
+- 운영 서비스: `logisrisk-web` (https://logisrisk-web-production.up.railway.app) — `main` 푸시 시 자동 배포.
+  `Dockerfile.web`(Next.js 빌드 + FastAPI), 헬스체크 `/api/health`, 볼륨 `/data`(SQLite 보존).
+- 서비스 변수: `LOGISRISK_SESSION_SECRET`(고정), `LOGISRISK_DATA_DIR=/data`, `TZ=Asia/Seoul`,
+  `RAILWAY_RUN_UID=0`(볼륨 쓰기), `RAILWAY_DOCKERFILE_PATH=Dockerfile.web`. 선택: `OPENAI_API_KEY`, `LOGISRISK_ACCESS_CODE`
+  (2026-11-06 사용자 요청으로 접근 코드 해제 — 현재 누구나 관리자 권한으로 접속·업로드 가능).
+- Railway 가 Config-as-code 경로 지정을 지원 중단해 빌드·헬스체크 설정은 서비스 설정에 직접 들어가 있다
+  (`railway.web.toml` 은 같은 내용의 참고용). 기존 Streamlit 서비스(ct_contest)는 2026-11-06 삭제 —
+  `railway.toml`·`Procfile` 은 로컬/다른 환경에서 Streamlit 을 띄울 때만 의미가 있다.
 
 상세: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 

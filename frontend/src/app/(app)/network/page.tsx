@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 
-import { ComingSoon } from "@/components/app/coming-soon";
+import { PageSkeleton } from "@/components/app/app-shell";
+import { NetworkScreen } from "@/components/screens/network";
 
 export const metadata: Metadata = { title: "Network Intelligence" };
 
 export default function Page() {
-  return <ComingSoon navKey="network" features={["영업소 위험 레이어(등급·LISA)", "센터·배송지·배송 밀도 레이어", "가중치 재계산 + 시나리오 ID 저장", "센터 주변 고위험 영업소", "영업소 위험 CSV"]} />;
+  return (
+    <Suspense fallback={<PageSkeleton />}>
+      <NetworkScreen />
+    </Suspense>
+  );
 }

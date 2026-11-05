@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, RefreshCw } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { AlertTriangle, ChevronRight, FlaskConical, Moon, RefreshCw, Sun } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { useTheme } from "next-themes";
 import { Suspense, useEffect, type ReactNode } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { client, unwrap } from "@/lib/api";
+import { dateTimeLabel } from "@/lib/format";
+import { NAV } from "@/lib/nav";
+import { cn } from "@/lib/utils";
 import { WorkspaceProvider, useWorkspace } from "@/lib/workspace";
 
 import { AppSidebar } from "./app-sidebar";
@@ -40,7 +44,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Suspense>
         <SidebarInset className="min-w-0 bg-canvas">
           <Topbar />
-          <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-16 pt-5 md:px-6 lg:px-8">
+          <main id="main" className="mx-auto w-full max-w-[1600px] flex-1 px-4 pb-16 pt-6 md:px-6 lg:px-8">
             <MeGate>{children}</MeGate>
           </main>
         </SidebarInset>
@@ -51,17 +55,84 @@ export function AppShell({ children }: { children: ReactNode }) {
 
 function Topbar() {
   return (
-    <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-canvas/85 px-3 backdrop-blur supports-[backdrop-filter]:bg-canvas/70 md:px-4">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded focus:bg-card focus:px-3 focus:py-1.5">
-        본문으로 건너뛰기
-      </a>
-      <SidebarTrigger className="-ml-1 text-muted-foreground" aria-label="내비게이션 접기/펼치기" />
-      <Separator orientation="vertical" className="mr-1 !h-5" />
-      <WorkspaceSwitcher />
-      <div className="ml-auto flex w-full max-w-72 items-center justify-end gap-2">
-        <CommandPalette />
+    <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70">
+      <div className="flex h-14 items-center gap-2 px-3 md:px-4">
+        <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded focus:bg-card focus:px-3 focus:py-1.5">
+          본문으로 건너뛰기
+        </a>
+        <SidebarTrigger className="-ml-1 text-muted-foreground" aria-label="내비게이션 접기/펼치기" />
+        <Separator orientation="vertical" className="mr-1 !h-5" />
+        <WorkspaceSwitcher />
+        <Suspense>
+          <Crumb />
+        </Suspense>
+        <div className="ml-auto flex items-center gap-2">
+          <Freshness />
+          <div className="w-56 lg:w-72">
+            <CommandPalette />
+          </div>
+          <ThemeButton />
+        </div>
       </div>
+      <SampleBanner />
     </header>
+  );
+}
+
+/** 현재 위치: 섹션 › 화면 */
+function Crumb() {
+  const pathname = usePathname();
+  const sec = NAV.find((s) => s.items.some((i) => pathname.startsWith(i.href.replace(/\/$/, ""))));
+  const item = sec?.items.find((i) => pathname.startsWith(i.href.replace(/\/$/, "")));
+  if (!sec || !item) return null;
+  return (
+    <nav aria-label="현재 위치" className="hidden items-center gap-1.5 text-[13px] md:flex">
+      <ChevronRight className="size-3.5 text-subtle-foreground" />
+      <span className="text-subtle-foreground">{sec.section}</span>
+      <ChevronRight className="size-3.5 text-subtle-foreground" />
+      <span className="font-medium text-foreground">{item.title}</span>
+    </nav>
+  );
+}
+
+function Freshness() {
+  const { me } = useWorkspace();
+  if (!me) return null;
+  return (
+    <span className="hidden items-center gap-1.5 text-[12px] text-muted-foreground xl:inline-flex" title="마지막 데이터 업로드 시각">
+      <span className={cn("size-1.5 rounded-full", me.data_updated_at ? "bg-success" : "bg-border-strong")} />
+      {me.data_updated_at ? `데이터 ${dateTimeLabel(me.data_updated_at)}` : "운영 데이터 없음"}
+    </span>
+  );
+}
+
+function ThemeButton() {
+  const { resolvedTheme, setTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
+  return (
+    <Button variant="ghost" size="icon" className="text-muted-foreground" onClick={() => setTheme(dark ? "light" : "dark")} aria-label={dark ? "라이트 모드로" : "다크 모드로"}>
+      {dark ? <Sun className="size-4" /> : <Moon className="size-4" />}
+    </Button>
+  );
+}
+
+/** 샘플 워크스페이스 안내 — 모든 화면 상단에 항상 표시 (실제 성과로 오인 방지) */
+function SampleBanner() {
+  const { me, switchWorkspace } = useWorkspace();
+  if (!me?.is_demo) return null;
+  const mine = me.workspaces.find((w) => !w.is_demo);
+  return (
+    <div className="flex items-center gap-2 border-t border-kind-demo/20 bg-kind-demo/[0.07] px-4 py-1.5 text-[12px] text-foreground/80">
+      <FlaskConical className="size-3.5 shrink-0 text-kind-demo" />
+      <span className="truncate">
+        <b className="font-semibold text-kind-demo">샘플 워크스페이스</b> · 화면의 운영 수치는 시연용 가상 데이터로 계산한 값이며 실제 성과가 아닙니다.
+      </span>
+      {mine && (
+        <button type="button" onClick={() => switchWorkspace(mine.id)} className="ml-auto shrink-0 font-medium text-primary hover:underline">
+          내 워크스페이스로 전환
+        </button>
+      )}
+    </div>
   );
 }
 

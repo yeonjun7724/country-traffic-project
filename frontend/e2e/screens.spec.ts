@@ -46,8 +46,8 @@ for (const ws of ["demo", "default"] as const) {
         await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 45_000 });
         if (r === "control-tower" && ws === "demo") {
           await expect(page.getByRole("button", { name: /OTIF:/ })).toBeVisible();
-          await page.waitForTimeout(1500); // 지도 타일
         }
+        await page.waitForTimeout(2000); // 차트 애니메이션·지도 타일이 끝난 뒤 촬영
         await page.screenshot({ path: `e2e-screens/${info.project.name}/${ws}-${r}.png`, fullPage: true });
         expect(errors, errors.join("\n")).toEqual([]);
       });

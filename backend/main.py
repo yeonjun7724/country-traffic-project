@@ -23,7 +23,7 @@ from logisrisk.config import ROOT, auto_seed_demo
 from logisrisk.security import PermissionDenied
 
 from .deps import get_external, get_store
-from .routers import control_tower, core, data_hub
+from .routers import admin, analysis, control_tower, core, data_hub
 
 log = logging.getLogger("logisrisk.api")
 mimetypes.add_type("text/javascript", ".mjs")  # 모듈 워커(MapLibre)는 JS MIME 이 아니면 로드 거부됨
@@ -73,7 +73,7 @@ def create_app(seed: bool = True) -> FastAPI:
     def health():
         return {"status": "ok", "version": __version__}
 
-    for r in (core.router, control_tower.router, data_hub.router):
+    for r in (core.router, control_tower.router, data_hub.router, analysis.router, admin.router):
         app.include_router(r, prefix="/api")
 
     if FRONTEND_DIR.is_dir():

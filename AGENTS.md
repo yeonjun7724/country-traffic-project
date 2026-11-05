@@ -15,7 +15,7 @@ KPI·비용·배차 대안·시나리오를 계산하고, 기존 공모전 산�
   - `views/` 화면용 뷰 모델 (Streamlit·API 공통, 계산 로직 없음)
 - `backend/` — FastAPI (logisrisk 를 HTTP 로 노출하는 얇은 계층, 계산 로직 금지)
 - `frontend/` — Next.js(App Router·정적 export)·Tailwind·shadcn/ui. 디자인 토큰은 `src/app/globals.css` 한 곳
-- `streamlit_app.py` — 기존 엔트리 (Next.js 기능 동등성 확인 전까지 병행). `app.py` — **레거시 공모전 대시보드(수정 금지, 독립 보존)**
+- `streamlit_app.py` — 기존 엔트리 (로컬 전용. 모든 화면이 Next.js 로 이전됨, 배포 서비스 삭제) `app.py` — **레거시 공모전 대시보드(수정 금지, 독립 보존)**
 - `output/` — 기존 분석 산출물 CSV (읽기 전용 입력)
 - `fixtures/demo/` — DEMO(가상) 데이터. `scripts/generate_demo_data.py` 로 재생성
 - `templates/index.html` — 개인 포트폴리오. 앱과 무관, 수정·삭제 금지

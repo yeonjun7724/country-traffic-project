@@ -111,7 +111,7 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 | 항목 | 결정 | 이유 |
 |---|---|---|
 | 배포 구조 | **A안: 단일 서비스** — FastAPI 가 Next.js 정적 빌드(`frontend/out`)를 같은 도메인에서 서빙 | 쿠키·CORS 문제 없음, 볼륨 1개, 비용 최소. SSR 불필요(로그인 뒤 대시보드) |
-| 병행 운영 | 기존 Streamlit 서비스(`railway.toml`) 유지, 신규는 새 Railway 서비스(`railway.web.toml`·`Dockerfile.web`) | 기능 동등성 확인 전 중단 없음 |
+| 운영 서비스 | Railway `logisrisk-web` 단일 서비스(`Dockerfile.web`, 볼륨 `/data`). Streamlit 서비스는 2026-11-06 사용자 요청으로 삭제, 코드는 8개 화면 이전 전까지 로컬용으로 보존 | 설정 파일 경로 지정은 Railway 가 지원 중단 → 서비스 설정에 직접 지정 |
 | 계산 재사용 | `logisrisk/views/` 뷰 모델을 Streamlit·API 가 공유 | 화면별 값 불일치 방지. UI 에 있던 일별 집계 등을 이동 |
 | 프런트 스택 | Next.js 15 · Tailwind v4 · shadcn/ui(Radix) · TanStack Query/Table v8/Virtual · Recharts · MapLibre GL | TanStack Table 은 v9 API 변경이 커서 안정판 v8 고정 |
 | 지도 | MapLibre + CARTO Positron/Dark Matter. 센터 라벨은 HTML 마커(한글 글꼴 의존 없음). 로딩 실패 시 단순 배경 | 운영 단계에서 CARTO 이용 조건 확인 또는 자체 타일 |
@@ -143,3 +143,21 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 - 업로드 임시 보관은 메모리 — 서버 재시작 시 진행 중 업로드는 다시 올려야 함.
 - Docker 이미지는 로컬에서 빌드해 보지 못함(Docker 없음). 동일 의존성만 설치한 venv 로 기동·계산 검증.
 - 빌드 도구 체인(next 내부 postcss)에 npm audit 경고 — 정적 export 라 런타임 노출은 없음, Next 패치 시 갱신.
+
+## 11. Next.js 전환 — P1·P2 완료 (10개 화면 전체)
+
+- 뷰 모델: `logisrisk/views/{network,transportation,analysis,admin}.py` — Network·Transportation·Inventory·Fuel&Risk·
+  Scenario·Reports·Settings 의 화면 조립(리포트 시트 구성 포함)을 UI 밖으로 이동. 계산은 기존 analytics 그대로.
+- API 추가: `/api/network/*`, `/api/transportation/{cts,fuel,planning,plan,plan/save}`, `/api/inventory/*`,
+  `/api/fuel/{diesel,market,traffic,audit}`, `/api/scenarios/*`(비교·민감도·센터 중단·저장·복제·상태·Excel),
+  `/api/copilot/{meta,chat}`, `/api/reports/*`, `/api/alerts*`, `/api/actions*`, `/api/settings*`, `/api/audit`.
+  모든 쓰기·내보내기는 기존 권한(`scenario.save`·`plan.approve`·`data.export`·`settings.manage` 등) 강제.
+- Copilot: 계획의 SSE 스트리밍 대신 **요청-응답**으로 구현(도구 실행 후 근거와 함께 반환). 진행 표시는 클라이언트 상태.
+  세션 호출 예산은 서버 세션 쿠키로 추적. 토큰 스트리밍은 미구현.
+- 접근 코드: 사용자 요청으로 운영 서비스 변수 삭제(공개 모드). 기능 코드는 남아 있어 변수만 다시 넣으면 재활성화.
+- UI 다듬기: 상단 바(현재 위치·데이터 기준 시각·테마 전환), 샘플 워크스페이스 슬림 배너(전 화면 고정),
+  사이드바 활성 표시, 화면 아이콘 헤더, Control Tower ‘이번 기간 요약’(계산된 KPI·권역 집계로 만든 규칙 문장),
+  선택 상태가 분명한 토글, 슬라이더 손잡이 접근성 이름, 앱 아이콘.
+- 검증: pytest 149(API 화면 테스트 8 추가) · vitest 11 · Playwright 55(화면 40 + 흐름 15).
+- 남은 한계: Streamlit 코드 제거(사용자 확인 필요), 시간창 VRP, 서버측 PDF, SSO, Copilot 토큰 스트리밍,
+  업로드 임시 보관이 메모리(재시작 시 진행 중 업로드 소실).

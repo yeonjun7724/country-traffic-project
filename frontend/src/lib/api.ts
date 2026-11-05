@@ -131,3 +131,31 @@ export async function postForm<T>(path: string, form: FormData): Promise<T> {
   if (!res.ok) throw new ApiError(res.status, detail(body, `업로드 실패 (${res.status})`));
   return body as T;
 }
+
+/** 스키마가 느슨한(dict) 엔드포인트용 — 응답 타입은 src/lib/types.ts 에서 명시 */
+export async function apiFetch<T>(
+  path: string,
+  opts: { method?: string; query?: Record<string, string | number | string[] | number[] | undefined | null>; body?: unknown } = {},
+): Promise<T> {
+  const ws = memoryWorkspace ?? getWorkspace();
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(opts.query ?? {})) {
+    if (v === undefined || v === null || v === "") continue;
+    if (Array.isArray(v)) v.forEach((x) => qs.append(k, String(x)));
+    else qs.set(k, String(v));
+  }
+  const res = await fetch(`${API_BASE}${path}${qs.toString() ? `?${qs}` : ""}`, {
+    method: opts.method ?? "GET",
+    credentials: "include",
+    headers: { ...(ws ? { "X-Workspace": ws } : {}), ...(opts.body !== undefined ? { "Content-Type": "application/json" } : {}) },
+    body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
+  });
+  let body: unknown = null;
+  try {
+    body = await res.json();
+  } catch {
+    /* 204 등 */
+  }
+  if (!res.ok) throw new ApiError(res.status, detail(body, `요청 실패 (${res.status})`));
+  return body as T;
+}

@@ -29,7 +29,9 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { client } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+
+import { client, unwrap } from "@/lib/api";
 import { NAV } from "@/lib/nav";
 import { useWorkspace } from "@/lib/workspace";
 
@@ -68,7 +70,7 @@ export function AppSidebar() {
                       asChild
                       isActive={active}
                       tooltip={it.ready ? it.title : `${it.title} · 준비 중`}
-                      className="h-8 gap-2.5 text-[13px] font-medium data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
+                      className="relative h-8 gap-2.5 text-[13px] font-medium before:absolute before:inset-y-1.5 before:-left-2 before:w-[3px] before:rounded-r-full before:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:bg-primary group-data-[collapsible=icon]:before:hidden"
                     >
                       <Link href={`${it.href}${qs ? `?${qs}` : ""}`} aria-current={active ? "page" : undefined}>
                         <Icon className={active ? "text-primary" : "text-subtle-foreground"} />
@@ -97,6 +99,7 @@ export function AppSidebar() {
 
 function UserMenu() {
   const { me } = useWorkspace();
+  const auth = useQuery({ queryKey: ["auth"], queryFn: () => unwrap(client.GET("/api/auth/status")), staleTime: 60_000 });
   const { theme, setTheme } = useTheme();
   const initials = (me?.display_name ?? "?").slice(0, 1);
   return (
@@ -133,6 +136,7 @@ function UserMenu() {
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
             <DropdownMenuSeparator />
+            {auth.data?.access_code_required && (
             <DropdownMenuGroup>
               <DropdownMenuItem
                 onSelect={async () => {
@@ -143,6 +147,7 @@ function UserMenu() {
                 <LogOut className="size-4" /> 로그아웃
               </DropdownMenuItem>
             </DropdownMenuGroup>
+            )}
             <DropdownMenuSeparator />
             <div className="px-2 py-1.5 text-[11px] text-subtle-foreground">
               v{me?.app_version} · 계산 {me?.calc_version}
