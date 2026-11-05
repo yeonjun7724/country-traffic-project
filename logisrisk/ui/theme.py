@@ -30,10 +30,15 @@ LISA_COLOR = {"High-High": "#dc2626", "High-Low": "#f97316", "Low-High": "#60a5f
               "Not significant": "#cbd5e1"}
 
 
+def _one_block(html_src: str) -> str:
+    """Markdown 이 빈 줄에서 <style> 블록을 끊어 CSS 를 텍스트로 출력하지 않도록 빈 줄을 제거."""
+    return "\n".join(line for line in html_src.splitlines() if line.strip())
+
+
 def css(mode: str = "light") -> str:
     t = TOKENS[mode]
     var = "".join(f"--{k}:{v};" for k, v in t.items())
-    return f"""
+    return _one_block(f"""
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root {{ {var} --r:10px; --mono:'JetBrains Mono','SFMono-Regular',Consolas,monospace; }}
@@ -49,6 +54,9 @@ h1, h2, h3, h4, p, li, label, .stMarkdown {{ color: var(--text-1); }}
 [data-testid="stSidebar"] a[aria-current="page"] {{ background: rgba(96,165,250,.18); }}
 [data-testid="stSidebar"] [data-testid="stSidebarNavLink"] span {{ color: #e2e8f0; font-size: 13.5px; }}
 [data-testid="stSidebar"] input, [data-testid="stSidebar"] [data-baseweb="select"] > div {{ background: #13254a !important; color:#e2e8f0 !important; }}
+[data-testid="stSidebar"] [data-baseweb="input"], [data-testid="stSidebar"] [data-baseweb="base-input"],
+[data-testid="stSidebar"] [data-testid="stTextInputRootElement"] {{ background: #13254a !important; border-color: #1e3a8a !important; }}
+[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] {{ background: transparent; }}
 [data-testid="stSidebar"] [data-baseweb="tag"] {{ background: #1e3a8a !important; }}
 [data-testid="stSidebarNavSeparator"] {{ border-color: #1e293b; }}
 div[data-testid="stVerticalBlockBorderWrapper"] {{ background: var(--surface); border-color: var(--border) !important; border-radius: var(--r); }}
@@ -97,7 +105,7 @@ code {{ font-family: var(--mono); }}
 .lr-def {{ font-size:12px; color:var(--text-2); line-height:1.6; }} .lr-def code {{ font-size:11.5px; }}
 .lr-demo {{ color:var(--text-3); font-size:11.5px; margin:-4px 0 10px; display:flex; align-items:center; gap:6px; }}
 .lr-demo::before {{ content:""; width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; }}
-</style>"""
+</style>""")
 
 
 def plotly_layout(mode: str = "light", height: int = 320, title: str | None = None) -> dict:
