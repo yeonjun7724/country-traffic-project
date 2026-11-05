@@ -1,9 +1,10 @@
-streamlit>=1.45.0,<2
-pandas>=2.2.0
-numpy>=1.26.0
-plotly>=5.24.0
-openpyxl>=3.1.0
-SQLAlchemy>=2.0.0
-openai>=1.40.0
+# 버전 범위는 테스트를 통과한 조합으로 제한 (Streamlit 1.66 에서 CSS 주입이 텍스트로 출력되는 문제 확인)
+streamlit==1.45.1
+pandas>=2.2.0,<3
+numpy>=1.26.0,<3
+plotly>=5.24.0,<6
+openpyxl>=3.1.0,<4
+SQLAlchemy>=2.0.0,<2.1
+openai>=1.40.0,<3
 # 레거시 app.py 의 선택적 웹 검색 (신규 앱은 사용하지 않음)
 duckduckgo_search>=6.0.0
