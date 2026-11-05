@@ -11,6 +11,7 @@ from ...data.connectors import available_statuses
 from ...data.schemas import ENTITIES, UPLOAD_ORDER, template_frame
 from ...data.validation import auto_map, read_table
 from ...security import PermissionDenied
+from ...reports.export import csv_bytes
 from .. import common as C
 
 NONE = "(매핑 안 함)"
@@ -93,6 +94,9 @@ def _upload_tab(wb):
     v = st.session_state.get("val")
     if not v or v["fid"] != fid:
         return
+    if v["mapping"] != mapping:  # 검증 후 매핑을 바꾸면 이전 결과로 저장되지 않도록 차단
+        C.callout("검증 이후 컬럼 매핑이 변경되었습니다. <b>검증을 다시 실행</b>하세요.", "warn")
+        return
     res = v["res"]
     C.section("검증 결과")
     m1, m2, m3, m4 = st.columns(4)
@@ -110,7 +114,7 @@ def _upload_tab(wb):
         st.dataframe(summ, hide_index=True, use_container_width=True)
         st.dataframe(res.errors.head(500), hide_index=True, use_container_width=True, height=220)
         er = res.error_rows(raw)
-        st.download_button("오류 행 다운로드 (CSV)", er.to_csv(index=False).encode("utf-8-sig"),
+        st.download_button("오류 행 다운로드 (CSV)", csv_bytes(er),
                            file_name=f"errors_{ent}.csv", mime="text/csv", key=f"err_{fid}")
     if res.ok and res.n_valid:
         st.markdown("**저장될 데이터 미리보기**")
@@ -202,7 +206,7 @@ def _templates_tab():
                  hide_index=True, use_container_width=True)
     st.caption(f"기본키: {', '.join(spec.primary_key)}"
                + (" · 외래키: " + ", ".join(f"{k.column}→{k.ref_entity}" for k in spec.foreign_keys) if spec.foreign_keys else ""))
-    st.download_button(f"{spec.label} 템플릿 CSV", template_frame(ent).to_csv(index=False).encode("utf-8-sig"),
+    st.download_button(f"{spec.label} 템플릿 CSV", csv_bytes(template_frame(ent)),
                        file_name=f"template_{ent}.csv", mime="text/csv")
 
 

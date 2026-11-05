@@ -25,6 +25,12 @@ class Filters:
     categories: list[str] = field(default_factory=list)
     stores: list[str] = field(default_factory=list)
 
+    @property
+    def days(self) -> int | None:
+        if not self.start or not self.end:
+            return None
+        return (pd.Timestamp(self.end) - pd.Timestamp(self.start)).days + 1
+
     def shifted(self) -> "Filters":
         """동일 길이의 직전 기간."""
         if not self.start or not self.end:
@@ -57,13 +63,16 @@ def _order_attrs(frames: dict[str, pd.DataFrame]) -> pd.DataFrame | None:
         x["category"], x["unit_weight_kg"], x["unit_volume_m3"] = None, np.nan, np.nan
     x["w"] = x["qty"] * x["unit_weight_kg"]
     x["v"] = x["qty"] * x["unit_volume_m3"]
-    g = x.groupby("order_id").agg(
-        ordered_qty=("qty", "sum"),
-        order_weight_kg=("w", lambda s: s.sum(min_count=len(s)) if s.notna().all() else np.nan),
-        order_volume_m3=("v", lambda s: s.sum(min_count=len(s)) if s.notna().all() else np.nan),
-        categories=("category", lambda s: "|".join(sorted(set(map(str, s.dropna()))))),
-    )
-    return g.reset_index()
+    x["w_na"], x["v_na"] = x["w"].isna(), x["v"].isna()
+    # 벡터화 집계 (주문 수십만 건에서도 수 초 이내). 한 줄이라도 중량/부피 미상이면 주문 전체를 미상(NaN) 처리
+    g = x.groupby("order_id").agg(ordered_qty=("qty", "sum"), w=("w", "sum"), w_na=("w_na", "any"),
+                                  v=("v", "sum"), v_na=("v_na", "any"))
+    g["order_weight_kg"] = g["w"].where(~g["w_na"])
+    g["order_volume_m3"] = g["v"].where(~g["v_na"])
+    cats = (x[["order_id", "category"]].dropna().astype({"category": str}).drop_duplicates()
+            .sort_values(["order_id", "category"]).groupby("order_id")["category"].agg("|".join))
+    g["categories"] = cats.reindex(g.index).fillna("")
+    return g[["ordered_qty", "order_weight_kg", "order_volume_m3", "categories"]].reset_index()
 
 
 def build_fact(frames: dict[str, pd.DataFrame]) -> pd.DataFrame | None:
@@ -110,8 +119,12 @@ def build_fact(frames: dict[str, pd.DataFrame]) -> pd.DataFrame | None:
     has_dates = f["actual_delivery_date"].notna() & f["planned_delivery_date"].notna()
     f["on_time"] = np.where(has_dates, f["actual_delivery_date"] <= f["planned_delivery_date"], np.nan)
     f["delay_days"] = np.where(has_dates, (f["actual_delivery_date"] - f["planned_delivery_date"]).dt.days, np.nan)
-    has_qty = f["delivered_qty"].notna() & f["ordered_qty"].notna()
-    f["in_full"] = np.where(has_qty, f["delivered_qty"] >= f["ordered_qty"] - 1e-9, np.nan)
+    # 완납(In-Full)은 주문 단위: 분할배송이면 같은 주문의 모든 배송 수량을 합산해 주문수량과 비교
+    grp = f.groupby("order_id")
+    dq = grp["delivered_qty"].transform("sum").where(~f["delivered_qty"].isna().groupby(f["order_id"]).transform("any"))
+    f["order_delivered_qty"] = dq
+    has_qty = dq.notna() & f["ordered_qty"].notna()
+    f["in_full"] = np.where(has_qty, dq >= f["ordered_qty"] - 1e-9, np.nan)
     return f
 
 
@@ -131,11 +144,19 @@ def apply_filters(fact: pd.DataFrame, flt: Filters, date_col: str = "ship_date")
     return x
 
 
-def _filter_orders(frames: dict[str, pd.DataFrame], flt: Filters) -> pd.DataFrame | None:
+def _filter_orders(frames: dict[str, pd.DataFrame], flt: Filters, fact: pd.DataFrame | None = None) -> pd.DataFrame | None:
     o = frames.get("orders")
     if o is None:
         return None
     x = o
+    # 운송사·차량은 주문 속성이 아니므로 해당 운송사/차량으로 배송된 주문만 남긴다
+    if (flt.carriers or flt.vehicles) and fact is not None:
+        sel = fact
+        if flt.carriers:
+            sel = sel[sel["carrier"].isin(flt.carriers)]
+        if flt.vehicles:
+            sel = sel[sel["vehicle_id"].isin(flt.vehicles)]
+        x = x[x["order_id"].isin(sel["order_id"])]
     if flt.start:
         x = x[x["order_date"] >= pd.Timestamp(flt.start)]
     if flt.end:
@@ -164,12 +185,14 @@ def compute(frames: dict[str, pd.DataFrame], fact: pd.DataFrame | None, flt: Fil
     per = _period(flt)
     m: dict[str, Metric] = {}
 
-    orders = _filter_orders(frames, flt)
+    orders = _filter_orders(frames, flt, fact)
     if orders is None:
         m["orders"] = not_computable("orders", "주문 수", "주문(orders) 데이터 없음")
     else:
         m["orders"] = Metric("orders", "주문 수", float(orders["order_id"].nunique()), "건",
-                             "기간 내 주문일 기준 고유 주문번호 수", "COUNT(DISTINCT order_id)", n=len(orders), period=per)
+                             "기간 내 주문일 기준 고유 주문번호 수 (운송사·차량 필터 시 해당 배송이 있는 주문만)",
+                             "COUNT(DISTINCT order_id)", n=len(orders), period=per,
+                             warnings=["취소 주문 포함"] if "status" in orders and (orders["status"] == "cancelled").any() else [])
 
     if fact is None:
         reason = "배송(shipments) 데이터 없음"
@@ -211,13 +234,20 @@ def compute(frames: dict[str, pd.DataFrame], fact: pd.DataFrame | None, flt: Fil
     else:
         m["late_rate"] = not_computable("late_rate", "배송 지연율", "실제 배송일 데이터 없음", period=per)
 
-    both = x[x["on_time"].notna() & x["in_full"].notna()]
-    if len(both):
-        ok = float(((both["on_time"] == 1) & (both["in_full"] == 1)).sum())
-        m["otif"] = Metric("otif", "OTIF", ok / len(both), "%",
-                           "약속일 이내 배송 AND 주문수량 전량 배송 비율", "(정시 ∧ 완납) 건 / 판정 가능 건",
-                           numerator=ok, denominator=float(len(both)), n=len(both), period=per,
-                           warnings=[f"판정 불가(배송일 또는 수량 결측) {len(x) - len(both)}건 제외"] if len(x) > len(both) else [])
+    # OTIF 는 주문 단위: 주문의 (기간 내) 모든 배송이 정시 AND 주문 전체 배송수량 ≥ 주문수량
+    og = x.assign(_known=x["on_time"].notna(), _ok=x["on_time"] == 1).groupby("order_id").agg(
+        ot_known=("_known", "all"), ot=("_ok", "all"), inf=("in_full", "first"))
+    judg = og[og["ot_known"] & og["inf"].notna()]
+    n_orders = len(og)
+    if len(judg):
+        ok = float((judg["ot"] & (judg["inf"] == 1)).sum())
+        warn = [f"판정 불가(배송일 또는 수량 결측) 주문 {n_orders - len(judg)}건 제외"] if n_orders > len(judg) else []
+        if x.duplicated("order_id").any():
+            warn.append("분할배송 주문은 배송수량을 합산해 완납 여부를 판정")
+        m["otif"] = Metric("otif", "OTIF", ok / len(judg), "%",
+                           "주문 단위: 해당 주문의 모든 배송이 약속일 이내 AND 배송수량 합계가 주문수량 이상인 비율",
+                           "(정시 ∧ 완납) 주문 / 판정 가능 주문", numerator=ok, denominator=float(len(judg)),
+                           n=len(judg), period=per, warnings=warn)
     else:
         m["otif"] = not_computable("otif", "OTIF", "실제 배송일·배송수량·주문수량 중 결측", period=per)
 
@@ -226,8 +256,9 @@ def compute(frames: dict[str, pd.DataFrame], fact: pd.DataFrame | None, flt: Fil
         trips = t.groupby(["vehicle_id", "ship_date"]).agg(load=("load_kg_eff", "sum"), cap=("capacity_kg", "first"))
         lf = safe_div(float(trips["load"].sum()), float(trips["cap"].sum()))
         warn = []
-        if (trips["load"] > trips["cap"] * 1.0001).any():
-            warn.append(f"적재중량이 차량 용량을 초과한 운행 {int((trips['load'] > trips['cap']).sum())}건")
+        over = int((trips["load"] > trips["cap"] * 1.0001).sum())
+        if over:
+            warn.append(f"차량·일 단위 적재 합이 용량을 초과한 경우 {over}건 — 1일 다회전 운행이거나 적재중량 입력 오류일 수 있음")
         if x["load_kg"].isna().any():
             warn.append("적재중량 미입력 건은 주문중량(수량×단위중량)으로 대체")
         m["load_factor"] = Metric("load_factor", "적재율(중량)", lf, "%",
@@ -296,11 +327,12 @@ def by_dimension(fact: pd.DataFrame | None, flt: Filters, dim: str) -> pd.DataFr
     x = apply_filters(fact, flt)
     if dim not in x.columns or x.empty:
         return pd.DataFrame()
-    g = x.groupby(dim, dropna=False).agg(
-        shipments=("shipment_id", "count"), orders=("order_id", "nunique"),
-        cost=("cost", lambda s: s.sum(min_count=1)), distance_km=("distance_km", lambda s: s.sum(min_count=1)),
-        weight_kg=("order_weight_kg", lambda s: s.sum(min_count=1)),
-        on_time_n=("on_time", "count"), late=("on_time", lambda s: float((s == 0).sum())))
+    gb = x.assign(_late=(x["on_time"] == 0).astype(float)).groupby(dim, dropna=False)
+    g = pd.DataFrame({"shipments": gb["shipment_id"].count(), "orders": gb["order_id"].nunique(),
+                      "cost": gb["cost"].sum(min_count=1), "distance_km": gb["distance_km"].sum(min_count=1),
+                      "weight_kg": gb["order_weight_kg"].sum(min_count=1), "on_time_n": gb["on_time"].count(),
+                      "late": gb["_late"].sum()})
+    g.index.name = dim
     g["cost_per_order"] = g["cost"] / g["orders"].replace(0, np.nan)
     g["cost_per_kg"] = g["cost"] / g["weight_kg"].replace(0, np.nan)
     g["cost_per_km"] = g["cost"] / g["distance_km"].replace(0, np.nan)

@@ -6,7 +6,7 @@ import os
 import pandas as pd
 import streamlit as st
 
-from ...config import DATABASE_URL, OPENAI_MODEL, openai_api_key
+from ...config import DATABASE_URL, OPENAI_MODEL, access_code, local_mode, openai_api_key
 from ...security import PERMISSIONS, ROLE_LABEL, ROLES
 from .. import common as C
 
@@ -37,9 +37,13 @@ def render():
         C.callout("현재 <b>인증 미구성 — 로컬 단일 사용자 모드</b>입니다. 역할 기반 권한은 서비스·AI 도구 계층에서 강제되며, "
                   "아래에서 역할을 낮춰 화면별 접근 제한을 확인할 수 있습니다. 실제 다중 사용자 운영에는 SSO/OIDC 연동(P2)이 필요합니다.", "warn")
         cur = wb.ctx.role
+        st.markdown(C.badge("접근 코드 사용 중", "ok") if access_code() else C.badge("접근 코드 미설정 — 공개 배포 시 LOGISRISK_ACCESS_CODE 설정 필요", "bad"),
+                    unsafe_allow_html=True)
+        if not local_mode():
+            st.caption(f"현재 역할: {ROLE_LABEL[cur]}. 역할 전환 테스트 기능은 로컬 모드(LOGISRISK_LOCAL_MODE=1)에서만 제공됩니다.")
         sim = st.selectbox("세션 역할 (로컬 모드 전용 테스트 기능)", ROLES, index=ROLES.index(cur),
-                           format_func=lambda r: ROLE_LABEL[r], key="set_role")
-        if st.button("역할 적용"):
+                           format_func=lambda r: ROLE_LABEL[r], key="set_role", disabled=not local_mode())
+        if local_mode() and st.button("역할 적용"):
             store = C.get_store()
             uid = f"local-{sim}"
             store.add_user(uid, f"로컬 {ROLE_LABEL[sim]}")

@@ -268,12 +268,15 @@ def baseline_plan(depot: dict, assignments: pd.DataFrame, vehicles: pd.DataFrame
     rrows, warnings = [], []
     vv = vehicles.set_index("vehicle_id")
     a = assignments.copy()
-    if "recorded_distance_km" not in a:
-        a["recorded_distance_km"] = np.nan
+    violations: list[str] = []
+    for c in ("recorded_distance_km", "service_min"):
+        if c not in a:
+            a[c] = np.nan
     for vid, g in a.dropna(subset=["lat", "lon"]).groupby("vehicle_id"):
         g = g.groupby("stop_id", as_index=False).agg(lat=("lat", "first"), lon=("lon", "first"),
                                                      demand_kg=("demand_kg", lambda x: x.sum(min_count=1)),
-                                                     rec=("recorded_distance_km", lambda x: x.sum(min_count=1)))
+                                                     rec=("recorded_distance_km", lambda x: x.sum(min_count=1)),
+                                                     svc=("service_min", "first"))
         D = distance_matrix([depot["lat"]] + g["lat"].tolist(), [depot["lon"]] + g["lon"].tolist())
         seq = two_opt(nearest_neighbor(list(range(1, len(g) + 1)), D), D)
         dist = _route_len(seq, D) * params.road_factor
@@ -285,10 +288,18 @@ def baseline_plan(depot: dict, assignments: pd.DataFrame, vehicles: pd.DataFrame
         fix_c = veh["fixed_cost_per_day"] if veh is not None and pd.notna(veh.get("fixed_cost_per_day")) else np.nan
         parts = [fuel_c, var_c, fix_c]
         load = float(g["demand_kg"].sum())
+        svc_min = g["svc"].fillna(params.default_service_min).sum()
+        dur = dist / params.avg_speed_kmh + svc_min / 60
+        mh = float(veh["max_hours"]) if veh is not None and pd.notna(veh.get("max_hours")) else params.default_max_hours
+        if dur > mh + 1e-9:
+            violations.append(f"현행 {vid}: 추정 운행시간 {dur:.1f}h > 최대 {mh:g}h")
+        if cap == cap and load > cap + 1e-9:
+            violations.append(f"현행 {vid}: 적재 {load:,.0f}kg > 용량 {cap:,.0f}kg (다회전 운행일 수 있음)")
         rrows.append({"vehicle_id": vid, "stops": len(g), "load_kg": load, "capacity_kg": cap,
                       "load_factor": load / cap if cap == cap and cap else np.nan, "distance_km": dist,
                       "recorded_distance_km": float(g["rec"].sum()) if g["rec"].notna().any() else np.nan,
-                      "duration_h": dist / params.avg_speed_kmh + len(g) * params.default_service_min / 60,
+                      "duration_h": dur,
+                      "max_hours": mh,
                       "est_cost": float(np.nansum(parts)) if any(pd.notna(p) for p in parts) else np.nan,
                       "cost_complete": all(pd.notna(p) for p in parts)})
     routes = pd.DataFrame(rrows)
@@ -302,7 +313,7 @@ def baseline_plan(depot: dict, assignments: pd.DataFrame, vehicles: pd.DataFrame
             "method": "현행 차량 배정 유지, 방문 순서는 최근접+2-opt 로 재구성(실제 순서 미보유)",
             "distance_basis": f"직선거리 × 우회계수 {params.road_factor}"}
     warnings.append("현행 계획의 실제 방문 순서 데이터가 없어 동일 기준(직선거리·최근접+2-opt)으로 재구성해 비교합니다.")
-    return PlanResult(routes, pd.DataFrame(), pd.DataFrame(), [], warnings, summ)
+    return PlanResult(routes, pd.DataFrame(), pd.DataFrame(), violations, warnings, summ)
 
 
 def compare_plans(base: PlanResult, prop: PlanResult) -> pd.DataFrame:
@@ -317,24 +328,72 @@ def compare_plans(base: PlanResult, prop: PlanResult) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def build_day_inputs(frames: dict, fact: pd.DataFrame, day, warehouse_id: str, source: str = "orders"):
+def due_orders(frames: dict, fact: pd.DataFrame | None, day, warehouse_id: str) -> pd.DataFrame:
+    """해당일 납기(요청일, 없으면 주문일+1일)이면서 아직 배송 실적이 없는 주문 (취소·출고·완료 제외)."""
+    o = frames.get("orders")
+    if o is None:
+        return pd.DataFrame()
+    due = o["requested_date"].where(o["requested_date"].notna(), o["order_date"] + pd.Timedelta(days=1))
+    x = o[(due == pd.Timestamp(day)) & (o["warehouse_id"] == warehouse_id)]
+    if "status" in x:
+        x = x[~x["status"].fillna("").isin(["cancelled", "shipped", "delivered"])]
+    if fact is not None and len(fact):
+        x = x[~x["order_id"].isin(fact["order_id"])]
+    return x
+
+
+def planning_days(frames: dict, fact: pd.DataFrame | None, source: str) -> list:
+    if source == "orders":
+        o = frames.get("orders")
+        if o is None:
+            return []
+        due = o["requested_date"].where(o["requested_date"].notna(), o["order_date"] + pd.Timedelta(days=1))
+        shipped = set(fact["order_id"]) if fact is not None else set()
+        open_ = o[~o["order_id"].isin(shipped) & ~o["status"].fillna("").isin(["cancelled", "shipped", "delivered"])]
+        return sorted(due.loc[open_.index].dropna().unique())
+    return sorted(fact["ship_date"].dropna().unique()) if fact is not None else []
+
+
+def build_day_inputs(frames: dict, fact: pd.DataFrame | None, day, warehouse_id: str, source: str = "shipments"):
     """특정 일자·센터의 배송지 수요와 현행 배정을 구성.
-    source='orders': 해당일 납기(요청일 또는 주문일) 주문 / 'shipments': 해당일 출고 실적."""
+
+    source='shipments': 해당일 출고 실적을 다시 계획 (현행 배차와 비교 가능)
+    source='orders'   : 해당일 납기인 미출고 주문으로 계획 (현행 배차 없음 → 비교 대상 없음)
+    """
+    from .kpi import _order_attrs  # 순환 import 방지
+
     wh = frames["warehouses"].set_index("warehouse_id").loc[warehouse_id]
     depot = {"id": warehouse_id, "name": wh["name"], "lat": float(wh["lat"]), "lon": float(wh["lon"])}
     st = frames["stores"]
+    st_cols = ["store_id", "name", "lat", "lon"] + [c for c in ("service_min", "tw_start", "tw_end") if c in st]
     day = pd.Timestamp(day)
-    x = fact[(fact["ship_date"] == day) & (fact["warehouse_id"] == warehouse_id)]
-    stops = (x.groupby("store_id").agg(demand_kg=("load_kg_eff", lambda s: s.sum(min_count=len(s))),
-                                       demand_m3=("order_volume_m3", lambda s: s.sum(min_count=len(s))))
-             .reset_index().merge(st[["store_id", "name", "lat", "lon"] + (["service_min", "tw_start", "tw_end"]
-                                  if "service_min" in st else [])], on="store_id", how="left")
-             .rename(columns={"store_id": "stop_id"}))
-    assign = x[["vehicle_id", "store_id", "store_name", "lat", "lon", "load_kg_eff", "distance_km"]].rename(
-        columns={"store_id": "stop_id", "store_name": "name", "load_kg_eff": "demand_kg",
-                 "distance_km": "recorded_distance_km"})
+    if source == "orders":
+        od = due_orders(frames, fact, day, warehouse_id)
+        oa = _order_attrs(frames)
+        if oa is not None and len(od):
+            od = od.merge(oa, on="order_id", how="left")
+        else:
+            od = od.assign(order_weight_kg=np.nan, order_volume_m3=np.nan)
+        stops = (od.groupby("store_id").agg(demand_kg=("order_weight_kg", lambda s: s.sum(min_count=len(s))),
+                                            demand_m3=("order_volume_m3", lambda s: s.sum(min_count=len(s))),
+                                            orders=("order_id", "count"))
+                 .reset_index().merge(st[st_cols], on="store_id", how="left").rename(columns={"store_id": "stop_id"}))
+        assign = pd.DataFrame(columns=["vehicle_id", "stop_id", "name", "lat", "lon", "demand_kg", "recorded_distance_km"])
+    else:
+        x = fact[(fact["ship_date"] == day) & (fact["warehouse_id"] == warehouse_id)]
+        stops = (x.groupby("store_id").agg(demand_kg=("load_kg_eff", lambda s: s.sum(min_count=len(s))),
+                                           demand_m3=("order_volume_m3", lambda s: s.sum(min_count=len(s))),
+                                           orders=("order_id", "nunique"))
+                 .reset_index().merge(st[st_cols], on="store_id", how="left").rename(columns={"store_id": "stop_id"}))
+        assign = x[["vehicle_id", "store_id", "store_name", "lat", "lon", "load_kg_eff", "distance_km"]].rename(
+            columns={"store_id": "stop_id", "store_name": "name", "load_kg_eff": "demand_kg",
+                     "distance_km": "recorded_distance_km"})
+        if "service_min" in st:
+            assign = assign.merge(st[["store_id", "service_min"]].rename(columns={"store_id": "stop_id"}),
+                                  on="stop_id", how="left")
+        assign = assign.dropna(subset=["vehicle_id"])
     v = frames["vehicles"]
     v = v[v["home_warehouse_id"] == warehouse_id]
     if "available" in v:
         v = v[available_mask(v)]
-    return depot, stops, assign.dropna(subset=["vehicle_id"]), v
+    return depot, stops, assign, v

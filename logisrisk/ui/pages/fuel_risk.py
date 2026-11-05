@@ -6,6 +6,7 @@ import streamlit as st
 
 from ...analytics import cost, risk
 from ...config import REFERENCE_EVENT_DATE, REFERENCE_EVENT_LABEL
+from ...reports.export import csv_bytes
 from .. import common as C
 from .. import theme
 
@@ -43,7 +44,7 @@ def render():
                 st.caption("• " + a)
             if "by" in r:
                 st.dataframe(r["by"].head(50), hide_index=True, use_container_width=True, height=300)
-                C.download_button("CSV", r["by"].to_csv(index=False).encode("utf-8-sig"), "diesel_sensitivity.csv",
+                C.download_button("CSV", csv_bytes(r["by"]), "diesel_sensitivity.csv",
                                   "text/csv", "fr_dl")
             st.caption("복합 시나리오(운송단가·물동량·차량 수)는 Scenario Lab 에서 비교·저장할 수 있습니다.")
 

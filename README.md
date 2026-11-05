@@ -48,8 +48,11 @@ python -m pytest -q
 AI 폴백(키 없음/쿼터/Rate limit/인증/타임아웃)·인수 시나리오 E2E·10개 화면 렌더링 스모크.
 
 ## 배포 (Railway)
-시작 파일이 `streamlit_app.py` 로 바뀌었습니다. 업로드 데이터를 유지하려면 Volume(`LOGISRISK_DATA_DIR=/data`) 또는
-PostgreSQL 이 필요합니다. 상세: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+시작 파일이 `streamlit_app.py` 로 바뀌었습니다. 배포 전 필수:
+- **`LOGISRISK_ACCESS_CODE` 설정** — 미설정 시 URL 을 아는 누구나 관리자 권한으로 접근합니다.
+- 업로드 데이터 유지: Volume(`LOGISRISK_DATA_DIR=/data`) 또는 PostgreSQL.
+
+상세: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## 데이터 원칙
 관측·모델 예측·시뮬레이션·가정 기반 추정·DEMO 를 구분 표기하고, 외부 지표(고속도로·전국 유가)를 기업 실적으로

@@ -23,6 +23,18 @@ AI_MAX_TOOL_ROUNDS = int(os.environ.get("LOGISRISK_AI_MAX_TOOL_ROUNDS", "4"))
 AI_MAX_CALLS_PER_SESSION = int(os.environ.get("LOGISRISK_AI_MAX_CALLS_PER_SESSION", "40"))
 
 
+def access_code() -> str | None:
+    """설정 시 앱 진입에 공용 접근 코드 요구 (SSO 대체 아님 — 공개 URL 무단 접근 방지용 최소 장치)."""
+    v = os.environ.get("LOGISRISK_ACCESS_CODE", "").strip()
+    return v or None
+
+
+def local_mode() -> bool:
+    """로컬 모드에서만 역할 전환 테스트 기능을 노출. 배포 환경에서는 LOGISRISK_LOCAL_MODE=0."""
+    default = "0" if os.environ.get("RAILWAY_ENVIRONMENT") else "1"
+    return os.environ.get("LOGISRISK_LOCAL_MODE", default) == "1"
+
+
 def openai_api_key() -> str | None:
     """환경변수에서만 키를 읽는다. (Streamlit secrets 는 UI 계층이 env 로 주입)"""
     key = os.environ.get("OPENAI_API_KEY", "").strip()

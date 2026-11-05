@@ -37,12 +37,20 @@ def replenishment(frames: dict, service_level: float = 0.95, window_days: int = 
     cur = inv[inv["snapshot_date"] == snap_date].copy()
     end = min(snap_date, dd["order_date"].max())
     start = end - pd.Timedelta(days=window_days - 1)
+    if not 0.5 <= service_level < 1:
+        raise ValueError("service_level 은 0.5~1 미만")
     z = NormalDist().inv_cdf(service_level)
+    # SKU×센터별 일 수요 행렬 (주문 없는 날 = 0) — 한 번에 계산
+    win = dd[(dd["order_date"] >= start) & (dd["order_date"] <= end)]
+    mat = win.pivot_table(index=["warehouse_id", "sku_id"], columns="order_date", values="qty", aggfunc="sum",
+                          fill_value=0.0).reindex(columns=pd.date_range(start, end, freq="D"), fill_value=0.0)
+    mu_s, sd_s = mat.mean(axis=1), mat.std(axis=1, ddof=1)
     rows = []
     for r in cur.itertuples():
-        h = dd[(dd["warehouse_id"] == r.warehouse_id) & (dd["sku_id"] == r.sku_id)]
-        s = _dense(h[(h["order_date"] >= start) & (h["order_date"] <= end)], start, end)
-        mu, sd = float(s.mean()), float(s.std(ddof=1)) if len(s) > 1 else 0.0
+        key = (r.warehouse_id, r.sku_id)
+        mu = float(mu_s.get(key, 0.0))
+        sd = float(sd_s.get(key, 0.0)) if window_days > 1 else 0.0
+        sd = 0.0 if sd != sd else sd
         lt = r.lead_time_days if pd.notna(r.lead_time_days) else default_lead_time
         avail = float(r.on_hand - (r.allocated if pd.notna(r.allocated) else 0))
         inbound = float(r.inbound_qty) if pd.notna(r.inbound_qty) else 0.0
@@ -58,9 +66,14 @@ def replenishment(frames: dict, service_level: float = 0.95, window_days: int = 
             target = rop + mu * review_days
             pos = avail + inbound
             rec = max(0.0, target - pos) if pos <= rop else 0.0
-            row.update(safety_stock=ss, reorder_point=rop, recommended_qty=float(np.ceil(rec)),
-                       basis=(f"재고포지션 {pos:,.0f} ≤ ROP {rop:,.0f} → 목표 {target:,.0f}까지 보충"
-                              if pos <= rop else f"재고포지션 {pos:,.0f} > ROP {rop:,.0f} → 보충 불필요"))
+            if pos <= rop:
+                basis = f"재고포지션 {pos:,.0f}(가용 {avail:,.0f}+입고예정 {inbound:,.0f}) ≤ ROP {rop:,.0f} → 목표 {target:,.0f}까지 보충"
+            elif avail <= 0:
+                basis = (f"현재 결품(가용 {avail:,.0f}) — 입고예정 {inbound:,.0f} 반영 시 ROP {rop:,.0f} 초과로 추가 발주 불필요. "
+                         "입고 일정이 고객 납기 이전인지 확인 필요")
+            else:
+                basis = f"재고포지션 {pos:,.0f} > ROP {rop:,.0f} → 보충 불필요"
+            row.update(safety_stock=ss, reorder_point=rop, recommended_qty=float(np.ceil(rec)), basis=basis)
         row["stockout_risk"] = ("결품" if avail <= 0 else
                                 "높음" if pd.notna(row["reorder_point"]) and avail + inbound <= row["reorder_point"] else
                                 "낮음" if pd.notna(row["reorder_point"]) else "판정 불가")

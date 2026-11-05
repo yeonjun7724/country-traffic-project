@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ...analytics import alerts, inventory, kpi
+from ...reports.export import csv_bytes
 from .. import common as C
 from .. import nav, theme
 
@@ -58,7 +59,7 @@ def render():
     st.caption("▲▼: 같은 길이의 직전 기간 대비. 각 카드의 '정의·산식'에서 분자·분모·표본·경고를 확인하세요.")
 
     inv = inventory.replenishment(wb.frames) if "inventory" in wb.frames else None
-    al = alerts.evaluate(ms, wb.rules, wb.versions, inv)
+    al = alerts.evaluate(ms, wb.rules, wb.versions, inv, period_days=flt.days)
     if al:
         tone = {"high": "bad", "medium": "warn", "low": "info"}
         st.markdown(" ".join(C.badge(f"{a['rule']}: {a['message']}", tone[a["severity"]]) for a in al),
@@ -66,14 +67,19 @@ def render():
 
     # ── 지도 ↔ 표 연동 ────────────────────────────────────────────────
     C.section("배송 네트워크", "지도에서 점을 클릭/박스·올가미 선택 → 아래 원장 필터 · 표에서 행 선택 → 지도 강조")
-    smap = kpi.store_map_frame(wb.fact, wb.frames, flt)
+    smap_all = kpi.store_map_frame(wb.fact, wb.frames, flt)
+    has = smap_all["shipments"].fillna(0) > 0 if len(smap_all) else pd.Series(dtype=bool)
+    smap, nodata = (smap_all[has], smap_all[~has]) if len(smap_all) else (smap_all, smap_all)
     wh = wb.frames.get("warehouses")
     sel_table = st.session_state.get("ct_sel_table", [])
     left, right = st.columns([3, 2])
     with left:
         fig = go.Figure()
+        if len(nodata):  # 실적 없는 배송지는 '지연율 0%'로 오인되지 않도록 회색으로 별도 표시
+            fig.add_trace(go.Scattermap(lat=nodata["lat"], lon=nodata["lon"], mode="markers", name="기간 내 배송 없음",
+                                        marker=dict(size=6, color="#cbd5e1"), text=nodata["name"], hoverinfo="text"))
         if len(smap):
-            lr = smap["late_rate"].fillna(0)
+            lr = smap["late_rate"]
             fig.add_trace(go.Scattermap(
                 lat=smap["lat"], lon=smap["lon"], mode="markers", name="배송지",
                 marker=dict(size=(6 + (smap["shipments"].fillna(0) ** 0.5) * 1.6).clip(upper=26), color=lr,
@@ -81,7 +87,7 @@ def render():
                             colorbar=dict(title="지연율", tickformat=".0%", thickness=10, len=0.6), opacity=0.85),
                 customdata=smap[["store_id"]].to_numpy(),
                 text=smap["name"] + "<br>" + smap["region"].fillna("") + "<br>배송 " + smap["shipments"].fillna(0).astype(int).astype(str)
-                + "건 · 지연율 " + (lr * 100).round(1).astype(str) + "%",
+                + "건 · 지연율 " + lr.map(lambda v: "판정 불가" if pd.isna(v) else f"{v:.1%}"),
                 hoverinfo="text"))
             if sel_table:
                 hs = smap[smap["store_id"].isin(sel_table)]
@@ -102,7 +108,7 @@ def render():
     with right:
         daily = kpi.apply_filters(wb.fact, flt).groupby("ship_date").agg(
             cost=("cost", "sum"), shipments=("shipment_id", "count"),
-            late=("on_time", lambda s: float((s == 0).sum()) / max(1, s.notna().sum())))
+            late=("on_time", lambda s: float((s == 0).sum()) / s.notna().sum() if s.notna().any() else float("nan")))
         f2 = go.Figure()
         f2.add_bar(x=daily.index, y=daily["cost"], name="운송비(원)", marker_color="#93c5fd")
         f2.add_scatter(x=daily.index, y=daily["late"], name="지연율", yaxis="y2", line=dict(color="#dc2626", width=2))
@@ -126,7 +132,7 @@ def render():
         tev = st.dataframe(C.format_df(stab, pct_cols=["late_rate"], money_cols=["cost", "cost_per_order"]),
                            hide_index=True, use_container_width=True, height=230, on_select="rerun",
                            selection_mode="multi-row", key="ct_table")
-        rows = tev.selection.rows if tev and tev.selection else []
+        rows = [r for r in (tev.selection.rows if tev and tev.selection else []) if r < len(stab)]  # 필터 변경 후 잔존 선택 방어
         new_sel = stab.loc[rows, "store_id"].tolist() if rows else []
         if new_sel != sel_table:
             st.session_state["ct_sel_table"] = new_sel
@@ -149,7 +155,7 @@ def render():
             if key == "cost":
                 st.caption("판정 규칙: " + ex.get("cost_over_rule", ""))
             st.dataframe(d[[c for c in LEDGER_COLS if c in d]].head(1000), hide_index=True, use_container_width=True, height=280)
-            C.download_button("CSV 내보내기", d[[c for c in LEDGER_COLS if c in d]].to_csv(index=False).encode("utf-8-sig"),
+            C.download_button("CSV 내보내기", csv_bytes(d[[c for c in LEDGER_COLS if c in d]]),
                               f"ledger_{key}.csv", "text/csv", key=f"dl_{key}")
 
     C.section("외부 위험 요약")

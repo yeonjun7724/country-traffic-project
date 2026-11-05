@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ...analytics import cost, kpi, routing
+from ...reports.export import csv_bytes
 from .. import common as C
 from .. import nav, theme
 
@@ -41,7 +42,7 @@ def _cts(wb, flt):
                                                          "cost_per_km", "distance_km", "late_rate"]
     st.dataframe(C.format_df(t[cols], pct_cols=["late_rate"], money_cols=["cost", "cost_per_order", "cost_per_km"],
                              num_cols=["cost_per_kg", "distance_km"]), hide_index=True, use_container_width=True, height=300)
-    C.download_button("Cost-to-Serve CSV", t[cols].to_csv(index=False).encode("utf-8-sig"), f"cost_to_serve_{dim}.csv",
+    C.download_button("Cost-to-Serve CSV", csv_bytes(t[cols]), f"cost_to_serve_{dim}.csv",
                       "text/csv", "tr_dl_cts")
 
 
@@ -95,10 +96,17 @@ def _planning(wb):
     C.callout("<b>휴리스틱 계획 대안</b> — Clarke-Wright Savings + 2-opt. 중량·용적·운행시간·차량 수 제약을 검토하며 "
               "<b>시간창은 강제하지 않습니다</b>. 거리는 직선거리 근사(우회계수 조정 가능)이며 실도로 주행거리가 아닙니다. "
               "결과는 '제안'이며 배차 확정은 운영 관리자 승인 후 기존 TMS 에서 수행해야 합니다.", "info")
-    dates = sorted(wb.fact["ship_date"].dropna().unique())
+    src = st.segmented_control("계획 대상", ["orders", "shipments"], default="orders", key="rp_src",
+                               format_func={"orders": "미출고 주문 (납기일 기준)", "shipments": "과거 출고 실적 재계획 (현행 비교)"}.get) or "orders"
+    dates = routing.planning_days(wb.frames, wb.fact, src)
+    if not dates:
+        C.callout("납기일이 지정된 미출고 주문이 없습니다. 미래 주문을 업로드하거나 '과거 출고 실적 재계획'을 선택하세요."
+                  if src == "orders" else "출고 실적이 없습니다.", "warn")
+        return
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        day = st.selectbox("출고일", dates[::-1], format_func=lambda d: str(pd.Timestamp(d).date()), key="rp_day")
+        day = st.selectbox("납기일" if src == "orders" else "출고일", dates[::-1] if src == "shipments" else dates,
+                           format_func=lambda d: str(pd.Timestamp(d).date()), key=f"rp_day_{src}")
     with c2:
         wid = st.selectbox("센터", wb.options("warehouse_id"), key="rp_wh")
     fp = wb.frames.get("fuel_prices")
@@ -115,34 +123,43 @@ def _planning(wb):
     speed = c5.number_input("평균 속도(km/h, 가정)", 10.0, 90.0, 40.0, 5.0, key="rp_speed")
     svc = c6.number_input("기본 하역시간(분)", 0.0, 120.0, 15.0, 5.0, key="rp_svc")
     mh = c7.number_input("기본 최대 운행시간(h)", 1.0, 16.0, 10.0, 0.5, key="rp_mh")
-    depot, stops, assign, veh = routing.build_day_inputs(wb.frames, wb.fact, day, wid)
-    st.caption(f"대상: 배송지 {len(stops)}곳 · 가용 차량 {len(veh)}대 · 총 수요 {stops['demand_kg'].sum():,.0f}kg")
+    depot, stops, assign, veh = routing.build_day_inputs(wb.frames, wb.fact, day, wid, source=src)
     if stops.empty:
-        st.info("해당 일자·센터에 출고 실적이 없습니다.")
+        st.info("해당 일자·센터에 계획 대상이 없습니다.")
         return
+    st.caption(f"대상: 배송지 {len(stops)}곳 · 주문 {int(stops['orders'].sum())}건 · 가용 차량 {len(veh)}대 · "
+               f"총 수요 {stops['demand_kg'].sum():,.0f}kg"
+               + (f" (중량 미상 배송지 {int(stops['demand_kg'].isna().sum())}곳)" if stops["demand_kg"].isna().any() else ""))
     params = routing.RoutingParams(road_factor=rf, avg_speed_kmh=speed, default_service_min=svc, default_max_hours=mh,
                                    diesel_price=price or None)
     if st.button("계획 대안 생성", type="primary", icon=":material/route:", key="rp_run"):
         with st.spinner("경로 계산 중…"):
             prop = routing.plan_routes(depot, stops, veh, params)
-            base = routing.baseline_plan(depot, assign, wb.frames["vehicles"], params)
-        st.session_state["rp_res"] = {"key": (str(day), wid, params.to_dict()), "prop": prop, "base": base, "depot": depot}
+            base = routing.baseline_plan(depot, assign, wb.frames["vehicles"], params) if len(assign) else None
+        st.session_state["rp_res"] = {"key": (src, str(day), wid, params.to_dict()), "prop": prop, "base": base, "depot": depot}
     r = st.session_state.get("rp_res")
-    if not r or r["key"] != (str(day), wid, params.to_dict()):
+    if not r or r["key"] != (src, str(day), wid, params.to_dict()):
         return
     prop, base = r["prop"], r["base"]
     for v in prop.violations:
-        C.callout(f"<b>제약 위반</b> — {C.E(v)}", "bad")
-    for w in prop.warnings + base.warnings:
+        C.callout(f"<b>제안 계획 제약 위반</b> — {C.E(v)}", "bad")
+    for w in prop.warnings + (base.warnings if base else []):
         C.callout(f"⚠ {C.E(w)}", "warn")
-    cmp = routing.compare_plans(base, prop)
-    st.markdown("**현행(재구성) vs 제안** — 동일 거리 기준으로 비교한 추정치이며 실측 절감액이 아닙니다.")
-    st.dataframe(cmp, hide_index=True, use_container_width=True,
-                 column_config={"현행(재구성)": st.column_config.NumberColumn(format="%.1f"),
-                                "제안": st.column_config.NumberColumn(format="%.1f"),
-                                "차이": st.column_config.NumberColumn(format="%.1f"),
-                                "차이(%)": st.column_config.NumberColumn(format="%.1f%%")})
-    if base.summary.get("recorded_distance_km"):
+    if base is not None:
+        for v in base.violations:
+            C.callout(f"현행(재구성) 제약 위반 — {C.E(v)}", "info")
+        cmp = routing.compare_plans(base, prop)
+        st.markdown("**현행(재구성) vs 제안** — 동일 거리 기준으로 비교한 추정치이며 실측 절감액이 아닙니다.")
+        st.dataframe(cmp, hide_index=True, use_container_width=True,
+                     column_config={"현행(재구성)": st.column_config.NumberColumn(format="%.1f"),
+                                    "제안": st.column_config.NumberColumn(format="%.1f"),
+                                    "차이": st.column_config.NumberColumn(format="%.1f"),
+                                    "차이(%)": st.column_config.NumberColumn(format="%.1f%%")})
+    else:
+        cmp = pd.DataFrame([prop.summary])
+        st.markdown("**제안 계획 요약** — 미출고 주문이라 비교할 현행 배차가 없습니다.")
+        st.dataframe(cmp.drop(columns=["method", "distance_basis"], errors="ignore"), hide_index=True, use_container_width=True)
+    if base is not None and base.summary.get("recorded_distance_km"):
         st.caption(f"참고: 현행 배송 실적에 기록된 운행거리 합 {base.summary['recorded_distance_km']:,.0f}km "
                    "(기록 기준이 달라 직접 비교하지 않음)")
     c1, c2 = st.columns([3, 2])
@@ -162,10 +179,10 @@ def _planning(wb):
         if st.button("승인 요청으로 저장 (배차 확정 아님)", icon=":material/approval:", key="rp_save"):
             sid = C.get_store().save_scenario(
                 wb.ctx, name, "route_plan", {"date": str(pd.Timestamp(day).date()), "warehouse_id": wid, **params.to_dict()},
-                {"summary_proposed": prop.summary, "summary_baseline": base.summary, "comparison": cmp.to_dict(orient="records"),
+                {"summary_proposed": prop.summary, "summary_baseline": base.summary if base else None, "source": src, "comparison": cmp.to_dict(orient="records"),
                  "routes": prop.routes.to_dict(orient="records"), "stops": prop.stops.to_dict(orient="records"),
                  "unassigned": prop.unassigned.to_dict(orient="records"), "violations": prop.violations},
-                prop.warnings + base.warnings, wb.versions, status="proposed")
+                prop.warnings + (base.warnings if base else []), wb.versions, status="proposed")
             st.success(f"제안 #{sid} 저장 — Scenario Lab 의 '승인 대기'에서 운영 관리자가 승인/반려할 수 있습니다. "
                        "승인해도 외부 시스템 배차는 자동 실행되지 않습니다.")
 

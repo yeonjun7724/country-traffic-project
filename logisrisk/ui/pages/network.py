@@ -8,6 +8,7 @@ import streamlit as st
 
 from ...analytics import kpi, risk
 from ...analytics.routing import haversine_km
+from ...reports.export import csv_bytes
 from .. import common as C
 from .. import theme
 
@@ -117,16 +118,17 @@ def render():
     C.section("영업소 위험 테이블", f"외부 지표 · {len(units):,}개" + (f" · 지도 선택 {len(sel_map)}개" if sel_map else ""))
     tab = units if not sel_map else units[units["unitCode"].isin(sel_map)]
     tab = tab.sort_values(score_col, ascending=False).reset_index(drop=True)
-    show = ["unitCode", "unitName", "routeName", score_col, "vulnerability_grade", "lisa_cluster", "local_p_value",
+    grade_col = "sim_grade" if sim is not None else "vulnerability_grade"
+    show = ["unitCode", "unitName", "routeName", score_col, grade_col, "lisa_cluster", "local_p_value",
             "mean_freight_345_share", "mean_freight_345_traffic", "traffic_volatility", "abs_imbalance_ratio"]
     tev = st.dataframe(tab[show], hide_index=True, use_container_width=True, height=300, on_select="rerun",
                        selection_mode="multi-row", key="nw_table")
-    rows = tev.selection.rows if tev and tev.selection else []
+    rows = [r for r in (tev.selection.rows if tev and tev.selection else []) if r < len(tab)]
     new = tab.loc[rows, "unitCode"].tolist() if rows else []
     if new != sel_tab:
         st.session_state["nw_sel_table"] = new
         st.rerun()
-    C.download_button("영업소 위험 CSV", tab[show].to_csv(index=False).encode("utf-8-sig"), "units_risk.csv", "text/csv", "nw_dl")
+    C.download_button("영업소 위험 CSV", csv_bytes(tab[show]), "units_risk.csv", "text/csv", "nw_dl")
 
     c1, c2 = st.columns(2)
     with c1:
@@ -148,7 +150,7 @@ def render():
         C.section("센터 주변 고위험 영업소", "직선거리 근접성 지표 · 실제 이용 경로 아님")
         radius = st.slider("반경(km)", 5, 50, 20, 5, key="nw_rad")
         rows = []
-        vh = units[(units["vulnerability_grade"] == "Very High")]
+        vh = units[(units[grade_col] == "Very High")]
         for w in wh.itertuples():
             d = haversine_km(w.lat, w.lon, units["yValue"].values, units["xValue"].values)
             near = units[d <= radius]

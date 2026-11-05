@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from ...analytics import inventory
+from ...reports.export import csv_bytes
 from .. import common as C
 from .. import nav, theme
 
@@ -42,7 +43,7 @@ def render():
                                 "safety_stock": st.column_config.NumberColumn("안전재고", format="%.0f"),
                                 "reorder_point": st.column_config.NumberColumn("재주문점", format="%.0f"),
                                 "basis": st.column_config.TextColumn("추천 근거", width="large")})
-    C.download_button("보충 추천 CSV", view.to_csv(index=False).encode("utf-8-sig"), "replenishment.csv", "text/csv", "iv_dl")
+    C.download_button("보충 추천 CSV", csv_bytes(view), "replenishment.csv", "text/csv", "iv_dl")
     st.caption("보충 추천은 발주 확정이 아닙니다. 발주는 ERP 에서 담당자 승인 후 진행하세요.")
 
     C.section("수요예측 모델 비교", "holdout 14일 백테스트 · WAPE 순")

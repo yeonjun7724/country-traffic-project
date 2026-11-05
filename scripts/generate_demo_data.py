@@ -113,6 +113,14 @@ def main(out: Path = OUT, days: int = 92, end: str = "2026-10-31") -> dict[str, 
                               round(wkg, 1), round(dist, 1), round(fuel_l, 2), round(fuel_c, 0), round(toll, 0),
                               round(other, 0), None, "delivered"))
                 sid += 1
+    # 마지막 날 접수된 다음날 납기 미출고 주문 (배송 계획 '미출고 주문' 모드 시연용)
+    nxt = dates[-1] + pd.Timedelta(days=1)
+    for si in rng.choice(len(st), size=32, replace=False):
+        o = f"OD-{oid:06d}"
+        oid += 1
+        orders.append((o, dates[-1], st.loc[si, "store_id"], st_wh[si], nxt, "created"))
+        for s in rng.choice(40, size=rng.integers(2, 6), replace=False):
+            lines.append((o, sk.loc[s, "sku_id"], float(rng.integers(5, 60))))
     od = pd.DataFrame(orders, columns=["order_id", "order_date", "store_id", "warehouse_id", "requested_date", "status"])
     ol = pd.DataFrame(lines, columns=["order_id", "sku_id", "qty"])
     sh = pd.DataFrame(ships, columns=["shipment_id", "order_id", "vehicle_id", "carrier", "ship_date",

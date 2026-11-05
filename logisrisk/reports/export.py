@@ -11,6 +11,7 @@ from datetime import datetime
 import pandas as pd
 
 from .. import CALC_VERSION, __version__
+from ..data.validation import neutralize_formulas
 from ..provenance import KIND_LABEL, Metric
 
 
@@ -33,8 +34,13 @@ def metrics_frame(metrics: dict[str, Metric]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def csv_bytes(df: pd.DataFrame) -> bytes:
+    """다운로드용 CSV (UTF-8 BOM · 수식 주입 방지)."""
+    return neutralize_formulas(df).to_csv(index=False).encode("utf-8-sig")
+
+
 def _clean_for_excel(df: pd.DataFrame) -> pd.DataFrame:
-    x = df.copy()
+    x = neutralize_formulas(df)
     for c in x.columns:
         if isinstance(x[c].dtype, pd.DatetimeTZDtype):
             x[c] = x[c].dt.tz_localize(None)

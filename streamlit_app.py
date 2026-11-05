@@ -47,10 +47,37 @@ def _search_dialog(wb, q):
         st.dataframe(df, hide_index=True, use_container_width=True)
 
 
+def _gate() -> bool:
+    """LOGISRISK_ACCESS_CODE 설정 시 접근 코드 확인 (상수 시간 비교, 5회 실패 시 세션 잠금)."""
+    import hmac
+
+    from logisrisk.config import access_code
+    code = access_code()
+    if not code or st.session_state.get("_authed"):
+        return True
+    fails = st.session_state.get("_auth_fail", 0)
+    st.markdown("<div class='lr-title' style='margin-top:12vh'>LogisRisk Enterprise</div>"
+                "<div class='lr-sub'>접근 코드가 필요한 배포 환경입니다.</div>", unsafe_allow_html=True)
+    if fails >= 5:
+        st.error("시도 횟수를 초과했습니다. 브라우저를 새로 열어 다시 시도하세요.")
+        return False
+    with st.form("gate"):
+        v = st.text_input("접근 코드", type="password")
+        if st.form_submit_button("입장"):
+            if hmac.compare_digest(v.encode(), code.encode()):
+                st.session_state["_authed"] = True
+                st.rerun()
+            st.session_state["_auth_fail"] = fails + 1
+            st.error("접근 코드가 올바르지 않습니다.")
+    return False
+
+
 def main():
     st.session_state.setdefault("theme_mode", "light")
     st.markdown(theme.css(C.mode()), unsafe_allow_html=True)
     C.inject_secrets_to_env()
+    if not _gate():
+        st.stop()
     pages = nav.build()
     store = C.get_store()
     uid = st.session_state.setdefault("user_id", "local")

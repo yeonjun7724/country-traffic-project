@@ -62,8 +62,9 @@ def workbench() -> Workbench:
     """활성 데이터셋 버전이 바뀔 때만 다시 로드 (세션 캐시)."""
     store, c = get_store(), ctx()
     versions = store.data_versions(c)
+    # 다른 세션이 목표·알림 규칙을 바꿔도 반영되도록 설정 갱신 시각을 키에 포함
     key = (c.workspace_id, c.role, tuple(sorted((k, v["dataset_id"]) for k, v in versions.items())),
-           st.session_state.get("settings_rev", 0))
+           store.settings_revision(c), st.session_state.get("settings_rev", 0))
     cached = st.session_state.get("_wb")
     if cached and cached[0] == key:
         return cached[1]
@@ -87,6 +88,17 @@ def global_filters(wb: Workbench) -> kpi.Filters:
             st.caption("운영 데이터 업로드 후 기간·센터 필터가 활성화됩니다.")
             return flt
         lo, hi = b[0].date(), b[1].date()
+        # 워크스페이스·데이터가 바뀌면 이전 위젯 상태가 범위/옵션 밖일 수 있음 → 정리 (StreamlitAPIException 방지)
+        bkey = (wb.ctx.workspace_id, lo, hi)
+        if st.session_state.get("_flt_bounds") != bkey:
+            for k in ("flt_range_w", "flt_range"):
+                st.session_state.pop(k, None)
+            st.session_state["_flt_bounds"] = bkey
+        for k, col in (("flt_wh", "warehouse_id"), ("flt_region", "region"), ("flt_carrier", "carrier"),
+                       ("flt_vehicle", "vehicle_id"), ("flt_cat", "category"), ("flt_store", "store_id")):
+            if k in st.session_state:
+                opts = set(wb.options(col))
+                st.session_state[k] = [v for v in st.session_state[k] if v in opts]
         default = st.session_state.get("flt_range")
         if not default or default[0] < lo or default[1] > hi:
             default = (max(lo, (b[1] - pd.Timedelta(days=29)).date()), hi)

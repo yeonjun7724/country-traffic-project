@@ -8,15 +8,18 @@ import pandas as pd
 DEFAULT_RULES = {
     "otif_min": 0.95,          # OTIF 하한
     "late_rate_max": 0.05,     # 지연율 상한
-    "cost_budget": None,       # 기간 운송비 예산(원)
+    "monthly_cost_budget": None,  # 월 운송비 예산(원) — 선택 기간 일수로 일할 환산해 비교
     "stockout_max": 0,         # 결품 SKU·센터 허용 수
     "data_stale_days": 7,      # 데이터 갱신 지연 허용 일수
     "risk_vh_max": None,       # 외부: Very High 영업소 허용 수
 }
 
 
+DAYS_PER_MONTH = 365.25 / 12
+
+
 def evaluate(kpis: dict, rules: dict, versions: dict, inventory: dict | None = None,
-             now: datetime | None = None) -> list[dict]:
+             now: datetime | None = None, period_days: int | None = None) -> list[dict]:
     now = now or datetime.now()
     out = []
 
@@ -30,9 +33,12 @@ def evaluate(kpis: dict, rules: dict, versions: dict, inventory: dict | None = N
     if m is not None and m.ok and rules.get("late_rate_max") is not None and m.value > rules["late_rate_max"]:
         add("medium", "배송 지연율 초과", f"지연율 {m.value:.1%} > 허용 {rules['late_rate_max']:.0%}", "KPI")
     m = kpis.get("cost")
-    if m is not None and m.ok and rules.get("cost_budget"):
-        if m.value > float(rules["cost_budget"]):
-            add("high", "운송비 예산 초과", f"운송비 {m.value:,.0f}원 > 예산 {float(rules['cost_budget']):,.0f}원", "KPI")
+    if m is not None and m.ok and rules.get("monthly_cost_budget") and period_days:
+        budget = float(rules["monthly_cost_budget"]) * period_days / DAYS_PER_MONTH
+        if m.value > budget:
+            add("high", "운송비 예산 초과",
+                f"운송비 {m.value:,.0f}원 > 기간 예산 {budget:,.0f}원 (월 예산 {float(rules['monthly_cost_budget']):,.0f}원 × {period_days}일 일할)",
+                "KPI")
     if inventory and inventory.get("status") == "ok":
         so = inventory["summary"]["stockout"]
         if so > (rules.get("stockout_max") or 0):

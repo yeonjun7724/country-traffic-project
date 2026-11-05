@@ -79,8 +79,9 @@ def _alerts_tab(wb, flt):
     c = st.columns(3)
     rules["otif_min"] = c[0].number_input("OTIF 하한", 0.0, 1.0, float(rules.get("otif_min") or 0.95), 0.01, disabled=not can_edit)
     rules["late_rate_max"] = c[1].number_input("지연율 상한", 0.0, 1.0, float(rules.get("late_rate_max") or 0.05), 0.01, disabled=not can_edit)
-    rules["cost_budget"] = c[2].number_input("기간 운송비 예산(원, 0=미설정)", 0.0, 1e13, float(rules.get("cost_budget") or 0), 1e6,
-                                             disabled=not can_edit) or None
+    rules["monthly_cost_budget"] = c[2].number_input("월 운송비 예산(원, 0=미설정)", 0.0, 1e13,
+                                                     float(rules.get("monthly_cost_budget") or 0), 1e6, disabled=not can_edit,
+                                                     help="선택 기간 일수로 일할 환산해 비교합니다.") or None
     c = st.columns(3)
     rules["stockout_max"] = int(c[0].number_input("결품 허용 건수", 0, 10000, int(rules.get("stockout_max") or 0), 1, disabled=not can_edit))
     rules["data_stale_days"] = int(c[1].number_input("데이터 갱신 허용 일수", 1, 365, int(rules.get("data_stale_days") or 7), 1,
@@ -91,7 +92,7 @@ def _alerts_tab(wb, flt):
         st.success("저장되었습니다.")
     ms = kpi.compute_with_comparison(wb.frames, wb.fact, flt, wb.targets)
     inv = inventory.replenishment(wb.frames) if "inventory" in wb.frames else None
-    al = alerts.evaluate(ms, rules, wb.versions, inv)
+    al = alerts.evaluate(ms, rules, wb.versions, inv, period_days=flt.days)
     C.section("현재 발생 알림", flt.describe())
     if not al:
         st.caption("발생한 알림이 없습니다." if wb.has_ops_data else "운영 데이터가 없어 평가할 규칙이 없습니다.")

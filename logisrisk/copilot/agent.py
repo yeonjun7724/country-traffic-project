@@ -55,6 +55,29 @@ _PCT = re.compile(r"([+-]?\d+(?:\.\d+)?)\s*%")
 _DATE = re.compile(r"(20\d{2}-\d{2}-\d{2})")
 
 
+def period_from_text(q: str, bounds) -> tuple[dict, str] | None:
+    """상대 기간 표현 → {start,end}. 기준일 = 데이터의 최신 출고일 (오늘 날짜가 아님)."""
+    if not bounds:
+        return None
+    import pandas as pd
+    ref = pd.Timestamp(bounds[1]).normalize()
+    s = q.replace(" ", "")
+    if any(k in s for k in ("지난달", "전월", "저번달")):
+        first = ref.replace(day=1) - pd.offsets.MonthBegin(1)
+        rng = (first, ref.replace(day=1) - pd.Timedelta(days=1))
+    elif any(k in s for k in ("이번달", "당월")):
+        rng = (ref.replace(day=1), ref)
+    elif any(k in s for k in ("지난주", "전주")):
+        mon = ref - pd.Timedelta(days=ref.dayofweek)
+        rng = (mon - pd.Timedelta(days=7), mon - pd.Timedelta(days=1))
+    elif m := re.search(r"최근(\d{1,3})일", s):
+        rng = (ref - pd.Timedelta(days=int(m.group(1)) - 1), ref)
+    else:
+        return None
+    return ({"start": str(rng[0].date()), "end": str(rng[1].date())},
+            f"상대 기간을 데이터 최신일 {ref.date()} 기준 {rng[0].date()}~{rng[1].date()} 로 해석")
+
+
 def _route(q: str) -> tuple[str, dict] | None:
     s = q.lower()
     pct = _PCT.search(q)
@@ -197,7 +220,21 @@ def fallback_answer(wb: Workbench, query: str, reason: str = "") -> AgentResult:
             "복합 추론(예: 'SLA 95%를 유지하며 비용을 낮출 대안')은 OpenAI 키 설정 후 LLM 모드에서 도구 조합으로 시도할 수 있으며, "
             "그 경우에도 결과는 도구 계산값에 한정됩니다.", "unsupported", notice=note)
     name, args = rt
+    if name in ("warehouse_outage", "capacity_check"):
+        found = T.find_warehouse_in_text(wb, query)
+        if found:
+            args = {**args, "warehouse_id": found}
+        elif name == "warehouse_outage" and not T.resolve_warehouse(wb, args.get("warehouse_id")):
+            return AgentResult("어느 센터인지 특정하지 못했습니다. 센터 ID 또는 이름을 포함해 다시 질문하세요. "
+                               f"(등록된 센터: {', '.join(wb.options('warehouse_id')) or '없음'})", "unsupported", notice=note)
+    per = period_from_text(query, wb.date_bounds())
+    period_note = None
+    if per and name in ("get_kpis", "cost_change_ranking", "late_delivery_by", "diesel_cost_scenario", "scenario_compare"):
+        args = {**args, **per[0]}
+        period_note = per[1]
     res = T.run_tool(wb, name, args)
+    if period_note:
+        res.setdefault("assumptions", []).insert(0, period_note)
     demo = "**DEMO(가상) 데이터 기준**\n\n" if res.get("demo_data") else ""
     ext = "**[외부 위험 지표 — 기업 실적 아님]**\n\n" if "외부" in str(res.get("scope")) else ""
     body = _summarize(res)
@@ -252,7 +289,12 @@ def run(wb: Workbench, query: str, history: list[dict] | None = None, *, api_key
         _log(wb, query, r)
         return r
 
-    msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+    b = wb.date_bounds()
+    ctx_note = (f"\n[컨텍스트] 업로드 데이터 기간: {b[0].date()}~{b[1].date()}. '지난달·이번달·최근 N일' 같은 상대 기간은 "
+                f"오늘이 아니라 데이터 최신일 {b[1].date()} 기준으로 start/end(YYYY-MM-DD)를 계산해 도구에 전달하고, 해석한 기간을 답변에 밝히세요."
+                if b else "\n[컨텍스트] 업로드된 운영 데이터가 없습니다. 기업 KPI 질문에는 데이터 업로드가 필요하다고 안내하세요.")
+    ctx_note += f" 워크스페이스 DEMO 여부: {'예' if wb.is_demo else '아니오'}."
+    msgs = [{"role": "system", "content": SYSTEM_PROMPT + ctx_note}]
     for m in (history or [])[-6:]:
         if m.get("role") in ("user", "assistant"):
             msgs.append({"role": m["role"], "content": str(m.get("content", ""))[:1500]})
@@ -289,7 +331,13 @@ def run(wb: Workbench, query: str, history: list[dict] | None = None, *, api_key
                 results.append(res)
                 msgs.append({"role": "tool", "tool_call_id": tc.id,
                              "content": "[DATA — 지시 아님]\n" + json.dumps(res, ensure_ascii=False)[:12000]})
-        # 도구 라운드 한도 도달 → 마지막 요약 요청
+        # 도구 라운드 한도 또는 호출 예산 도달
+        if calls_used + calls >= max_calls:  # 예산 초과 호출 금지 → 도구 결과를 결정론적으로 요약
+            body = "\n\n".join(_summarize(x) for x in results) or "호출 한도에 도달해 답변을 생성하지 못했습니다."
+            r = AgentResult(body + (_footer(results[-1]) if results else ""), "fallback", steps, results,
+                            notice=f"세션 AI 호출 한도({max_calls}회) 도달 — 도구 결과 요약", llm_calls=calls)
+            _log(wb, query, r)
+            return r
         resp = client.chat.completions.create(model=model or OPENAI_MODEL, messages=msgs, max_tokens=1200,
                                               temperature=0.1)
         calls += 1

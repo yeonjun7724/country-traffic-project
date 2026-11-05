@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 import math
+import re
 from datetime import date, datetime
 
 import numpy as np
@@ -159,20 +160,37 @@ def t_scenario_compare(wb, a):
 
 
 def t_capacity_check(wb, a):
-    if e := _need_ops(wb, "warehouses", "stores", "vehicles", "shipments"):
+    if e := _need_ops(wb, "warehouses", "stores", "vehicles", "orders"):
         return _wrap(wb, "capacity_check", e)
     note = []
     day = _date(a.get("date"))
+    open_days = routing.planning_days(wb.frames, wb.fact, "orders")
     if day is None:
-        day = wb.fact["ship_date"].max().date()
-        note.append(f"일자 미지정 → 데이터의 최신 출고일({day}) 기준으로 검토 (미래 주문 데이터는 업로드된 범위까지만 사용)")
-    wid = a.get("warehouse_id") or wb.options("warehouse_id")[0]
+        if open_days:
+            day = pd.Timestamp(open_days[0]).date()
+            note.append(f"일자 미지정 → 미출고 주문의 가장 이른 납기일({day}) 기준")
+        elif wb.fact is not None:
+            day = wb.fact["ship_date"].max().date()
+            note.append(f"미출고 주문 없음 → 최신 출고일({day}) 실적을 재계획해 검토")
+        else:
+            return _wrap(wb, "capacity_check", {"status": "not_computable", "reason": "계획할 주문·배송 데이터 없음"})
+    source = "orders" if any(pd.Timestamp(d) == pd.Timestamp(day) for d in open_days) else "shipments"
+    if source == "shipments" and wb.fact is None:
+        return _wrap(wb, "capacity_check", {"status": "not_computable", "reason": f"{day} 납기 미출고 주문 없음"})
+    wid = resolve_warehouse(wb, a.get("warehouse_id"))
+    if wid is None:
+        return _wrap(wb, "capacity_check", {"status": "not_computable", "reason": f"센터 '{a.get('warehouse_id')}' 를 찾을 수 없음"})
     if not a.get("warehouse_id"):
-        note.append(f"센터 미지정 → {wid} 기준")
-    depot, stops, assign, veh = routing.build_day_inputs(wb.frames, wb.fact, day, wid)
+        cands = [w for w in wb.options("warehouse_id")
+                 if not routing.build_day_inputs(wb.frames, wb.fact, day, w, source=source)[1].empty]
+        if cands:
+            wid = cands[0]
+        note.append(f"센터 미지정 → {wid} 기준 (다른 센터: {', '.join(c for c in cands if c != wid) or '없음'})")
+    note.append("계획 대상: " + ("해당일 납기 미출고 주문" if source == "orders" else "해당일 출고 실적 재계획"))
+    depot, stops, assign, veh = routing.build_day_inputs(wb.frames, wb.fact, day, wid, source=source)
     if stops.empty:
         return _wrap(wb, "capacity_check", {"status": "not_computable",
-                                            "reason": f"{day} {wid} 출고 대상 배송이 없습니다. (주문 기반 계획 데이터 필요)"})
+                                            "reason": f"{day} {wid} 계획 대상 주문·배송이 없습니다."})
     price = _price_for(wb, day)
     pr = routing.plan_routes(depot, stops, veh, routing.RoutingParams(diesel_price=price))
     return _wrap(wb, "capacity_check", {"date": str(day), "warehouse_id": wid, "available_vehicles": len(veh),
@@ -196,10 +214,44 @@ def _price_for(wb, day):
     return None
 
 
+def resolve_warehouse(wb, key: str | None) -> str | None:
+    """센터 ID 또는 이름(부분 일치)으로 해석. 미지정이면 첫 센터."""
+    ids = wb.options("warehouse_id")
+    if not key:
+        return ids[0] if ids else None
+    if key in ids:
+        return key
+    wh = wb.frames.get("warehouses")
+    if wh is not None:
+        k = str(key).strip().lower()
+        m = wh[wh["warehouse_id"].str.lower().str.endswith(k) | wh["name"].str.lower().str.contains(k, regex=False)]
+        if len(m) == 1:
+            return m.iloc[0]["warehouse_id"]
+    return None
+
+
+def find_warehouse_in_text(wb, text: str) -> str | None:
+    """질문 문장 안의 센터 ID·이름(‘센터’·‘DEMO’ 등 제거한 핵심어) 탐색. 정확히 1개일 때만 반환."""
+    wh = wb.frames.get("warehouses")
+    if wh is None:
+        return None
+    hits = set()
+    for r in wh.itertuples():
+        core = re.sub(r"(DEMO|물류센터|센터|창고|\s)", "", str(r.name))
+        for cand in (str(r.warehouse_id), str(r.name), core):
+            if len(cand) >= 2 and cand in text:
+                hits.add(r.warehouse_id)
+    return hits.pop() if len(hits) == 1 else None
+
+
 def t_warehouse_outage(wb, a):
-    wid = a.get("warehouse_id")
-    if not wid:
+    if not a.get("warehouse_id"):
         raise ValueError("warehouse_id 필요")
+    wid = resolve_warehouse(wb, a.get("warehouse_id"))
+    if wid is None:
+        return _wrap(wb, "warehouse_outage", {"status": "not_computable",
+                                              "reason": f"센터 '{a.get('warehouse_id')}' 를 ID·이름으로 특정할 수 없습니다. "
+                                                        f"가능한 센터: {', '.join(wb.options('warehouse_id'))}"})
     r = cost.warehouse_outage(wb.frames, wid)
     return _wrap(wb, "warehouse_outage", {k: v for k, v in r.items() if k != "assumptions"},
                  assumptions=r.get("assumptions", []), kind="simulated")

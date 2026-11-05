@@ -16,10 +16,20 @@ from .kpi import Filters, apply_filters
 from .routing import available_mask, haversine_km
 
 
+def _ns(s: pd.Series) -> pd.Series:
+    """merge_asof 는 키의 datetime 해상도가 같아야 한다 (pandas 2/3·CSV/DB 경로 차이 흡수)."""
+    return pd.to_datetime(s).astype("datetime64[ns]")
+
+
 def fuel_basis(fact: pd.DataFrame, fuel_prices: pd.DataFrame | None = None,
                external_diesel: pd.DataFrame | None = None) -> pd.DataFrame:
     """배송별 연료량·기준 경유가와 그 출처를 붙인다."""
     x = fact.copy()
+    x["ship_date"] = _ns(x["ship_date"])
+    if fuel_prices is not None:
+        fuel_prices = fuel_prices.assign(date=_ns(fuel_prices["date"]))
+    if external_diesel is not None:
+        external_diesel = external_diesel.assign(date=_ns(external_diesel["date"]))
     est_l = x["distance_km"] / x["fuel_efficiency_km_per_l"]
     x["fuel_l_eff"] = x["fuel_l"].where(x["fuel_l"].notna(), est_l)
     x["fuel_l_source"] = np.select([x["fuel_l"].notna(), est_l.notna()],
@@ -126,7 +136,7 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
     # 원래도 용량 초과 운행이었으면 기존 운행 수를 1로 유지
     k[cap_known & (trips["load"] > trips["cap"])] = np.maximum(1.0, 1 + d)
     if d < 0:
-        k[cap_known] = 1.0  # 수요 감소 시 운행 수 유지, 변동 연료만 감소한다고 보지 않음 (보수적)
+        k[:] = 1.0  # 수요 감소 시 운행 수·비용 유지 (운행 통폐합 효과는 배송 계획에서 별도 검토, 보수적)
 
     def total(diesel: float, rate: float, kk: pd.Series) -> dict:
         fuel = float((trips["fuel"] * (1 + diesel) * kk).sum())
@@ -152,16 +162,18 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
         fleet = max(0, len(av) + params.fleet_change)
     day_need_base = trips.groupby("date").size()
     day_need = (k.groupby(trips["date"]).sum()).apply(math.ceil)
-    short_days = None
+    short_days = base_short = None
     if fleet is not None:
-        capday = fleet * max(1, params.trips_per_vehicle_day)
-        short_days = int((day_need > capday).sum())
+        tpd = max(1, params.trips_per_vehicle_day)
+        short_days = int((day_need > fleet * tpd).sum())
+        base_short = int((day_need_base > (fleet - params.fleet_change) * tpd).sum())
     dist_known = trips["dist"].notna()
     res = {
         "status": "ok", "params": params.to_dict(), "kind": "assumption",
         "n_shipments": len(x), "n_trips": len(trips),
         "baseline": {**base, "trips": float(len(trips)), "distance_km": float(trips.loc[dist_known, "dist"].sum()),
-                     "peak_daily_trips": int(day_need_base.max()), "fleet": None if fleet is None else fleet - params.fleet_change},
+                     "peak_daily_trips": int(day_need_base.max()), "fleet": None if fleet is None else fleet - params.fleet_change,
+                     "days_fleet_short": base_short},
         "scenario": {**scen, "trips": float(k.sum()), "distance_km": float((trips.loc[dist_known, "dist"] * k[dist_known]).sum()),
                      "peak_daily_trips": int(day_need.max()), "fleet": fleet, "days_fleet_short": short_days},
         "delta_total": delta, "delta_pct": delta / base["total"] * 100 if base["total"] else None,
@@ -175,7 +187,8 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
             "연료비는 경유가에 선형 비례, 연료 외 비용(인건·고정·통행 등)은 운송 단가 변화율에 선형 비례.",
             "물동량 증가 시 기존 운행(차량×출고일)의 적재량이 같은 비율로 늘며, 용량 초과분은 동일 비용의 추가 운행으로 처리.",
             "용량 정보가 없는 운행은 물동량에 선형 비례하여 비용이 증가한다고 가정.",
-            "수요 감소 시 운행 수는 줄이지 않음(보수적).",
+            "수요 감소 시 운행 수·비용은 유지(보수적). 운행 통폐합 효과는 배송 계획 대안에서 검토.",
+            "총 운송비에 연료비가 포함되어 있다고 가정. 정액 위탁(3PL) 계약은 경유가 변화가 단기 비용에 반영되지 않을 수 있음.",
             f"차량 부족 판정: 일자별 필요 운행 > 가용 차량 × {params.trips_per_vehicle_day}회.",
         ],
     }
@@ -205,8 +218,8 @@ def warehouse_outage(frames: dict[str, pd.DataFrame], warehouse_id: str, fact: p
     alt = wh[wh["warehouse_id"] != warehouse_id]
     if alt.empty:
         return {"status": "infeasible", "reason": "대체 가능한 다른 센터가 없습니다."}
-    o = od if flt is None else od[(od["order_date"] >= pd.Timestamp(flt.start)) & (od["order_date"] <= pd.Timestamp(flt.end))] \
-        if (flt and flt.start) else od
+    o = od[(od["order_date"] >= pd.Timestamp(flt.start)) & (od["order_date"] <= pd.Timestamp(flt.end))] \
+        if (flt is not None and flt.start and flt.end) else od
     served = o[o["warehouse_id"] == warehouse_id]
     stores = st[st["store_id"].isin(served["store_id"])]
     src = wh.set_index("warehouse_id").loc[warehouse_id]
