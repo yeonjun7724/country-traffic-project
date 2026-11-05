@@ -31,6 +31,19 @@ def get_external():
     return load_external()
 
 
+@st.cache_resource(show_spinner="샘플 데이터 준비 중… (최초 1회)")
+def ensure_demo() -> bool:
+    """프로세스당 1회: DEMO 워크스페이스가 비어 있으면 샘플 데이터·예시 작업물로 채운다."""
+    from ..config import auto_seed_demo
+    from ..data.seed import ensure_demo_seeded
+    if not auto_seed_demo():
+        return False
+    try:
+        return ensure_demo_seeded(get_store(), get_external())
+    except Exception:  # 시드 실패가 앱 기동을 막지 않도록 (Data Hub 에서 수동 적재 가능)
+        return False
+
+
 def inject_secrets_to_env():
     """Streamlit secrets → 환경변수 (core 는 env 만 읽는다). 값은 로그/화면에 노출하지 않는다."""
     if os.environ.get("OPENAI_API_KEY"):
@@ -132,7 +145,7 @@ def header(eyebrow: str, title: str, sub: str = "", wb: Workbench | None = None,
     meta = list(extra_badges or [])
     if wb is not None:
         if wb.is_demo:
-            meta.insert(0, badge("DEMO 데이터", "bad"))
+            meta.insert(0, badge("샘플 데이터", "warn"))
         if wb.versions:
             last = max(v["uploaded_at"] for v in wb.versions.values())
             meta.append(badge(f"데이터 갱신 {last[:16]}", "neutral"))
@@ -144,7 +157,7 @@ def header(eyebrow: str, title: str, sub: str = "", wb: Workbench | None = None,
 <div class="lr-title">{E(title)}</div><div class="lr-sub">{E(sub)}</div></div>
 <div class="lr-meta">{''.join(meta)}</div></div>""", unsafe_allow_html=True)
     if wb is not None and wb.is_demo:
-        st.markdown("<div class='lr-demo'>DEMO 워크스페이스 — 화면의 모든 운영 수치는 테스트용 가상 데이터이며 실제 성과가 아닙니다.</div>",
+        st.markdown("<div class='lr-demo'>DEMO 워크스페이스 · 운영 수치는 시연용 샘플 데이터입니다. 실데이터는 '내 워크스페이스'에 업로드하세요.</div>",
                     unsafe_allow_html=True)
 
 

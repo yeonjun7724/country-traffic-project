@@ -80,13 +80,15 @@ def main():
         st.stop()
     pages = nav.build()
     store = C.get_store()
+    C.ensure_demo()  # 데이터 버전이 바뀌므로 Workbench 캐시는 자동 갱신
     uid = st.session_state.setdefault("user_id", "local")
     with st.sidebar:
         st.markdown("<div class='lr-brand'><div class='lr-brand-mark'>LR</div><div><div class='lr-brand-name'>LogisRisk</div>"
                     "<div class='lr-brand-sub'>Enterprise · Control Tower</div></div></div>", unsafe_allow_html=True)
         wss = store.workspaces_for(uid)
         ids = [w["id"] for w in wss]
-        cur = st.session_state.get("workspace_id", "default")
+        from logisrisk.config import default_workspace
+        cur = st.session_state.get("workspace_id", default_workspace())
         wid = st.selectbox("워크스페이스", ids, index=ids.index(cur) if cur in ids else 0,
                            format_func=lambda i: next(w["name"] for w in wss if w["id"] == i), key="ws_sel")
         if wid != st.session_state.get("workspace_id"):

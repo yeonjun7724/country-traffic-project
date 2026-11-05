@@ -21,7 +21,7 @@ output/
 !fixtures/**/*.csv
 
 # 로컬 DB (업로드 데이터·시나리오·감사 로그) — 절대 커밋 금지
-data/
+/data/
 *.db
 .pytest_cache/
 

@@ -39,3 +39,13 @@ def openai_api_key() -> str | None:
     """환경변수에서만 키를 읽는다. (Streamlit secrets 는 UI 계층이 env 로 주입)"""
     key = os.environ.get("OPENAI_API_KEY", "").strip()
     return key or None
+
+
+def default_workspace() -> str:
+    """첫 화면 워크스페이스. 기본은 샘플 데이터가 채워진 DEMO (실데이터 운영 시 'default')."""
+    return os.environ.get("LOGISRISK_DEFAULT_WORKSPACE", "demo").strip() or "demo"
+
+
+def auto_seed_demo() -> bool:
+    """기동 시 DEMO 워크스페이스를 샘플 데이터·예시 작업물로 자동 채울지 (기본 1)."""
+    return os.environ.get("LOGISRISK_AUTO_DEMO", "1") == "1"

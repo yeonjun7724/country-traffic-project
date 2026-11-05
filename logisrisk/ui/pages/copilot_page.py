@@ -26,12 +26,20 @@ def render():
     hkey = f"chat_{wb.ctx.workspace_id}"
     hist = st.session_state.setdefault(hkey, [])
     used = st.session_state.setdefault("ai_calls", 0)
+    if not hist and wb.has_ops_data and not st.session_state.get(f"{hkey}_seeded"):
+        # 첫 방문: 예시 질문 1개를 규칙 기반 도구로 실제 계산해 보여준다 (LLM 호출 없음)
+        st.session_state[f"{hkey}_seeded"] = True
+        q0 = EXAMPLES[2]
+        r0 = agent.fallback_answer(wb, q0, "예시")
+        hist += [{"role": "user", "content": q0},
+                 {"role": "assistant", "content": r0.answer,
+                  "meta": {"mode": r0.mode, "notice": "예시 대화 · 규칙 기반으로 계산", "steps": r0.steps, "results": r0.tool_results}}]
     with st.sidebar:
         st.caption(f"이번 세션 LLM 호출 {used}/{AI_MAX_CALLS_PER_SESSION}")
         if st.button("대화 초기화", key="cp_clear"):
             st.session_state[hkey] = []
             st.rerun()
-    if not hist:
+    if len(hist) <= 2:
         C.callout("Copilot 은 아래 도구로 계산한 결과만 근거로 답합니다. 데이터 변경·배차 확정·외부 발송은 할 수 없습니다. "
                   + ("" if has_key else "현재 <b>OPENAI_API_KEY 가 없어 규칙 기반 모드</b>로 동작합니다 (지원 질문 유형 제한)."), "info")
         cols = st.columns(4)

@@ -95,8 +95,8 @@ code {{ font-family: var(--mono); }}
 .lr-sec {{ font-size:15px; font-weight:700; color:var(--text-1); margin:18px 0 8px; display:flex; align-items:center; gap:8px; }}
 .lr-sec small {{ font-weight:500; color:var(--text-3); font-size:12px; }}
 .lr-def {{ font-size:12px; color:var(--text-2); line-height:1.6; }} .lr-def code {{ font-size:11.5px; }}
-.lr-demo {{ background:repeating-linear-gradient(45deg,#fef3c7,#fef3c7 10px,#fde68a 10px,#fde68a 20px); color:#78350f;
-  border:1px solid #f59e0b; border-radius:8px; padding:7px 14px; font-weight:700; font-size:12.5px; margin-bottom:10px; }}
+.lr-demo {{ color:var(--text-3); font-size:11.5px; margin:-4px 0 10px; display:flex; align-items:center; gap:6px; }}
+.lr-demo::before {{ content:""; width:6px; height:6px; border-radius:50%; background:#f59e0b; display:inline-block; }}
 </style>"""
 
 

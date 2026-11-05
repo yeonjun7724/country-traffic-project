@@ -132,13 +132,16 @@ def _planning(wb):
                + (f" (중량 미상 배송지 {int(stops['demand_kg'].isna().sum())}곳)" if stops["demand_kg"].isna().any() else ""))
     params = routing.RoutingParams(road_factor=rf, avg_speed_kmh=speed, default_service_min=svc, default_max_hours=mh,
                                    diesel_price=price or None)
-    if st.button("계획 대안 생성", type="primary", icon=":material/route:", key="rp_run"):
+    rkey = (src, str(day), wid, params.to_dict())
+    prev = st.session_state.get("rp_res")
+    auto = len(stops) <= 150 and (not prev or prev["key"] != rkey)  # 소규모는 자동 계산, 대규모는 버튼
+    if st.button("계획 대안 생성", type="primary", icon=":material/route:", key="rp_run") or auto:
         with st.spinner("경로 계산 중…"):
             prop = routing.plan_routes(depot, stops, veh, params)
             base = routing.baseline_plan(depot, assign, wb.frames["vehicles"], params) if len(assign) else None
-        st.session_state["rp_res"] = {"key": (src, str(day), wid, params.to_dict()), "prop": prop, "base": base, "depot": depot}
+        st.session_state["rp_res"] = {"key": rkey, "prop": prop, "base": base, "depot": depot}
     r = st.session_state.get("rp_res")
-    if not r or r["key"] != (src, str(day), wid, params.to_dict()):
+    if not r or r["key"] != rkey:
         return
     prop, base = r["prop"], r["base"]
     for v in prop.violations:
