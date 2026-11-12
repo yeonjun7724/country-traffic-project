@@ -1,7 +1,8 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { AlertOctagon, AlertTriangle, CheckCircle2, Fuel as FuelIcon, Info } from "lucide-react";
+import { AlertOctagon, AlertTriangle, ArrowRight, CheckCircle2, Fuel as FuelIcon, Info } from "lucide-react";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -20,6 +21,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFilters } from "@/lib/filters";
 import { dateLabel, isNum, num, pct, won } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
+import { scenarioLink } from "@/lib/scenario-url";
 import type { Audit, Diesel, Market, Traffic } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
@@ -142,6 +144,12 @@ function ImpactTab() {
                 <div className="mt-1 text-[11.5px] text-subtle-foreground tabular">
                   총 운송비 대비 {isNum(r.total_cost_delta_pct) ? `${r.total_cost_delta_pct > 0 ? "+" : ""}${r.total_cost_delta_pct.toFixed(2)}%` : "—"}
                 </div>
+                <Link
+                  href={scenarioLink({ diesel_pct: r.diesel_pct }, { diesel_pct: r.diesel_pct, demand_pct: 10 }, filters)}
+                  className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
+                >
+                  Scenario Lab 에서 단가·물동량과 함께 비교 <ArrowRight className="size-3" />
+                </Link>
               </div>
             ))}
           </div>

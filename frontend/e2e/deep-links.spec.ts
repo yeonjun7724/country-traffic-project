@@ -32,3 +32,41 @@ test("알림 '지연 원장 보기' → 같은 화면의 원장 '지연 배송' 
   await expect(page.getByRole("tab", { name: /지연 배송/ })).toHaveAttribute("aria-selected", "true");
   await expect(page.locator("#ledger")).toBeInViewport();
 });
+
+test("Fuel & Risk 카드 → Scenario Lab 이 그 입력값으로 열리고, 입력 변경은 URL·새로고침에 유지된다", async ({ page }) => {
+  await ws(page, "demo");
+  await page.goto("/fuel-risk/");
+  await page.getByRole("link", { name: /Scenario Lab 에서 단가·물동량과 함께 비교/ }).first().click();
+  await expect(page).toHaveURL(/\/scenario-lab\/\?.*a=/);
+  const aName = page.getByLabel("시나리오 A 이름");
+  await expect(aName).toHaveValue(/^경유가 [+-]\d+%$/);
+  const pctA = Number((await aName.inputValue()).match(/[+-]?\d+/)![0]);
+  await expect(page.locator("#dA")).toHaveValue(String(pctA));
+  await expect(page.locator("#qB")).toHaveValue("10");
+  // 입력 변경 → URL 반영 → 새로고침해도 유지
+  await page.locator("#qA").fill("25");
+  await expect(page).toHaveURL(new RegExp(`a=${pctA}%2C0%2C25%2C0%2C1`));
+  await page.reload();
+  await expect(page.locator("#qA")).toHaveValue("25");
+});
+
+test("Network 센터 카드 → Scenario Lab 센터 중단 탭이 해당 센터로 열린다", async ({ page }) => {
+  await ws(page, "demo");
+  await page.goto("/network/");
+  await page.getByRole("link", { name: /센터 중단 분석/ }).nth(1).click();
+  await expect(page).toHaveURL(/tab=outage/);
+  await expect(page).toHaveURL(/wh=WH-B/);
+  await expect(page.getByRole("combobox", { name: "중단 센터" })).toContainText("중부");
+});
+
+test("저장된 시나리오는 ?id= 로 바로 열리고, 같은 입력값으로 다시 분석할 수 있다", async ({ page, request }) => {
+  await ws(page, "demo");
+  const list = await (await request.get("/api/scenarios", { headers: { "X-Workspace": "demo" } })).json();
+  const cost = list.find((r: { kind: string }) => r.kind === "cost_scenario");
+  await page.goto(`/scenario-lab/?tab=saved&id=${cost.id}`);
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByRole("heading", { name: cost.name })).toBeVisible();
+  await sheet.getByRole("link", { name: /이 입력값으로 다시 분석/ }).click();
+  await expect(page).toHaveURL(/\/scenario-lab\/\?.*a=/);
+  await expect(page.getByLabel("시나리오 A 이름")).toHaveValue(cost.name);
+});

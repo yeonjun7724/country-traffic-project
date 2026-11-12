@@ -24,6 +24,7 @@ import { apiFetch } from "@/lib/api";
 import { filterSearchParams, useFilters } from "@/lib/filters";
 import { isNum, num, pct, won } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
+import { savedScenarioLink } from "@/lib/scenario-url";
 import type { CtsRow, Fuel, Plan, PlanningMeta } from "@/lib/types";
 import { useApi, useApiMutation } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
@@ -256,7 +257,8 @@ function PlanTab() {
   const body = { source, day, warehouse_id: wh, ...p, diesel_price: price };
   const run = usePlan(day && wh ? body : null);
   const save = useApiMutation<void, { id: number }>(() => ({ path: "/api/transportation/plan/save", body: { ...body, name: name || `배송계획 ${day} ${wh}` } }), {
-    success: (r) => `제안 #${r.id} 저장 — Scenario Lab '저장된 시나리오'에서 승인/반려할 수 있습니다.`,
+    success: (r) => `제안 #${r.id} 저장 — 승인/반려는 Scenario Lab '저장된 시나리오'에서 합니다.`,
+    action: (r) => ({ label: "승인 화면 열기", href: savedScenarioLink(r.id) }),
   });
 
   if (meta.isError) return <ErrorState error={meta.error} onRetry={() => meta.refetch()} />;

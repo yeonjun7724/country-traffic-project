@@ -1,8 +1,10 @@
 "use client";
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { Check, Copy, Loader2, Save, X } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { Check, Copy, Loader2, PencilLine, Save, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { KindBadge, Pill } from "@/components/common/badges";
@@ -28,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 
 import { SimpleTable } from "@/components/common/simple-table";
+import { decodeScenario, encodeScenario, outageLink, savedScenarioLink, scenarioLink } from "@/lib/scenario-url";
 
 const NAV = navByKey("scenario-lab");
 const PRESETS: Record<string, Partial<ScenarioInput>> = {
@@ -42,6 +45,42 @@ const PRESETS: Record<string, Partial<ScenarioInput>> = {
 const BASE: ScenarioInput = { name: "Scenario", diesel_pct: 0, demand_pct: 0, rate_pct: 0, fleet_change: 0, trips_per_vehicle_day: 1 };
 const KIND_LABEL: Record<string, string> = { cost_scenario: "비용·운행", warehouse_outage: "센터 중단", route_plan: "배송 계획", risk_weights: "위험 가중치" };
 const CONTRIB_LABEL: Record<string, string> = { 경유가: "경유", "운송 단가": "단가", "물동량(운행 증가)": "물량", 상호작용: "상호" };
+
+const DEFAULT_A: ScenarioInput = { ...BASE, name: "경유가 +10%", diesel_pct: 10 };
+const DEFAULT_B: ScenarioInput = { ...BASE, name: "경유가 +10% · 수요 +30%", diesel_pct: 10, demand_pct: 30 };
+const sameScenario = (x: ScenarioInput, y: ScenarioInput) => x.name === y.name && encodeScenario(x) === encodeScenario(y);
+
+/** 화면 고유 URL 파라미터 읽기·부분 갱신 (다른 파라미터·전역 필터 유지, 값이 같으면 이동하지 않음) */
+function useUrlParams() {
+  const sp = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const cur = sp.toString();
+  const patch = useCallback(
+    (p: Record<string, string | null>) => {
+      const q = new URLSearchParams(cur);
+      for (const [k, v] of Object.entries(p)) {
+        if (v === null || v === "") q.delete(k);
+        else q.set(k, v);
+      }
+      const next = q.toString();
+      if (next !== cur) router.replace(`${pathname}${next ? `?${next}` : ""}`, { scroll: false });
+    },
+    [cur, router, pathname],
+  );
+  return { get: (k: string) => sp.get(k), patch };
+}
+
+/** 저장된 시나리오 → 같은 입력으로 다시 분석하는 링크 (비용 시나리오·센터 중단만) */
+function reopenHref(s: ScenarioDetail): string | null {
+  const p = (s.params ?? {}) as Record<string, unknown>;
+  if (s.kind === "cost_scenario") {
+    const n = (k: string, d = 0) => (typeof p[k] === "number" ? (p[k] as number) : d);
+    return scenarioLink({ name: s.name, diesel_pct: n("diesel_pct"), rate_pct: n("rate_pct"), demand_pct: n("demand_pct"), fleet_change: n("fleet_change"), trips_per_vehicle_day: n("trips_per_vehicle_day", 1) });
+  }
+  if (s.kind === "warehouse_outage" && typeof p.warehouse_id === "string") return outageLink(p.warehouse_id);
+  return null;
+}
 
 export function ScenarioLabScreen() {
   const [tab, setTab] = useUrlTab(["cost", "outage", "saved", "scope"]);
@@ -112,13 +151,31 @@ function useDebounce<T>(v: T, ms = 350) {
 function CostTab() {
   const { filters } = useFilters();
   const { can } = useWorkspace();
-  const [a, setA] = useState<ScenarioInput>({ ...BASE, name: "경유가 +10%", diesel_pct: 10 });
-  const [b, setB] = useState<ScenarioInput>({ ...BASE, name: "경유가 +10% · 수요 +30%", diesel_pct: 10, demand_pct: 30 });
+  // A/B 입력은 URL(?a=&an=&b=&bn=) 과 동기화 — 공유 링크·새로고침·다른 화면의 "Scenario Lab 에서 비교" 링크
+  const url = useUrlParams();
+  const [ua, uan, ub, ubn] = [url.get("a"), url.get("an"), url.get("b"), url.get("bn")];
+  const [a, setA] = useState<ScenarioInput>(() => decodeScenario(ua, uan) ?? DEFAULT_A);
+  const [b, setB] = useState<ScenarioInput>(() => decodeScenario(ub, ubn) ?? DEFAULT_B);
+  useEffect(() => {
+    const x = decodeScenario(ua, uan);
+    if (x) setA((cur) => (sameScenario(cur, x) ? cur : x));
+  }, [ua, uan]);
+  useEffect(() => {
+    const x = decodeScenario(ub, ubn);
+    if (x) setB((cur) => (sameScenario(cur, x) ? cur : x));
+  }, [ub, ubn]);
   const body = useDebounce({ a, b });
+  // 입력이 바뀔 때만 URL 에 쓴다 (URL 이 바뀔 때마다 쓰면 외부 링크로 들어온 값을 이전 값으로 덮어씀)
+  const patchRef = useRef(url.patch);
+  patchRef.current = url.patch;
+  useEffect(() => {
+    patchRef.current({ a: encodeScenario(body.a), an: body.a.name, b: encodeScenario(body.b), bn: body.b.name });
+  }, [body]);
   const cmp = useCompare(body, filters);
   const sens = useApi<Sens[]>("/api/scenarios/sensitivity", { filters, staleTime: 120_000 });
   const save = useApiMutation<void, { ids: number[] }>(() => ({ path: "/api/scenarios/compare/save", body: { a, b }, query: filterQ(filters) }), {
-    success: (r) => `시나리오 #${r.ids.join(", #")} 저장 — '저장된 시나리오'에서 확인`,
+    success: (r) => `시나리오 #${r.ids.join(", #")} 저장 (초안)`,
+    action: (r) => (r.ids.length ? { label: "저장된 시나리오 열기", href: savedScenarioLink(r.ids[0]) } : null),
   });
   const d = cmp.data;
 
@@ -366,13 +423,15 @@ function OutageTab() {
   const { can } = useWorkspace();
   const fm = useFilterMeta();
   const whs = useMemo(() => fm.data?.options.warehouses ?? [], [fm.data]);
-  const [wid, setWid] = useState("");
-  useEffect(() => {
-    if (!wid && whs.length) setWid(whs[0].value);
-  }, [whs, wid]);
+  // 중단 센터는 URL(?wh=) 과 동기화 — Network·Control Tower 의 "센터 중단 분석" 링크로 들어온다
+  const url = useUrlParams();
+  const uw = url.get("wh") ?? "";
+  const wid = whs.some((w) => w.value === uw) ? uw : (whs[0]?.value ?? "");
+  const setWid = (v: string) => url.patch({ wh: v });
   const q = useApi<Outage>(wid ? "/api/scenarios/outage" : null, { filters, query: { warehouse_id: wid } });
   const save = useApiMutation<void, { id: number }>(() => ({ path: "/api/scenarios/outage/save", query: { ...filterQ(filters), warehouse_id: wid } }), {
     success: (r) => `센터 중단 분석 #${r.id} 저장`,
+    action: (r) => ({ label: "열기", href: savedScenarioLink(r.id) }),
   });
   const d = q.data;
   if (fm.data && !whs.length) return <EmptyState title="센터 데이터가 없습니다" description="센터·배송지·주문 데이터가 있어야 중단 영향을 분석합니다." />;
@@ -474,7 +533,10 @@ function OutageTab() {
 // ── 저장된 시나리오 ───────────────────────────────────────────────────
 function SavedTab() {
   const q = useApi<ScenarioRow[]>("/api/scenarios");
-  const [open, setOpen] = useState<number | null>(null);
+  // 열린 시나리오는 URL(?id=) — 저장 직후 토스트·알림·조치에서 바로 승인 화면으로 들어온다
+  const url = useUrlParams();
+  const open = Number(url.get("id")) || null;
+  const setOpen = (v: number | null) => url.patch({ id: v === null ? null : String(v) });
   const [kind, setKind] = useState("all");
   const rows = useMemo(() => (q.data ?? []).filter((r) => kind === "all" || r.kind === kind), [q.data, kind]);
   const pending = (q.data ?? []).filter((r) => r.status === "proposed").length;
@@ -529,6 +591,7 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
   });
   const dup = useApiMutation<void, { id: number }>(() => ({ path: `/api/scenarios/${id}/duplicate`, body: { name: dupName || `${q.data?.name} (복제)` } }), {
     success: (r) => `#${r.id} 로 복제했습니다`,
+    action: (r) => ({ label: "복제본 열기", href: savedScenarioLink(r.id) }),
   });
   const s = q.data;
   return (
@@ -571,6 +634,13 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
             )}
             <Block title="입력값">
               <KV obj={s.params} />
+              {reopenHref(s) && (
+                <Button size="sm" variant="outline" asChild>
+                  <Link href={reopenHref(s)!}>
+                    <PencilLine className="size-3.5" /> 이 입력값으로 다시 분석
+                  </Link>
+                </Button>
+              )}
             </Block>
             {s.assumptions && s.assumptions.length > 0 && (
               <Block title="가정">

@@ -1,7 +1,8 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Globe2, RotateCcw, Save } from "lucide-react";
+import { ArrowRight, Globe2, RotateCcw, Save } from "lucide-react";
+import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
@@ -22,6 +23,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { useFilters } from "@/lib/filters";
 import { num, pct } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
+import { outageLink, savedScenarioLink } from "@/lib/scenario-url";
 import { useNetwork } from "@/lib/queries";
 import type { Component, Proximity, Unit, UnitsView } from "@/lib/types";
 import { useApi, useApiMutation } from "@/lib/use-api";
@@ -81,7 +83,8 @@ export function NetworkScreen() {
   const prox = useApi<Proximity[]>("/api/network/proximity", { query: { ...wq, radius_km: radius } });
   const ops = useNetwork(filters);
   const save = useApiMutation<void, { id: number }>(() => ({ path: "/api/network/scenarios", body: weights }), {
-    success: (r) => `가중치 시나리오 #${r.id} 저장 — Scenario Lab 에서 확인`,
+    success: (r) => `가중치 시나리오 #${r.id} 저장`,
+    action: (r) => ({ label: "Scenario Lab 에서 보기", href: savedScenarioLink(r.id) }),
   });
 
   const d = units.data;
@@ -278,6 +281,9 @@ export function NetworkScreen() {
                       <span className="text-subtle-foreground">
                         최근접 {p.nearest_unit} {num(p.nearest_km, 1)}km
                       </span>
+                      <Link href={outageLink(p.warehouse_id, filters)} className="ml-auto inline-flex items-center gap-0.5 font-medium text-primary hover:underline">
+                        센터 중단 분석 <ArrowRight className="size-3" />
+                      </Link>
                     </div>
                   </li>
                 ))}

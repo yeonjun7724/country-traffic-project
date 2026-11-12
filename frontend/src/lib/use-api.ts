@@ -1,6 +1,7 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
 import { apiFetch } from "./api";
@@ -26,9 +27,15 @@ export function useApi<T>(path: string | null, opts: { query?: Query; filters?: 
 /** 쓰기 요청 + 성공 시 관련 조회 무효화 + 토스트 */
 export function useApiMutation<TBody, TRes>(
   fn: (body: TBody) => { path: string; method?: string; body?: unknown; query?: Query },
-  opts: { success?: string | ((r: TRes) => string); invalidate?: boolean } = {},
+  opts: {
+    success?: string | ((r: TRes) => string);
+    invalidate?: boolean;
+    /** 성공 토스트의 이동 버튼 (예: 저장한 시나리오의 승인 화면 열기) */
+    action?: (r: TRes) => { label: string; href: string } | null;
+  } = {},
 ) {
   const qc = useQueryClient();
+  const router = useRouter();
   return useMutation({
     mutationFn: (b: TBody) => {
       const r = fn(b);
@@ -36,7 +43,9 @@ export function useApiMutation<TBody, TRes>(
     },
     onSuccess: (r) => {
       if (opts.invalidate !== false) qc.invalidateQueries();
-      if (opts.success) toast.success(typeof opts.success === "function" ? opts.success(r) : opts.success);
+      const act = opts.action?.(r);
+      if (opts.success)
+        toast.success(typeof opts.success === "function" ? opts.success(r) : opts.success, act ? { action: { label: act.label, onClick: () => router.push(act.href) } } : undefined);
     },
     onError: (e) => toast.error((e as Error).message),
   });
