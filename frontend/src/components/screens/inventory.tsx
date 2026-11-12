@@ -146,7 +146,7 @@ export function InventoryScreen() {
                       <ToggleGroup type="multiple" variant="outline" size="sm" value={risks} onValueChange={setRisks} aria-label="위험 구분 필터">
                         {RISKS.map((r) => (
                           <ToggleGroupItem key={r} value={r} className="px-2.5 text-[12px]">
-                            {r} <span className="ml-1 text-subtle-foreground tabular">{d.rows.filter((x) => x.stockout_risk === r).length}</span>
+                            {r} <span className="ml-1 text-muted-foreground tabular">{d.rows.filter((x) => x.stockout_risk === r).length}</span>
                           </ToggleGroupItem>
                         ))}
                       </ToggleGroup>

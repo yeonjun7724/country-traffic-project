@@ -113,6 +113,8 @@ export function LineTabs({ items, value, onChange }: { items: { v: string; label
           <TabsTrigger
             key={t.v}
             value={t.v}
+            // 탭 패널(TabsContent)을 쓰지 않고 화면이 직접 내용을 바꾸므로, 존재하지 않는 패널을 가리키는 aria-controls 제거 (axe critical)
+            aria-controls={undefined}
             className="h-9 flex-none rounded-none border-0 border-b-2 border-transparent px-0.5 text-[13px] data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
           >
             {t.label}

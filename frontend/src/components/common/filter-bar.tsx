@@ -139,8 +139,9 @@ function DateRangeButton({
       }}
     >
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8 gap-2 px-2 font-medium" aria-label="기간 선택">
+        <Button variant="ghost" size="sm" className="h-8 gap-2 px-2 font-medium">
           <CalendarDays className="size-4 text-muted-foreground" />
+          <span className="sr-only">기간 선택:</span>
           <span className="tabular">
             {dateLabel(start)} – {dateLabel(end)}
           </span>

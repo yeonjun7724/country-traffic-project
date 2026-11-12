@@ -58,7 +58,6 @@ export function KpiCard({
           ? "rounded-xl border border-border bg-card shadow-card hover:border-border-strong"
           : "hover:bg-muted/40",
       )}
-      aria-label={`${m.label}: ${m.ok ? metricText(m.value, m.unit) : "계산 불가"}. 정의·산식 보기`}
     >
       <div className="flex items-center justify-between gap-2">
         <span className="truncate text-[12.5px] font-medium text-muted-foreground">{m.label}</span>
@@ -126,7 +125,6 @@ export function KpiRow({ m, onOpen }: { m: Metric; onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
-      aria-label={`${m.label}: ${m.ok ? metricText(m.value, m.unit) : "계산 불가"}. 정의·산식 보기`}
     >
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-medium text-foreground/85">{m.label}</div>
@@ -158,6 +156,8 @@ export function KpiRow({ m, onOpen }: { m: Metric; onOpen: () => void }) {
       ) : (
         <span className="shrink-0 text-[14px] font-semibold text-warning">계산 불가</span>
       )}
+      {/* 이름 = 보이는 내용 전체 + 동작 (WCAG 2.5.3: 보이는 글자가 접근 가능한 이름에 포함) */}
+      <span className="sr-only">정의·산식 보기</span>
     </button>
   );
 }

@@ -129,7 +129,7 @@ function SampleBanner() {
         <b className="font-semibold text-kind-demo">샘플 워크스페이스</b> · 화면의 운영 수치는 시연용 가상 데이터로 계산한 값이며 실제 성과가 아닙니다.
       </span>
       {mine && (
-        <button type="button" onClick={() => switchWorkspace(mine.id)} className="ml-auto shrink-0 font-medium text-primary hover:underline">
+        <button type="button" onClick={() => switchWorkspace(mine.id)} className="ml-auto shrink-0 font-medium text-primary-text hover:underline">
           내 워크스페이스로 전환
         </button>
       )}

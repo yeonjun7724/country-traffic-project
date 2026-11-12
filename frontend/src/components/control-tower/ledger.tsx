@@ -150,7 +150,7 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
           {TABS.map((t) => {
             const c = t.v === "cost" ? (counts.cost?.available ? counts.cost.total : undefined) : counts[t.v];
             return (
-              <TabsTrigger key={t.v} value={t.v} className="gap-1.5 px-3">
+              <TabsTrigger key={t.v} value={t.v} className="gap-1.5 px-3" aria-controls={undefined}>
                 {t.label}
                 {c !== undefined && (
                   <span className="rounded-full bg-background/80 px-1.5 text-[11px] text-muted-foreground tabular">{c.toLocaleString()}</span>

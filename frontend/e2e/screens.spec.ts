@@ -45,7 +45,7 @@ for (const ws of ["demo", "default"] as const) {
         // 스켈레톤이 모두 사라질 때까지 (데이터 로딩 완료)
         await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 45_000 });
         if (r === "control-tower" && ws === "demo") {
-          await expect(page.getByRole("button", { name: /OTIF:/ })).toBeVisible();
+          await expect(page.getByRole("button", { name: /^OTIF\s/ })).toBeVisible();
         }
         await page.waitForTimeout(2000); // 차트 애니메이션·지도 타일이 끝난 뒤 촬영
         await page.screenshot({ path: `e2e-screens/${info.project.name}/${ws}-${r}.png`, fullPage: true });

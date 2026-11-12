@@ -23,7 +23,7 @@ test("KPI 값이 API(엔진) 값과 일치하고, 정의·산식 시트가 열�
   await page.goto("/control-tower/");
   const api = await (await request.get("/api/control-tower/overview", { headers: { "X-Workspace": "demo" } })).json();
   const otif = api.kpis.find((k: { key: string }) => k.key === "otif");
-  const btn = page.getByRole("button", { name: /^OTIF:/ });
+  const btn = page.getByRole("button", { name: /^OTIF\s/ });
   await expect(btn).toContainText(pctText(otif.value));
   await btn.click();
   const sheet = page.getByRole("dialog");
@@ -44,7 +44,7 @@ test("운송사 필터를 바꾸면 URL 과 KPI 가 함께 바뀐다", async ({ 
     await request.get("/api/control-tower/overview?carriers=DEMO%EC%9A%B4%EC%86%A1A", { headers: { "X-Workspace": "demo" } })
   ).json();
   const ship = api.kpis.find((k: { key: string }) => k.key === "shipments");
-  await expect(page.getByRole("button", { name: /^배송 건수:/ })).toContainText(Number(ship.value).toLocaleString("ko-KR"));
+  await expect(page.getByRole("button", { name: /^배송 건수\s/ })).toContainText(Number(ship.value).toLocaleString("ko-KR"));
   // 새로고침해도 유지
   await page.reload();
   await expect(page.getByRole("button", { name: "운송사 필터" })).toContainText("DEMO운송A");
@@ -74,11 +74,11 @@ test("⌘K 검색으로 센터를 찾아 필터를 적용한다", async ({ page 
 test("워크스페이스를 전환하면 데이터가 섞이지 않는다", async ({ page }) => {
   await ws(page, "demo");
   await page.goto("/control-tower/");
-  await expect(page.getByRole("button", { name: /^OTIF:/ })).toBeVisible();
-  await page.getByRole("button", { name: "워크스페이스 전환" }).click();
+  await expect(page.getByRole("button", { name: /^OTIF\s/ })).toBeVisible();
+  await page.getByRole("button", { name: /^워크스페이스 전환/ }).click();
   await page.getByRole("menuitem", { name: /내 워크스페이스/ }).click();
   await expect(page.getByText("운영 데이터가 아직 없습니다")).toBeVisible();
-  await expect(page.getByRole("button", { name: /^OTIF:/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /^OTIF\s/ })).toHaveCount(0);
 });
 
 test("업로드 → 자동 매핑 → 검증 → 저장 흐름", async ({ page }) => {

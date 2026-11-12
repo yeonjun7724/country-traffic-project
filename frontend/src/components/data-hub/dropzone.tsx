@@ -41,7 +41,6 @@ export function Dropzone({ onFile, busy, label }: { onFile: (f: File) => void; b
           over ? "border-primary bg-primary/[0.05]" : "border-border-strong bg-muted/30 hover:border-primary/50 hover:bg-muted/50",
           busy && "pointer-events-none opacity-70",
         )}
-        aria-label={`${label} 파일 선택`}
       >
         <div className="flex size-11 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border">
           {busy ? <Loader2 className="size-5 animate-spin text-primary" /> : <UploadCloud className="size-5 text-primary" />}
@@ -59,6 +58,7 @@ export function Dropzone({ onFile, busy, label }: { onFile: (f: File) => void; b
         accept=".csv,.xlsx,.xls"
         className="sr-only"
         tabIndex={-1}
+        aria-hidden="true" // 위 버튼이 같은 동작을 하는 접근 가능한 컨트롤
         onChange={(e) => {
           accept(e.target.files?.[0]);
           e.target.value = "";

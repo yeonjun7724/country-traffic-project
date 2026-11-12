@@ -199,7 +199,7 @@ export function CopilotScreen() {
             {!m ? (
               <Skeleton className="m-4 h-40" />
             ) : (
-              <ul className="max-h-[420px] divide-y divide-border overflow-y-auto">
+              <ul className="max-h-[420px] divide-y divide-border overflow-y-auto" tabIndex={0} aria-label="사용 가능한 도구 목록">
                 {m.tools.map((t) => (
                   <li key={t.name} className="px-4 py-2">
                     <p className="font-mono text-[11.5px] text-primary">{t.name}</p>

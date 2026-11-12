@@ -22,7 +22,7 @@ for (const r of ROUTES) {
     expect(doc, `문서 폭 ${doc}px > 기기 폭 390px`).toBeLessThanOrEqual(390);
     expect(win, `레이아웃 뷰포트가 ${win}px 로 넓어짐`).toBeLessThanOrEqual(390);
     // 상단 바 핵심 동작은 좁은 화면에서도 보인다
-    await expect(page.getByRole("button", { name: "검색 열기" })).toBeVisible();
+    await expect(page.getByRole("button", { name: /검색/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /모드로$/ })).toBeVisible();
   });
 }

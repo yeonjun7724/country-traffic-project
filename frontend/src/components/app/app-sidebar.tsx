@@ -110,7 +110,8 @@ function UserMenu() {
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent" aria-label="사용자 메뉴">
+            <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
+              <span className="sr-only">사용자 메뉴:</span>
               <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[13px] font-semibold text-primary">
                 {initials}
               </span>

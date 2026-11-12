@@ -66,9 +66,10 @@ test("Reports: Excel 리포트를 내려받는다", async ({ page }) => {
 test("Reports: 조치를 만들고 상태를 바꾼다", async ({ page }) => {
   await ws(page);
   await page.goto("/reports/?tab=actions");
-  await page.getByLabel("조치 제목").fill("E2E 테스트 조치");
+  const title = `E2E 테스트 조치 ${Date.now()}`; // 반복 실행해도 같은 DB 에서 유일
+  await page.getByLabel("조치 제목").fill(title);
   await page.getByRole("button", { name: "생성" }).click();
-  await expect(page.getByText("E2E 테스트 조치")).toBeVisible();
+  await expect(page.getByText(title)).toBeVisible();
 });
 
 test("Settings: 내 워크스페이스 목표를 바꾸면 샘플 워크스페이스에는 영향이 없다", async ({ page }) => {
