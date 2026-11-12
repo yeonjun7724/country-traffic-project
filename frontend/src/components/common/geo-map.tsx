@@ -5,6 +5,7 @@ import type { ErrorEvent, GeoJSONSource, Map as MLMap, StyleSpecification } from
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
+import { cssColor } from "@/lib/colors";
 import { esc, type MapLine, type MapMarker, type MapPoint, type PointLayer } from "@/lib/map-utils";
 import { cn } from "@/lib/utils";
 
@@ -17,10 +18,10 @@ const STYLE = {
   light: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 };
-const BLANK = (dark: boolean): StyleSpecification => ({
+const BLANK = (): StyleSpecification => ({
   version: 8,
   sources: {},
-  layers: [{ id: "bg", type: "background", paint: { "background-color": dark ? "#151821" : "#eef2f7" } }],
+  layers: [{ id: "bg", type: "background", paint: { "background-color": cssColor("--map-bg") } }],
 });
 
 
@@ -84,12 +85,12 @@ export function GeoMap({
       m.on("error", (e: ErrorEvent) => {
         if (!m.isStyleLoaded() && !(e as { sourceId?: string }).sourceId) {
           setFailed(true);
-          m.setStyle(BLANK(dark));
+          m.setStyle(BLANK());
         }
       });
       map.current = m;
     } else {
-      map.current.setStyle(failed ? BLANK(dark) : STYLE[dark ? "dark" : "light"]);
+      map.current.setStyle(failed ? BLANK() : STYLE[dark ? "dark" : "light"]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dark]);
@@ -159,9 +160,9 @@ export function GeoMap({
           filter: ["in", ["get", "id"], ["literal", []]],
           paint: {
             "circle-radius": ["+", ["get", "r"], 6],
-            "circle-color": "rgba(37,99,235,0.16)",
+            "circle-color": cssColor("--primary", 0.16),
             "circle-stroke-width": 2,
-            "circle-stroke-color": "#2563eb",
+            "circle-stroke-color": cssColor("--primary"),
           },
         });
         m.addLayer({
@@ -173,7 +174,7 @@ export function GeoMap({
             "circle-color": ["get", "color"],
             "circle-opacity": l.opacity ?? 0.88,
             "circle-stroke-width": l.stroke === false ? 0 : 1,
-            "circle-stroke-color": dark ? "#0f172a" : "#ffffff",
+            "circle-stroke-color": cssColor("--map-halo"),
           },
         });
         m.on("mousemove", l.id, (e) => {
@@ -207,8 +208,8 @@ export function GeoMap({
     mk.current = markers.map((w) => {
       const node = document.createElement("div");
       node.className =
-        "flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-900 py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-white shadow-md dark:border-slate-700";
-      node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:#2563eb;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.label)}`;
+        "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-background shadow-md";
+      node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:var(--primary);align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.label)}`;
       node.setAttribute("role", "img");
       node.setAttribute("aria-label", w.label);
       return new maplibregl.Marker({ element: node, anchor: "left", offset: [-9, 0] }).setLngLat([w.lon, w.lat]).addTo(m);

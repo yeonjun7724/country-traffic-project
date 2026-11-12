@@ -253,12 +253,12 @@ function MarketTab() {
                   }
                 />
                 <Legend verticalAlign="bottom" height={28} iconType="plainline" wrapperStyle={{ fontSize: 11.5 }} />
-                <Area dataKey="band" name="Prophet 구간" stroke="none" fill="var(--chart-1)" fillOpacity={0.12} legendType="square" />
+                <Area dataKey="band" name="Prophet 구간" stroke="none" fill="var(--external)" fillOpacity={0.12} legendType="square" />
                 <Line dataKey="diesel" name="경유(관측)" stroke="var(--foreground)" strokeWidth={2} dot={false} />
                 <Line dataKey="gasoline" name="휘발유(관측)" stroke="var(--subtle-foreground)" strokeWidth={1} dot={false} />
-                <Line dataKey="reweighted" name={`앙상블(재가중 ${weight.toFixed(2)})`} stroke="var(--chart-1)" strokeWidth={2} strokeDasharray="5 4" dot={false} />
-                {comp && <Line dataKey="prophet" name="Prophet" stroke="var(--chart-5)" strokeWidth={1} dot={false} />}
-                {comp && <Line dataKey="lstm" name="LSTM" stroke="var(--chart-4)" strokeWidth={1} dot={false} />}
+                <Line dataKey="reweighted" name={`앙상블(재가중 ${weight.toFixed(2)})`} stroke="var(--external)" strokeWidth={2} strokeDasharray="5 4" dot={false} />
+                {comp && <Line dataKey="prophet" name="Prophet" stroke="var(--ext-2)" strokeWidth={1} dot={false} />}
+                {comp && <Line dataKey="lstm" name="LSTM" stroke="var(--ext-4)" strokeWidth={1} dot={false} />}
                 <ReferenceLine x={d.event_date} stroke="var(--danger)" strokeDasharray="3 3" label={{ value: d.event_label, position: "insideTopLeft", fontSize: 10.5, fill: "var(--danger)" }} />
               </ComposedChart>
             </ResponsiveContainer>

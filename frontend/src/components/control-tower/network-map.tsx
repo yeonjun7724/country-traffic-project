@@ -6,6 +6,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
 import type { Schemas } from "@/lib/api";
+import { cssColor } from "@/lib/colors";
 import { pct, won } from "@/lib/format";
 
 type Store = Schemas["StorePoint"];
@@ -16,21 +17,22 @@ const STYLE = {
   dark: "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json",
 };
 /** 배경지도 로딩 실패 시 — 점·센터는 계속 보이도록 빈 배경 스타일 */
-const BLANK = (dark: boolean): StyleSpecification => ({
+const BLANK = (): StyleSpecification => ({
   version: 8,
   sources: {},
-  layers: [{ id: "bg", type: "background", paint: { "background-color": dark ? "#151821" : "#eef2f7" } }],
+  layers: [{ id: "bg", type: "background", paint: { "background-color": cssColor("--map-bg") } }],
 });
 
 // 모듈 워커를 정적 경로에서 로드 (scripts/copy-vendor.mjs 가 빌드 시 복사)
 if (typeof window !== "undefined") maplibregl.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
-const LATE_COLORS: [number, string][] = [
-  [0, "#16a34a"],
-  [0.05, "#84cc16"],
-  [0.1, "#f59e0b"],
-  [0.2, "#ef4444"],
-  [0.3, "#b91c1c"],
+/** 지연율 → 색 (기업 실적 순차 척도 토큰 --perf-1…5) */
+const LATE_STOPS: [number, string][] = [
+  [0, "--perf-1"],
+  [0.05, "--perf-2"],
+  [0.1, "--perf-3"],
+  [0.2, "--perf-4"],
+  [0.3, "--perf-5"],
 ];
 
 function storesGeo(stores: Store[]) {
@@ -100,12 +102,12 @@ export function NetworkMap({
         // 배경 타일/스타일 오류 → 빈 배경으로 전환 (데이터 레이어는 유지)
         if (!m.isStyleLoaded() && !(e as { sourceId?: string }).sourceId) {
           setBasemapFailed(true);
-          m.setStyle(BLANK(dark));
+          m.setStyle(BLANK());
         }
       });
       map.current = m;
     } else {
-      map.current.setStyle(basemapFailed ? BLANK(dark) : STYLE[dark ? "dark" : "light"]);
+      map.current.setStyle(basemapFailed ? BLANK() : STYLE[dark ? "dark" : "light"]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dark]);
@@ -132,9 +134,9 @@ export function NetworkMap({
         source: "idle",
         paint: {
           "circle-radius": 4,
-          "circle-color": dark ? "#475569" : "#cbd5e1",
+          "circle-color": cssColor("--perf-none"),
           "circle-stroke-width": 1,
-          "circle-stroke-color": dark ? "#1e293b" : "#ffffff",
+          "circle-stroke-color": cssColor("--map-halo"),
         },
       });
       m.addLayer({
@@ -144,9 +146,9 @@ export function NetworkMap({
         filter: ["in", ["get", "id"], ["literal", []]],
         paint: {
           "circle-radius": ["+", ["min", 22, ["+", 6, ["*", 1.5, ["sqrt", ["get", "shipments"]]]]], 6],
-          "circle-color": "rgba(37,99,235,0.18)",
+          "circle-color": cssColor("--primary", 0.18),
           "circle-stroke-width": 2,
-          "circle-stroke-color": "#2563eb",
+          "circle-stroke-color": cssColor("--primary"),
         },
       });
       m.addLayer({
@@ -158,12 +160,12 @@ export function NetworkMap({
           "circle-color": [
             "case",
             ["<", ["get", "late"], 0],
-            "#94a3b8",
-            ["interpolate", ["linear"], ["get", "late"], ...LATE_COLORS.flat()],
+            cssColor("--perf-none"),
+            ["interpolate", ["linear"], ["get", "late"], ...LATE_STOPS.flatMap(([v, t]) => [v, cssColor(t)])],
           ],
           "circle-opacity": ["case", ["boolean", ["feature-state", "hover"], false], 1, 0.85],
           "circle-stroke-width": ["case", ["boolean", ["feature-state", "hover"], false], 2, 1],
-          "circle-stroke-color": dark ? "#0f172a" : "#ffffff",
+          "circle-stroke-color": cssColor("--map-halo"),
         },
       });
 
@@ -220,8 +222,8 @@ export function NetworkMap({
       .map((w) => {
         const node = document.createElement("div");
         node.className =
-          "flex items-center gap-1.5 rounded-full border border-white/70 bg-slate-900 py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-white shadow-md dark:border-slate-700";
-        node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:#2563eb;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.name ?? w.warehouse_id)}`;
+          "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-background shadow-md";
+        node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:var(--primary);align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.name ?? w.warehouse_id)}`;
         node.setAttribute("role", "img");
         node.setAttribute("aria-label", `센터 ${w.name ?? w.warehouse_id}`);
         return new maplibregl.Marker({ element: node, anchor: "left", offset: [-9, 0] }).setLngLat([w.lon!, w.lat!]).addTo(m);
@@ -262,13 +264,13 @@ function Legend() {
         <span className="tabular text-muted-foreground">0%</span>
         <span
           className="h-1.5 w-28 rounded-full"
-          style={{ background: `linear-gradient(90deg, ${LATE_COLORS.map(([v, c]) => `${c} ${(v / 0.3) * 100}%`).join(",")})` }}
+          style={{ background: `linear-gradient(90deg, ${LATE_STOPS.map(([v, t]) => `var(${t}) ${(v / 0.3) * 100}%`).join(",")})` }}
         />
         <span className="tabular text-muted-foreground">30%+</span>
       </div>
       <div className="mt-1.5 flex items-center gap-3 text-muted-foreground">
         <span className="flex items-center gap-1">
-          <span className="size-2 rounded-full bg-slate-300 dark:bg-slate-600" /> 기간 내 배송 없음
+          <span className="size-2 rounded-full" style={{ background: "var(--perf-none)" }} /> 기간 내 배송 없음
         </span>
         <span>원 크기 = 배송 건수</span>
       </div>

@@ -24,6 +24,8 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-text: var(--primary-text);
+  --color-scenario-a: var(--scenario-a);
+  --color-scenario-b: var(--scenario-b);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -124,6 +126,44 @@
   --chart-5: oklch(0.606 0.25 292.717);        /* violet-500 */
   --chart-grid: oklch(0.929 0.013 255.508);
 
+  /* ── 데이터 색 (차트·지도) — 화면에서 색 값을 직접 쓰지 않고 여기서만 정의 ── */
+  /* 기업 실적 순차 척도 (배송지 지연율 등): 좋음 → 나쁨. none = 판정 불가·실적 없음 */
+  --perf-1: oklch(0.627 0.194 149.214);        /* green-600 */
+  --perf-2: oklch(0.768 0.233 130.85);         /* lime-500 */
+  --perf-3: oklch(0.769 0.188 70.08);          /* amber-500 */
+  --perf-4: oklch(0.637 0.237 25.331);         /* red-500 */
+  --perf-5: oklch(0.505 0.213 27.518);         /* red-700 */
+  --perf-none: oklch(0.869 0.022 252.894);     /* slate-300 */
+  /* 외부 위험 지표 순차 척도 — 보라 계열만 (기업 실적의 빨강–초록과 섞이지 않게). 1 = 낮음 → 4 = 매우 높음 */
+  --ext-1: oklch(0.894 0.057 293.283);         /* violet-200 */
+  --ext-2: oklch(0.702 0.183 293.541);         /* violet-400 */
+  --ext-3: oklch(0.541 0.281 293.009);         /* violet-600 */
+  --ext-4: oklch(0.38 0.189 293.745);          /* violet-900 */
+  /* LISA 군집 (외부 지표) — 보라·남색 계열 범주 */
+  --lisa-hh: var(--ext-4);
+  --lisa-hl: var(--ext-3);
+  --lisa-lh: oklch(0.673 0.182 276.935);       /* indigo-400 */
+  --lisa-ll: oklch(0.87 0.065 274.039);        /* indigo-200 */
+  --lisa-ns: var(--perf-none);
+  /* 지도 */
+  --map-bg: oklch(0.955 0.009 250);            /* 배경지도 실패 시 */
+  --map-halo: oklch(1 0 0);                    /* 점 테두리 */
+  --map-store: oklch(0.609 0.126 221.723);     /* 기업 배송지(외부 지표 지도 위) — cyan-600 */
+  /* 경로 범주 (배송 계획) */
+  --route-1: oklch(0.546 0.245 262.881);
+  --route-2: oklch(0.577 0.245 27.325);
+  --route-3: oklch(0.627 0.194 149.214);
+  --route-4: oklch(0.666 0.179 58.318);
+  --route-5: oklch(0.6 0.118 184.704);
+  --route-6: oklch(0.592 0.249 0.584);
+  --route-7: oklch(0.446 0.043 257.281);
+  --route-8: oklch(0.648 0.2 131.684);
+  --route-9: oklch(0.646 0.222 41.116);
+  --route-10: oklch(0.488 0.243 264.376);
+  /* 시나리오 A·B (보라는 외부 지표 전용이라 B 는 청록) */
+  --scenario-a: oklch(0.546 0.245 262.881);
+  --scenario-b: oklch(0.511 0.096 186.391);    /* teal-700 — 글자로도 쓰므로 흰 배경 AA */
+
   --sidebar: oklch(0.984 0.003 247.858);
   --sidebar-foreground: oklch(0.372 0.044 257.287);
   --sidebar-primary: oklch(0.546 0.245 262.881);
@@ -177,6 +217,38 @@
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.702 0.183 293.541);
   --chart-grid: oklch(1 0 0 / 8%);
+
+  --perf-1: oklch(0.723 0.219 149.579);
+  --perf-2: oklch(0.841 0.238 128.85);
+  --perf-3: oklch(0.828 0.189 84.429);
+  --perf-4: oklch(0.704 0.191 22.216);
+  --perf-5: oklch(0.577 0.245 27.325);
+  --perf-none: oklch(0.446 0.043 257.281);     /* slate-600 */
+  /* 어두운 배경에서는 낮음 = 어둡게, 높음 = 밝게 */
+  --ext-1: oklch(0.432 0.232 292.759);         /* violet-800 */
+  --ext-2: oklch(0.541 0.281 293.009);
+  --ext-3: oklch(0.702 0.183 293.541);
+  --ext-4: oklch(0.894 0.057 293.283);
+  --lisa-hh: var(--ext-4);
+  --lisa-hl: var(--ext-3);
+  --lisa-lh: oklch(0.585 0.233 277.117);       /* indigo-500 */
+  --lisa-ll: oklch(0.398 0.195 277.366);       /* indigo-800 */
+  --lisa-ns: var(--perf-none);
+  --map-bg: oklch(0.2 0.012 264);
+  --map-halo: oklch(0.208 0.042 265.755);
+  --map-store: oklch(0.789 0.154 211.53);      /* cyan-400 */
+  --route-1: oklch(0.707 0.165 254.624);
+  --route-2: oklch(0.704 0.191 22.216);
+  --route-3: oklch(0.792 0.209 151.711);
+  --route-4: oklch(0.828 0.189 84.429);
+  --route-5: oklch(0.777 0.152 181.912);
+  --route-6: oklch(0.718 0.202 349.761);
+  --route-7: oklch(0.704 0.04 256.788);
+  --route-8: oklch(0.841 0.238 128.85);
+  --route-9: oklch(0.75 0.183 55.934);
+  --route-10: oklch(0.809 0.105 251.813);
+  --scenario-a: oklch(0.707 0.165 254.624);
+  --scenario-b: oklch(0.777 0.152 181.912);    /* teal-400 */
 
   --sidebar: oklch(0.175 0.014 264);
   --sidebar-foreground: oklch(0.82 0.025 256);

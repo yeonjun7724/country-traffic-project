@@ -186,8 +186,8 @@ function CostTab() {
         결과는 <b>단순 가정 기반 추정</b>입니다 (선형 비례·운행 단위 용량 가정, 최적화 아님). Baseline 은 선택 기간의 업로드 실적이며, 절감률을 임의로 제시하지 않습니다.
       </Callout>
       <div className="grid gap-4 xl:grid-cols-2">
-        <Editor tag="A" value={a} onChange={setA} tone="bg-blue-600" />
-        <Editor tag="B" value={b} onChange={setB} tone="bg-violet-600" />
+        <Editor tag="A" value={a} onChange={setA} tone="bg-scenario-a" />
+        <Editor tag="B" value={b} onChange={setB} tone="bg-scenario-b" />
       </div>
       {cmp.isError && <ErrorState error={cmp.error} />}
       {!d ? (
@@ -198,8 +198,8 @@ function CostTab() {
         <div className={cn("space-y-4", cmp.isFetching && "opacity-70 transition-opacity")}>
           <div className="grid gap-3 md:grid-cols-3">
             <StatTile label="Baseline 총 운송비 (실적)" value={won(d.a.baseline.total)} unit="원" sub={<KindBadge kind="observed" />} />
-            <ScenarioTile r={d.a} tag="A" tone="text-blue-600 dark:text-blue-400" />
-            <ScenarioTile r={d.b} tag="B" tone="text-violet-600 dark:text-violet-400" />
+            <ScenarioTile r={d.a} tag="A" tone="text-scenario-a" />
+            <ScenarioTile r={d.b} tag="B" tone="text-scenario-b" />
           </div>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <Section title="Baseline 대비 비교" bodyClassName="p-0">
@@ -208,8 +208,8 @@ function CostTab() {
                   <tr className="border-b border-border">
                     <th className="px-4 py-2 text-left font-medium">지표</th>
                     <th className="px-3 py-2 text-right font-medium">Baseline</th>
-                    <th className="px-3 py-2 text-right font-medium text-blue-600 dark:text-blue-400">A</th>
-                    <th className="px-4 py-2 text-right font-medium text-violet-600 dark:text-violet-400">B</th>
+                    <th className="px-3 py-2 text-right font-medium text-scenario-a">A</th>
+                    <th className="px-4 py-2 text-right font-medium text-scenario-b">B</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -232,8 +232,8 @@ function CostTab() {
             </Section>
             <Section title="원인 기여도" description="단일 요인 효과 + 상호작용 잔차 = 총 변화">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Waterfall r={d.a} title={`A · ${d.a.params.name}`} color="#2563eb" />
-                <Waterfall r={d.b} title={`B · ${d.b.params.name}`} color="#7c3aed" />
+                <Waterfall r={d.a} title={`A · ${d.a.params.name}`} color="var(--scenario-a)" />
+                <Waterfall r={d.b} title={`B · ${d.b.params.name}`} color="var(--scenario-b)" />
               </div>
             </Section>
           </div>
@@ -374,7 +374,9 @@ function Tornado({ data }: { data: Sens[] }) {
     return o;
   });
   const keys = ["-20", "-10", "10", "20"];
-  const color: Record<string, string> = { "-20": "#16a34a", "-10": "#86efac", "10": "#fca5a5", "20": "#dc2626" };
+  // 감소(비용 절감 방향) = success, 증가 = danger · 작은 변화는 옅게 (토큰 + 투명도)
+  const color: Record<string, string> = { "-20": "var(--success)", "-10": "var(--success)", "10": "var(--danger)", "20": "var(--danger)" };
+  const alpha: Record<string, number> = { "-20": 1, "-10": 0.45, "10": 0.45, "20": 1 };
   return (
     <div>
       <div style={{ height: 210 }} role="img" aria-label="민감도 토네이도 차트">
@@ -401,7 +403,7 @@ function Tornado({ data }: { data: Sens[] }) {
               }
             />
             {keys.map((k) => (
-              <Bar key={k} dataKey={k} fill={color[k]} isAnimationActive={false} />
+              <Bar key={k} dataKey={k} fill={color[k]} fillOpacity={alpha[k]} isAnimationActive={false} />
             ))}
           </BarChart>
         </ResponsiveContainer>
@@ -409,7 +411,7 @@ function Tornado({ data }: { data: Sens[] }) {
       <div className="mt-1 flex flex-wrap justify-center gap-3 text-[11px] text-muted-foreground">
         {keys.map((k) => (
           <span key={k} className="flex items-center gap-1">
-            <span className="size-2 rounded-sm" style={{ background: color[k] }} />
+            <span className="size-2 rounded-sm" style={{ background: color[k], opacity: alpha[k] }} />
             {Number(k) > 0 ? "+" : ""}
             {k}%
           </span>

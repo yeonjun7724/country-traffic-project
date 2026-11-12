@@ -27,12 +27,13 @@ const NetworkMap = dynamic(() => import("./network-map").then((m) => m.NetworkMa
 
 type Store = Schemas["StorePoint"];
 
+/** 지연율 → 기업 실적 척도 토큰 (지도 범례와 같은 구간) */
 function lateColor(v: number | null | undefined) {
-  if (!isNum(v)) return "bg-slate-300";
-  if (v < 0.05) return "bg-emerald-500";
-  if (v < 0.1) return "bg-lime-500";
-  if (v < 0.2) return "bg-amber-500";
-  return "bg-red-500";
+  if (!isNum(v)) return "var(--perf-none)";
+  if (v < 0.05) return "var(--perf-1)";
+  if (v < 0.1) return "var(--perf-2)";
+  if (v < 0.2) return "var(--perf-3)";
+  return "var(--perf-4)";
 }
 
 const COLUMNS: ColumnDef<Store, unknown>[] = [
@@ -57,7 +58,7 @@ const COLUMNS: ColumnDef<Store, unknown>[] = [
       const v = c.getValue() as number | null;
       return (
         <span className="inline-flex items-center justify-end gap-1.5">
-          <span className={cn("size-2 rounded-full", lateColor(v))} aria-hidden />
+          <span className="size-2 rounded-full" style={{ background: lateColor(v) }} aria-hidden />
           <span className={cn(isNum(v) && v >= 0.1 && "font-semibold text-danger")}>{isNum(v) ? pct(v) : "—"}</span>
         </span>
       );

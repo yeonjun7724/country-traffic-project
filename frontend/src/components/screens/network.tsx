@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { ArrowRight, Globe2, RotateCcw, Save } from "lucide-react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -20,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { cssColor, mixColor } from "@/lib/colors";
 import { useFilters } from "@/lib/filters";
 import { num, pct } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
@@ -36,29 +38,26 @@ const GeoMap = dynamic(() => import("@/components/common/geo-map").then((m) => m
 });
 
 const NAV = navByKey("network");
-const GRADE_COLOR: Record<string, string> = { "Very High": "#dc2626", High: "#f97316", Moderate: "#eab308", Low: "#22c55e" };
-const LISA_COLOR: Record<string, string> = {
-  "High-High": "#dc2626",
-  "Low-Low": "#2563eb",
-  "High-Low": "#f97316",
-  "Low-High": "#06b6d4",
-  "Not significant": "#94a3b8",
+// 외부 지표 색은 보라 계열 토큰만 (app/globals.css --ext-*·--lisa-*) — 기업 실적의 빨강–초록과 구분
+const GRADE_TOKEN: Record<string, string> = { "Very High": "--ext-4", High: "--ext-3", Moderate: "--ext-2", Low: "--ext-1" };
+const LISA_TOKEN: Record<string, string> = {
+  "High-High": "--lisa-hh",
+  "High-Low": "--lisa-hl",
+  "Low-High": "--lisa-lh",
+  "Low-Low": "--lisa-ll",
+  "Not significant": "--lisa-ns",
 };
+/** SVG·HTML 용 (CSS 변수 그대로) */
+const GRADE_COLOR: Record<string, string> = Object.fromEntries(Object.entries(GRADE_TOKEN).map(([k, t]) => [k, `var(${t})`]));
+const LISA_COLOR: Record<string, string> = Object.fromEntries(Object.entries(LISA_TOKEN).map(([k, t]) => [k, `var(${t})`]));
+const NONE = "var(--perf-none)";
 const GRADE_ORDER = ["Very High", "High", "Moderate", "Low"];
 
+/** 취약성 점수 → 보라 연속 척도 (--ext-1 → --ext-4), 지도용 rgb */
 function scoreColor(v: number, max: number) {
-  const t = Math.max(0, Math.min(1, v / (max || 1)));
-  const stops = [
-    [0, [254, 240, 138]],
-    [0.5, [249, 115, 22]],
-    [1, [153, 27, 27]],
-  ] as const;
-  const i = t <= 0.5 ? 0 : 1;
-  const [a, ca] = stops[i];
-  const [b, cb] = stops[i + 1];
-  const k = (t - a) / (b - a);
-  const c = ca.map((x, j) => Math.round(x + (cb[j] - x) * k));
-  return `rgb(${c.join(",")})`;
+  const t = Math.max(0, Math.min(1, v / (max || 1))) * 3;
+  const seg = Math.min(2, Math.floor(t));
+  return mixColor(`--ext-${seg + 1}`, `--ext-${seg + 2}`, t - seg);
 }
 
 type ColorBy = "score" | "grade" | "lisa";
@@ -77,6 +76,7 @@ export function NetworkScreen() {
   const [layers, setLayers] = useState<Layer[]>(["units", "warehouses"]);
   const [selected, setSelected] = useState<string[]>([]);
   const [radius, setRadius] = useState(20);
+  const { resolvedTheme } = useTheme(); // 지도 점 색(토큰)을 테마에 맞춰 다시 계산
 
   const wq = w ? Object.fromEntries(Object.entries(w).map(([k, v]) => [k, String(v)])) : {};
   const units = useApi<UnitsView>("/api/network/units", { query: { ...wq, routes } });
@@ -97,7 +97,7 @@ export function NetworkScreen() {
         id: u.unitCode,
         lat: u.lat,
         lon: u.lon,
-        color: colorBy === "score" ? scoreColor(u.score, maxScore) : colorBy === "grade" ? (GRADE_COLOR[u.grade] ?? "#94a3b8") : (LISA_COLOR[u.lisa_cluster] ?? "#94a3b8"),
+        color: colorBy === "score" ? scoreColor(u.score, maxScore) : cssColor((colorBy === "grade" ? GRADE_TOKEN[u.grade] : LISA_TOKEN[u.lisa_cluster]) ?? "--perf-none"),
         radius: colorBy === "grade" ? (u.grade === "Very High" ? 6.5 : u.grade === "High" ? 5.5 : 4.5) : u.lisa_cluster === "High-High" ? 6.5 : 4.5,
         html: popupHtml(u.unitName, `${u.routeName} · 외부 지표`, [
           ["취약성", u.score.toFixed(3)],
@@ -106,7 +106,8 @@ export function NetworkScreen() {
           ["순위", `${u.rank_sim}위${u.rank_change ? ` (${u.rank_change > 0 ? "▲" : "▼"}${Math.abs(u.rank_change)})` : ""}`],
         ]),
       })),
-    [shown, colorBy, maxScore],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- theme: 토큰 색을 다시 읽기 위한 의존성
+    [shown, colorBy, maxScore, resolvedTheme],
   );
   const storePoints: MapPoint[] = useMemo(
     () =>
@@ -114,11 +115,12 @@ export function NetworkScreen() {
         id: s.store_id,
         lat: s.lat,
         lon: s.lon,
-        color: "#0891b2",
+        color: cssColor("--map-store"),
         radius: 4.5,
         html: popupHtml(s.name ?? s.store_id, `${s.region ?? ""} · 배송지`, [["배송", `${num(s.shipments)}건`]]),
       })),
-    [ops.data],
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- theme
+    [ops.data, resolvedTheme],
   );
   const mapLayers = [
     ...(layers.includes("stores") ? [{ id: "stores", points: storePoints }] : []),
@@ -276,8 +278,8 @@ export function NetworkScreen() {
                       <span className="text-[12px] text-muted-foreground tabular">영업소 {p.units_in_radius}개</span>
                     </div>
                     <div className="mt-1 flex flex-wrap gap-1.5 text-[11.5px]">
-                      <Pill tone={p.very_high ? "danger" : "neutral"}>Very High {p.very_high}</Pill>
-                      <Pill tone={p.high_high ? "warning" : "neutral"}>High-High {p.high_high}</Pill>
+                      <Pill tone={p.very_high ? "external" : "neutral"}>Very High {p.very_high}</Pill>
+                      <Pill tone={p.high_high ? "external" : "neutral"}>High-High {p.high_high}</Pill>
                       <span className="text-subtle-foreground">
                         최근접 {p.nearest_unit} {num(p.nearest_km, 1)}km
                       </span>
@@ -318,7 +320,7 @@ export function NetworkScreen() {
                         ) : null
                       }
                     />
-                    <Bar dataKey="mean_score" fill="var(--chart-1)" radius={[0, 4, 4, 0]} barSize={14} />
+                    <Bar dataKey="mean_score" fill="var(--external)" radius={[0, 4, 4, 0]} barSize={14} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -372,12 +374,12 @@ function Legend({ colorBy }: { colorBy: ColorBy }) {
       ) : (
         <div className="flex items-center gap-1.5 text-muted-foreground">
           낮음
-          <span className="h-1.5 w-24 rounded-full" style={{ background: "linear-gradient(90deg,#fef08a,#f97316,#991b1b)" }} />
+          <span className="h-1.5 w-24 rounded-full" style={{ background: "linear-gradient(90deg,var(--ext-1),var(--ext-2),var(--ext-3),var(--ext-4))" }} />
           높음
         </div>
       )}
       <div className="mt-1 flex items-center gap-1 text-muted-foreground">
-        <span className="size-2 rounded-full bg-cyan-600" /> 배송지(선택 시)
+        <span className="size-2 rounded-full" style={{ background: "var(--map-store)" }} /> 배송지(선택 시)
       </div>
     </div>
   );
@@ -393,7 +395,7 @@ function LisaDonut({ counts }: { counts: Record<string, number> }) {
           <PieChart>
             <Pie data={data} dataKey="value" nameKey="name" innerRadius={62} outerRadius={92} paddingAngle={1.5} stroke="none" isAnimationActive={false}>
               {data.map((d) => (
-                <Cell key={d.name} fill={LISA_COLOR[d.name] ?? "#94a3b8"} />
+                <Cell key={d.name} fill={LISA_COLOR[d.name] ?? NONE} />
               ))}
             </Pie>
           </PieChart>
@@ -408,7 +410,7 @@ function LisaDonut({ counts }: { counts: Record<string, number> }) {
           .sort((a, b) => b.value - a.value)
           .map((d) => (
             <li key={d.name} className="flex items-center gap-2">
-              <span className="size-2.5 rounded-sm" style={{ background: LISA_COLOR[d.name] ?? "#94a3b8" }} />
+              <span className="size-2.5 rounded-sm" style={{ background: LISA_COLOR[d.name] ?? NONE }} />
               <span className="flex-1">{d.name}</span>
               <span className="tabular font-medium">{d.value}</span>
               <span className="w-12 text-right text-muted-foreground tabular">{pct(d.value / (total || 1), 0)}</span>
@@ -438,7 +440,7 @@ const COLS: ColumnDef<Unit, unknown>[] = [
       const g = c.getValue() as string;
       return (
         <span className="inline-flex items-center gap-1.5">
-          <span className="size-2 rounded-full" style={{ background: GRADE_COLOR[g] ?? "#94a3b8" }} />
+          <span className="size-2 rounded-full" style={{ background: GRADE_COLOR[g] ?? NONE }} />
           {g}
         </span>
       );
@@ -447,7 +449,7 @@ const COLS: ColumnDef<Unit, unknown>[] = [
   {
     accessorKey: "lisa_cluster",
     header: "LISA",
-    cell: (c) => <span className={cn((c.getValue() as string) === "High-High" && "font-medium text-danger")}>{c.getValue() as string}</span>,
+    cell: (c) => <span className={cn((c.getValue() as string) === "High-High" && "font-medium text-external")}>{c.getValue() as string}</span>,
   },
   { accessorKey: "rank_sim", header: "순위", meta: { align: "right" } },
   {

@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Loader2, Route, Send } from "lucide-react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -21,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { apiFetch } from "@/lib/api";
+import { cssColor } from "@/lib/colors";
 import { filterSearchParams, useFilters } from "@/lib/filters";
 import { isNum, num, pct, won } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
@@ -38,7 +40,9 @@ const GeoMap = dynamic(() => import("@/components/common/geo-map").then((m) => m
 const NAV = navByKey("transportation");
 const DIMS = { carrier: "운송사", vehicle_id: "차량", store_id: "배송지", region: "권역", warehouse_id: "센터", customer_group: "거래처군" } as const;
 type Dim = keyof typeof DIMS;
-const ROUTE_COLORS = ["#2563eb", "#dc2626", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4b5563", "#65a30d", "#ea580c"];
+/** 경로 범주 색 토큰 (--route-1…10, app/globals.css) */
+const ROUTE_TOKENS = 10;
+const routeToken = (r: number) => `--route-${((r - 1) % ROUTE_TOKENS) + 1}`;
 
 export function TransportationScreen() {
   const { me } = useWorkspace();
@@ -390,7 +394,8 @@ function RouteMap({ plan }: { plan: Plan }) {
   const byRoute = new Map<number, typeof plan.proposed.stops>();
   plan.proposed.stops.forEach((s) => byRoute.set(s.route, [...(byRoute.get(s.route) ?? []), s]));
   const routes = [...byRoute.keys()].sort((a, b) => a - b);
-  const color = (r: number) => ROUTE_COLORS[(r - 1) % ROUTE_COLORS.length];
+  useTheme(); // 테마가 바뀌면 다시 렌더 → 지도용 rgb 를 새 토큰 값으로
+  const color = (r: number) => cssColor(routeToken(r)); // 지도(maplibre)는 CSS 변수를 못 읽어 rgb 로
   const lines: MapLine[] = routes.map((r) => {
     const st = byRoute.get(r)!.sort((a, b) => a.seq - b.seq);
     return { id: `r${r}`, color: color(r), coords: [[plan.depot.lon, plan.depot.lat], ...st.map((s) => [s.lon, s.lat] as [number, number]), [plan.depot.lon, plan.depot.lat]] };
@@ -415,7 +420,7 @@ function RouteMap({ plan }: { plan: Plan }) {
         <div className="flex flex-wrap gap-x-2.5 gap-y-1">
           {routes.map((r) => (
             <span key={r} className="flex items-center gap-1 text-muted-foreground">
-              <span className="h-0.5 w-3 rounded" style={{ background: color(r) }} /> R{r} {byRoute.get(r)![0].vehicle_id}
+              <span className="h-0.5 w-3 rounded" style={{ background: `var(${routeToken(r)})` }} /> R{r} {byRoute.get(r)![0].vehicle_id}
             </span>
           ))}
         </div>
@@ -476,7 +481,7 @@ function RoutesTable({ plan }: { plan: Plan }) {
             <tr key={String(r.route)} className="border-b border-border last:border-0">
               <td className="py-2 pl-4 pr-3">
                 <span className="inline-flex items-center gap-1.5 font-medium">
-                  <span className="size-2 rounded-full" style={{ background: ROUTE_COLORS[((r.route as number) - 1) % ROUTE_COLORS.length] }} />R{String(r.route)}
+                  <span className="size-2 rounded-full" style={{ background: `var(${routeToken(r.route as number)})` }} />R{String(r.route)}
                 </span>
               </td>
               <td className="px-3 py-2 font-mono text-[12px]">{String(r.vehicle_id)}</td>
