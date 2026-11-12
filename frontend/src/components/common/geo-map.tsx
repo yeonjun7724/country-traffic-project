@@ -5,7 +5,11 @@ import type { ErrorEvent, GeoJSONSource, Map as MLMap, StyleSpecification } from
 import { useTheme } from "next-themes";
 import { useEffect, useRef, useState } from "react";
 
+import { esc, type MapLine, type MapMarker, type MapPoint, type PointLayer } from "@/lib/map-utils";
 import { cn } from "@/lib/utils";
+
+export type { MapLine, MapMarker, MapPoint, PointLayer };
+export { esc, popupHtml } from "@/lib/map-utils";
 
 if (typeof window !== "undefined") maplibregl.setWorkerUrl("/vendor/maplibre-gl-worker.mjs");
 
@@ -19,10 +23,6 @@ const BLANK = (dark: boolean): StyleSpecification => ({
   layers: [{ id: "bg", type: "background", paint: { "background-color": dark ? "#151821" : "#eef2f7" } }],
 });
 
-export type MapPoint = { id: string; lat: number; lon: number; color: string; radius?: number; html?: string };
-export type PointLayer = { id: string; points: MapPoint[]; opacity?: number; stroke?: boolean };
-export type MapLine = { id: string; coords: [number, number][]; color: string; width?: number; html?: string };
-export type MapMarker = { id: string; lat: number; lon: number; label: string; tone?: "primary" | "dark" };
 
 /**
  * 범용 지도: 원형 점 레이어(사전 계산 색) · 선(경로) · HTML 마커(한글 라벨) · 선택 강조 · 클릭 선택.
@@ -244,18 +244,4 @@ export function GeoMap({
       )}
     </div>
   );
-}
-
-export function esc(s: string) {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
-}
-
-/** 팝업 HTML (토큰 색 사용) */
-export function popupHtml(title: string, sub: string, rows: [string, string][]) {
-  return `<div style="padding:10px 12px;font-size:12.5px;line-height:1.5">
-    <div style="font-weight:600;font-size:13px">${esc(title)}</div>
-    <div style="color:var(--muted-foreground)">${esc(sub)}</div>
-    <div style="margin-top:6px;display:grid;grid-template-columns:auto auto;gap:2px 14px">
-      ${rows.map(([k, v]) => `<span style="color:var(--muted-foreground)">${esc(k)}</span><b style="text-align:right">${esc(v)}</b>`).join("")}
-    </div></div>`;
 }

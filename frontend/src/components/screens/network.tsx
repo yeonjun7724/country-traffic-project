@@ -8,7 +8,7 @@ import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis
 
 import { Pill } from "@/components/common/badges";
 import { DataTable } from "@/components/common/data-table";
-import { popupHtml, type MapPoint } from "@/components/common/geo-map";
+import { popupHtml, type MapPoint } from "@/lib/map-utils";
 import { Callout, DownloadButton, Field } from "@/components/common/kit";
 import { MultiSelect } from "@/components/common/multi-select";
 import { PageHeader } from "@/components/common/page-header";

@@ -27,7 +27,7 @@ import { useApi, useApiMutation } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 
-import { SimpleTable } from "./transportation";
+import { SimpleTable } from "@/components/common/simple-table";
 
 const NAV = navByKey("scenario-lab");
 const PRESETS: Record<string, Partial<ScenarioInput>> = {

@@ -9,7 +9,8 @@ import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, 
 
 import { DataTable } from "@/components/common/data-table";
 import { FilterBar } from "@/components/common/filter-bar";
-import { popupHtml, type MapLine, type MapPoint } from "@/components/common/geo-map";
+import { popupHtml, type MapLine, type MapPoint } from "@/lib/map-utils";
+import { SimpleTable } from "@/components/common/simple-table";
 import { Callout, DownloadButton, Field, LineTabs, NumberField, StatTile, useUrlTab } from "@/components/common/kit";
 import { PageHeader } from "@/components/common/page-header";
 import { Section } from "@/components/common/section";
@@ -498,34 +499,3 @@ function RoutesTable({ plan }: { plan: Plan }) {
     </div>
   );
 }
-
-export function SimpleTable({ rows }: { rows: Record<string, unknown>[] }) {
-  const cols = Object.keys(rows[0] ?? {});
-  return (
-    <div className="max-h-72 overflow-auto rounded-lg border border-border">
-      <table className="w-full text-[12.5px]">
-        <thead className="sticky top-0 bg-muted text-[11.5px] text-muted-foreground">
-          <tr>
-            {cols.map((c) => (
-              <th key={c} className="whitespace-nowrap px-3 py-1.5 text-left font-medium">
-                {c}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i} className="border-t border-border">
-              {cols.map((c) => (
-                <td key={c} className="whitespace-nowrap px-3 py-1.5">
-                  {typeof r[c] === "number" ? num(r[c] as number, Number.isInteger(r[c]) ? 0 : 1) : String(r[c] ?? "—")}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
