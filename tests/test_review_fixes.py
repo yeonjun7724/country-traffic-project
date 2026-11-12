@@ -89,6 +89,26 @@ def test_monthly_budget_prorated():
     assert not alerts.evaluate(m, rules, {}, period_days=None)
 
 
+
+def test_every_alert_has_a_cause_target():
+    """알림 → 원인 화면 딥링크 (F1): 모든 규칙이 목적지를 가지며 화면 키는 실제 화면이다."""
+    m = {"otif": Metric("otif", "OTIF", 0.8, "%", n=10), "late_rate": Metric("late_rate", "지연율", 0.2, "%"),
+         "cost": Metric("cost", "총 운송비", 400.0, "원")}
+    rules = {**alerts.DEFAULT_RULES, "monthly_cost_budget": 3000.0}
+    inv = {"status": "ok", "summary": {"stockout": 2}}
+    versions = {"orders": {"uploaded_at": "2020-01-01"}}
+    fired = alerts.evaluate(m, rules, versions, inv, now=datetime(2026, 11, 1), period_days=3)
+    by = {a["key"]: a for a in fired}
+    assert set(by) == {"otif", "late_rate", "cost_budget", "stockout", "data_stale"}
+    screens = {"control-tower", "network", "transportation", "inventory", "fuel-risk", "scenario-lab", "copilot",
+               "data-hub", "reports", "settings"}
+    assert all(a["target"]["screen"] in screens for a in fired)
+    assert by["otif"]["target"] == {"screen": "control-tower", "params": {"ledger": "late"}}
+    assert by["cost_budget"]["target"] == {"screen": "transportation", "params": {"tab": "cts"}}
+    assert by["stockout"]["target"] == {"screen": "inventory", "params": {"risk": "결품"}}
+    assert by["data_stale"]["target"]["params"] == {"tab": "datasets", "entity": "orders"}
+
+
 # ── 검증·보안 ─────────────────────────────────────────────────────────
 def test_na_tokens_become_missing():
     r = validate("stores", read_table(b"store_id,name,lat,lon,region\nS1,a,37.5,127,N/A\nS2,b,37.5,127,NULL\nS3,c,37.5,127,-\n", "s.csv"))

@@ -1,6 +1,7 @@
 "use client";
 
-import { AlertOctagon, AlertTriangle, CheckCircle2, FileSpreadsheet, FileText, Info, Plus } from "lucide-react";
+import { AlertOctagon, AlertTriangle, ArrowRight, CheckCircle2, FileSpreadsheet, FileText, Info, Plus } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { Pill } from "@/components/common/badges";
@@ -16,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { filterSearchParams, useFilters } from "@/lib/filters";
 import { dateTimeLabel, num } from "@/lib/format";
+import { screenHref, TARGET_LABEL } from "@/lib/links";
 import { navByKey } from "@/lib/nav";
 import type { Action, Alert, Rules } from "@/lib/types";
 import { useApi, useApiMutation } from "@/lib/use-api";
@@ -155,6 +157,7 @@ function AlertsTab() {
             <ul className="divide-y divide-border">
               {q.data.alerts.map((a, i) => {
                 const s = SEV[a.severity];
+                const href = a.target ? screenHref(a.target.screen, a.target.params ?? {}, filters) : null;
                 return (
                   <li key={i} className="flex items-start gap-3 px-4 py-3">
                     <s.icon className={cn("mt-0.5 size-4 shrink-0", s.cls)} aria-label={s.label} />
@@ -162,6 +165,13 @@ function AlertsTab() {
                       <p className="text-[13px] font-medium">{a.rule}</p>
                       <p className="text-[12.5px] text-muted-foreground tabular">{a.message}</p>
                     </div>
+                    {href && (
+                      <Button size="xs" variant="ghost" asChild>
+                        <Link href={href}>
+                          {TARGET_LABEL[a.target!.screen] ?? "원인 보기"} <ArrowRight className="size-3" />
+                        </Link>
+                      </Button>
+                    )}
                     {can("scenario.save") && (
                       <Button size="xs" variant="outline" onClick={() => createAction.mutate(a)} disabled={createAction.isPending}>
                         <Plus className="size-3" /> 조치 생성

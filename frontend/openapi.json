@@ -2300,8 +2300,8 @@
       "required": false,
       "schema": {
        "type": "number",
-       "maximum": 100.0,
-       "minimum": 1.0,
+       "maximum": 100,
+       "minimum": 1,
        "default": 20,
        "title": "Radius Km"
       }
@@ -3252,7 +3252,7 @@
       "schema": {
        "type": "number",
        "minimum": 0.5,
-       "exclusiveMaximum": 1.0,
+       "exclusiveMaximum": 1,
        "default": 0.95,
        "title": "Service Level"
       }
@@ -3275,8 +3275,8 @@
       "required": false,
       "schema": {
        "type": "number",
-       "maximum": 60.0,
-       "minimum": 1.0,
+       "maximum": 60,
+       "minimum": 1,
        "default": 7,
        "title": "Review Days"
       }
@@ -3332,7 +3332,7 @@
       "schema": {
        "type": "number",
        "minimum": 0.5,
-       "exclusiveMaximum": 1.0,
+       "exclusiveMaximum": 1,
        "default": 0.95,
        "title": "Service Level"
       }
@@ -3355,8 +3355,8 @@
       "required": false,
       "schema": {
        "type": "number",
-       "maximum": 60.0,
-       "minimum": 1.0,
+       "maximum": 60,
+       "minimum": 1,
        "default": 7,
        "title": "Review Days"
       }
@@ -3715,8 +3715,8 @@
        "anyOf": [
         {
          "type": "number",
-         "maximum": 1.0,
-         "minimum": 0.0
+         "maximum": 1,
+         "minimum": 0
         },
         {
          "type": "null"
@@ -6203,6 +6203,29 @@
      "source": {
       "type": "string",
       "title": "Source"
+     },
+     "key": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Key",
+      "description": "규칙 식별자 (otif·late_rate·cost_budget·stockout·data_stale)"
+     },
+     "target": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AlertTarget"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "원인 보기 목적지"
      }
     },
     "type": "object",
@@ -6213,6 +6236,28 @@
      "source"
     ],
     "title": "AlertOut"
+   },
+   "AlertTarget": {
+    "properties": {
+     "screen": {
+      "type": "string",
+      "title": "Screen",
+      "description": "화면 키 (nav key: control-tower·inventory·transportation·data-hub …)"
+     },
+     "params": {
+      "additionalProperties": {
+       "type": "string"
+      },
+      "type": "object",
+      "title": "Params",
+      "description": "화면 고유 파라미터 (탭·원장 종류·위험 구분 등)"
+     }
+    },
+    "type": "object",
+    "required": [
+     "screen"
+    ],
+    "title": "AlertTarget"
    },
    "AuthStatus": {
     "properties": {
@@ -6245,7 +6290,7 @@
      },
      "file": {
       "type": "string",
-      "contentMediaType": "application/octet-stream",
+      "format": "binary",
       "title": "File"
      },
      "sheet": {
@@ -7120,6 +7165,7 @@
     "properties": {
      "rows": {
       "items": {
+       "additionalProperties": true,
        "type": "object"
       },
       "type": "array",
@@ -8310,6 +8356,7 @@
      },
      "preview": {
       "items": {
+       "additionalProperties": true,
        "type": "object"
       },
       "type": "array",
@@ -8360,13 +8407,6 @@
      "type": {
       "type": "string",
       "title": "Error Type"
-     },
-     "input": {
-      "title": "Input"
-     },
-     "ctx": {
-      "type": "object",
-      "title": "Context"
      }
     },
     "type": "object",
@@ -8426,6 +8466,7 @@
      },
      "errors": {
       "items": {
+       "additionalProperties": true,
        "type": "object"
       },
       "type": "array",
@@ -8433,6 +8474,7 @@
      },
      "clean_preview": {
       "items": {
+       "additionalProperties": true,
        "type": "object"
       },
       "type": "array",

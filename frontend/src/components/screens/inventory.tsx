@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from "@tanstack/react-table";
 import { Boxes, Trophy } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
@@ -75,7 +76,13 @@ export function InventoryScreen() {
   const [sl, setSl] = useState("0.95");
   const [win, setWin] = useState("28");
   const [rev, setRev] = useState(7);
-  const [risks, setRisks] = useState<string[]>(["결품", "높음"]);
+  // ?risk=결품 (알림 "결품 SKU 보기" 링크) 로 들어오면 그 위험 구분만 보여준다
+  const sp = useSearchParams();
+  const urlRisk = sp.getAll("risk").filter((r) => (RISKS as readonly string[]).includes(r)).join(",");
+  const [risks, setRisks] = useState<string[]>(urlRisk ? urlRisk.split(",") : ["결품", "높음"]);
+  useEffect(() => {
+    if (urlRisk) setRisks(urlRisk.split(","));
+  }, [urlRisk]);
   const q = useApi<InventoryView>("/api/inventory/replenishment", { query: { service_level: sl, window_days: win, review_days: rev } });
   const d = q.data;
   const params = new URLSearchParams({ service_level: sl, window_days: win, review_days: String(rev) });

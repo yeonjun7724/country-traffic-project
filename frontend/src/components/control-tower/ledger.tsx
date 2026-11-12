@@ -6,6 +6,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { DataTable } from "@/components/common/data-table";
+import { useUrlTab } from "@/components/common/kit";
 import { Section } from "@/components/common/section";
 import { ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
@@ -84,7 +85,10 @@ const TABS: { v: LedgerKind; label: string }[] = [
 ];
 
 export function Ledger({ filters, selected, onClearSelection }: { filters: Filters; selected: string[]; onClearSelection: () => void }) {
-  const [kind, setKind] = useState<LedgerKind>("late");
+  // 원장 종류는 URL(?ledger=) 과 동기화 — 알림의 "지연 원장 보기" 링크가 탭을 지정해 들어온다
+  const [kindRaw, setKindRaw] = useUrlTab(TABS.map((t) => t.v), "ledger");
+  const kind = kindRaw as LedgerKind;
+  const setKind = (v: LedgerKind) => setKindRaw(v);
   const { can } = useWorkspace();
   const active = useLedger(filters, kind, selected);
   // 탭 배지용 건수 (행은 1건만 받아 가볍게)
@@ -110,6 +114,8 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
 
   return (
     <Section
+      id="ledger"
+      className="scroll-mt-28"
       title="예외 · 배송 원장"
       description="KPI 에서 운송장 단위까지 추적합니다. 지도·표에서 배송지를 선택하면 원장이 함께 좁혀집니다."
       actions={

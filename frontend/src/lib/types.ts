@@ -282,7 +282,17 @@ export type ChatReply = {
 };
 
 // ── Reports / Alerts / Settings ──
-export type Alert = { severity: "high" | "medium" | "low"; rule: string; message: string; source: string };
+export type AlertTarget = { screen: string; params: Record<string, string> };
+export type Alert = {
+  severity: "high" | "medium" | "low";
+  rule: string;
+  message: string;
+  source: string;
+  /** 규칙 식별자 (otif·late_rate·cost_budget·stockout·data_stale) */
+  key?: string | null;
+  /** 원인 보기 목적지 */
+  target?: AlertTarget | null;
+};
 export type Rules = {
   otif_min: number | null;
   late_rate_max: number | null;

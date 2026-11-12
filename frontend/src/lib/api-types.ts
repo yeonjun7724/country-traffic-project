@@ -1254,6 +1254,28 @@ export interface components {
             message: string;
             /** Source */
             source: string;
+            /**
+             * Key
+             * @description 규칙 식별자 (otif·late_rate·cost_budget·stockout·data_stale)
+             */
+            key?: string | null;
+            /** @description 원인 보기 목적지 */
+            target?: components["schemas"]["AlertTarget"] | null;
+        };
+        /** AlertTarget */
+        AlertTarget: {
+            /**
+             * Screen
+             * @description 화면 키 (nav key: control-tower·inventory·transportation·data-hub …)
+             */
+            screen: string;
+            /**
+             * Params
+             * @description 화면 고유 파라미터 (탭·원장 종류·위험 구분 등)
+             */
+            params?: {
+                [key: string]: string;
+            };
         };
         /** AuthStatus */
         AuthStatus: {
@@ -1271,7 +1293,10 @@ export interface components {
         Body_upload_api_data_uploads_post: {
             /** Entity */
             entity: string;
-            /** File */
+            /**
+             * File
+             * Format: binary
+             */
             file: string;
             /** Sheet */
             sheet?: string | null;
@@ -1524,7 +1549,9 @@ export interface components {
         /** LedgerOut */
         LedgerOut: {
             /** Rows */
-            rows: Record<string, never>[];
+            rows: {
+                [key: string]: unknown;
+            }[];
             /** Total */
             total: number;
             /** Rule */
@@ -1943,7 +1970,9 @@ export interface components {
             /** Columns */
             columns: string[];
             /** Preview */
-            preview: Record<string, never>[];
+            preview: {
+                [key: string]: unknown;
+            }[];
             /** Auto Mapping */
             auto_mapping: {
                 [key: string]: string;
@@ -1957,10 +1986,6 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
         /** ValidationOut */
         ValidationOut: {
@@ -1983,9 +2008,13 @@ export interface components {
             /** Error Summary */
             error_summary: components["schemas"]["ErrorSummary"][];
             /** Errors */
-            errors: Record<string, never>[];
+            errors: {
+                [key: string]: unknown;
+            }[];
             /** Clean Preview */
-            clean_preview: Record<string, never>[];
+            clean_preview: {
+                [key: string]: unknown;
+            }[];
             /** Current Version */
             current_version: number | null;
             /** Validated Mapping */

@@ -1,10 +1,12 @@
 "use client";
 
-import { AlertOctagon, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertOctagon, AlertTriangle, ArrowRight, CheckCircle2, Info } from "lucide-react";
 import Link from "next/link";
 
 import { Section } from "@/components/common/section";
 import type { Schemas } from "@/lib/api";
+import { useFilters } from "@/lib/filters";
+import { screenHref, TARGET_LABEL } from "@/lib/links";
 import { cn } from "@/lib/utils";
 
 type Alert = Schemas["AlertOut"];
@@ -15,9 +17,8 @@ const SEV = {
   low: { icon: Info, cls: "text-info", label: "참고" },
 } as const;
 
-const LINK: Record<string, string | undefined> = { "데이터 허브": "/data-hub/" };
-
 export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: boolean }) {
+  const { filters } = useFilters();
   const sorted = [...alerts].sort((a, b) => order(a.severity) - order(b.severity));
   return (
     <Section
@@ -44,7 +45,7 @@ export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: bo
           {sorted.map((a, i) => {
             const s = SEV[a.severity];
             const Icon = s.icon;
-            const href = LINK[a.source];
+            const href = a.target ? screenHref(a.target.screen, a.target.params ?? {}, filters) : null;
             return (
               <li key={i} className="flex items-start gap-3 px-4 py-2.5">
                 <Icon className={cn("mt-0.5 size-4 shrink-0", s.cls)} aria-label={s.label} />
@@ -54,8 +55,9 @@ export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: bo
                 </div>
                 <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{a.source}</span>
                 {href && (
-                  <Link href={href} className="shrink-0 text-[12px] font-medium text-primary hover:underline">
-                    열기
+                  <Link href={href} className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-medium text-primary hover:underline">
+                    {TARGET_LABEL[a.target!.screen] ?? "원인 보기"}
+                    <ArrowRight className="size-3" />
                   </Link>
                 )}
               </li>

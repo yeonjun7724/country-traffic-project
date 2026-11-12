@@ -112,6 +112,9 @@ def test_reports_alerts_actions_settings(api):
     assert h.status_code == 200 and "경영진 요약" in h.text
     al = api.get("/api/alerts", headers=DEMO).json()
     assert al["alerts"] and "otif_min" in al["rules"]
+    assert all(a["key"] and a["target"]["screen"] for a in al["alerts"])  # 원인 보기 딥링크
+    ov = api.get("/api/control-tower/overview", headers=DEMO).json()
+    assert all(a["target"] for a in ov["alerts"])
     a = api.post("/api/actions", headers=DEMO, json={"title": "테스트 조치"}).json()["id"]
     assert api.patch(f"/api/actions/{a}", headers=DEMO, json={"status": "done", "owner": "운영팀"}).status_code == 200
     assert api.patch("/api/actions/99999", headers=DEMO, json={"status": "done"}).status_code == 404

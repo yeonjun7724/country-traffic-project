@@ -31,11 +31,18 @@ class MetricOut(BaseModel):
     ok: bool
 
 
+class AlertTarget(BaseModel):
+    screen: str = Field(description="화면 키 (nav key: control-tower·inventory·transportation·data-hub …)")
+    params: dict[str, str] = Field(default_factory=dict, description="화면 고유 파라미터 (탭·원장 종류·위험 구분 등)")
+
+
 class AlertOut(BaseModel):
     severity: Literal["high", "medium", "low"]
     rule: str
     message: str
     source: str
+    key: str | None = Field(default=None, description="규칙 식별자 (otif·late_rate·cost_budget·stockout·data_stale)")
+    target: AlertTarget | None = Field(default=None, description="원인 보기 목적지")
 
 
 class OverviewOut(BaseModel):
