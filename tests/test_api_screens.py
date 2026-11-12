@@ -159,3 +159,13 @@ def test_actions_link_to_alert_and_scenario(api):
     assert api.post("/api/actions", headers=MINE, json={"title": "x", "ref_type": "scenario", "ref_id": str(sid)}).status_code == 404
     assert api.post("/api/actions", headers=DEMO, json={"title": "x", "ref_type": "email", "ref_id": "1"}).status_code == 422
     assert api.post("/api/actions", headers=DEMO, json={"title": "x", "ref_type": "alert"}).status_code == 422
+
+
+def test_saved_views_api(api):
+    r = api.post("/api/views", headers=MINE, json={"name": "API 보기", "screen": "inventory", "query": "risk=%EA%B2%B0%ED%92%88"})
+    assert r.status_code == 200
+    vid = r.json()["id"]
+    assert any(v["id"] == vid for v in api.get("/api/views", headers=MINE).json())
+    assert api.post("/api/views", headers=MINE, json={"name": "x", "screen": "없는화면", "query": ""}).status_code == 422
+    assert api.delete(f"/api/views/{vid}", headers=MINE).status_code == 200
+    assert api.delete(f"/api/views/{vid}", headers=MINE).status_code == 404

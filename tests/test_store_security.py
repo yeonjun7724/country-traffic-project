@@ -150,3 +150,28 @@ def test_action_refs_are_validated_and_workspace_scoped(store):
     linked = store.list_actions(demo, "scenario", str(sid))
     assert list(linked["id"]) == [a1]
     assert len(store.list_actions(mine, "scenario", str(sid))) == 0
+
+
+# ── 저장된 보기 ─────────────────────────────────────────────────────────────
+def test_saved_views_crud_permissions_and_cache_key(store):
+    ctx = store.context_for("local", "default")
+    rev = store.settings_revision(ctx)
+    v1 = store.save_view(ctx, "호남 지연 점검", "control-tower", "?regions=%ED%98%B8%EB%82%A8&ledger=late")
+    assert v1["query"] == "regions=%ED%98%B8%EB%82%A8&ledger=late"  # 앞의 ? 제거
+    store.save_view(ctx, "경유가 비교", "scenario-lab", "a=10,0,0,0,1")
+    assert [v["name"] for v in store.list_views(ctx)] == ["경유가 비교", "호남 지연 점검"]  # 최신 먼저
+    store.save_view(ctx, "호남 지연 점검", "control-tower", "regions=x")  # 같은 이름은 덮어쓰기
+    views = store.list_views(ctx)
+    assert len(views) == 2 and views[0]["query"] == "regions=x"
+    assert store.settings_revision(ctx) == rev  # 보기 저장은 계산 캐시 키를 바꾸지 않는다
+    assert store.delete_view(ctx, views[0]["id"]) and not store.delete_view(ctx, "없음")
+    assert len(store.list_views(ctx)) == 1
+    assert store.list_views(store.context_for("local", "demo")) == []  # 워크스페이스별
+    with pytest.raises(ValueError):
+        store.save_view(ctx, "  ", "control-tower", "")
+    store.add_user("vv")
+    store.grant("vv", "default", "viewer")
+    viewer = store.context_for("vv", "default")
+    assert len(store.list_views(viewer)) == 1  # 조회는 가능
+    with pytest.raises(PermissionDenied):
+        store.save_view(viewer, "x", "control-tower", "")

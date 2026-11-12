@@ -6157,6 +6157,155 @@
      }
     }
    }
+  },
+  "/api/views": {
+   "get": {
+    "summary": "Views List",
+    "operationId": "views_list_api_views_get",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   },
+   "post": {
+    "summary": "Views Save",
+    "operationId": "views_save_api_views_post",
+    "parameters": [
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "requestBody": {
+     "required": true,
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/ViewIn"
+       }
+      }
+     }
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/views/{view_id}": {
+   "delete": {
+    "summary": "Views Delete",
+    "operationId": "views_delete_api_views__view_id__delete",
+    "parameters": [
+     {
+      "name": "view_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "View Id"
+      }
+     },
+     {
+      "name": "X-Workspace",
+      "in": "header",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "X-Workspace"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
   }
  },
  "components": {
@@ -8583,6 +8732,45 @@
      "validated_mapping"
     ],
     "title": "ValidationOut"
+   },
+   "ViewIn": {
+    "properties": {
+     "name": {
+      "type": "string",
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Name"
+     },
+     "screen": {
+      "type": "string",
+      "enum": [
+       "control-tower",
+       "network",
+       "transportation",
+       "inventory",
+       "fuel-risk",
+       "scenario-lab",
+       "copilot",
+       "data-hub",
+       "reports",
+       "settings"
+      ],
+      "title": "Screen"
+     },
+     "query": {
+      "type": "string",
+      "maxLength": 2000,
+      "title": "Query",
+      "description": "화면 URL 쿼리 (전역 필터·탭·화면 상태)",
+      "default": ""
+     }
+    },
+    "type": "object",
+    "required": [
+     "name",
+     "screen"
+    ],
+    "title": "ViewIn"
    },
    "WarehousePoint": {
     "properties": {

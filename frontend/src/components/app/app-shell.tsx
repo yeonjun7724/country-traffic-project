@@ -19,6 +19,7 @@ import { WorkspaceProvider, useWorkspace } from "@/lib/workspace";
 import { AppSidebar } from "./app-sidebar";
 import { BrandMark } from "./brand";
 import { CommandPalette } from "./command-palette";
+import { SavedViewsMenu } from "./saved-views";
 import { WorkspaceSwitcher } from "./workspace-switcher";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -85,6 +86,7 @@ function Topbar() {
           <div className="sm:w-56 lg:w-72">
             <CommandPalette />
           </div>
+          <SavedViewsMenu />
           <ThemeButton />
         </div>
       </div>

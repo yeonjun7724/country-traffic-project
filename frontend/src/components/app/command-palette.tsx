@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, Moon, Search, Sun } from "lucide-react";
+import { Bookmark, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
@@ -19,6 +19,8 @@ import {
 import { Command } from "@/components/ui/command";
 import { ALL_NAV } from "@/lib/nav";
 import { useSearch } from "@/lib/queries";
+
+import { useSavedViews, viewHref } from "./saved-views";
 
 /** 검색 결과 → 이동할 화면·필터 (상세 화면이 아직 없는 유형은 선택 불가로 표시) */
 const TARGET: Record<string, ((id: string) => string) | undefined> = {
@@ -43,6 +45,8 @@ export function CommandPalette() {
   const router = useRouter();
   const { setTheme } = useTheme();
   const res = useSearch(q);
+  const views = useSavedViews();
+  const viewHits = (views.data ?? []).filter((v) => !text.trim() || v.name.toLowerCase().includes(text.trim().toLowerCase()));
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -103,6 +107,20 @@ export function CommandPalette() {
                 })}
               </CommandGroup>
             ))}
+            {viewHits.length > 0 && (
+              <CommandGroup heading="저장된 보기">
+                {viewHits.slice(0, 8).map((v) => {
+                  const href = viewHref(v);
+                  return (
+                    <CommandItem key={v.id} value={`view-${v.id}`} disabled={!href} onSelect={() => href && go(href)}>
+                      <Bookmark className="size-4" />
+                      <span>{v.name}</span>
+                      <span className="text-xs text-muted-foreground">{ALL_NAV.find((n) => n.key === v.screen)?.title}</span>
+                    </CommandItem>
+                  );
+                })}
+              </CommandGroup>
+            )}
             {!q && (
                 <>
                   <CommandGroup heading="화면">

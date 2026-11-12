@@ -178,3 +178,34 @@ def settings_targets(body: TargetsIn, ctx: UserContext = Depends(permission("set
 @router.get("/audit")
 def audit(limit: int = Query(300, ge=1, le=2000), ctx: UserContext = Depends(permission("audit.read"))):
     return records(get_store().audit_log(ctx, limit))
+
+
+# ── 저장된 보기 ──────────────────────────────────────────────────────────
+SCREENS = ("control-tower", "network", "transportation", "inventory", "fuel-risk", "scenario-lab", "copilot",
+           "data-hub", "reports", "settings")
+
+
+class ViewIn(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    screen: Literal[SCREENS]  # type: ignore[valid-type]
+    query: str = Field("", max_length=2000, description="화면 URL 쿼리 (전역 필터·탭·화면 상태)")
+
+
+@router.get("/views")
+def views_list(ctx: UserContext = Depends(permission("data.read"))):
+    return get_store().list_views(ctx)
+
+
+@router.post("/views")
+def views_save(body: ViewIn, ctx: UserContext = Depends(permission("scenario.save"))):
+    try:
+        return get_store().save_view(ctx, body.name, body.screen, body.query)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+
+@router.delete("/views/{view_id}")
+def views_delete(view_id: str, ctx: UserContext = Depends(permission("scenario.save"))):
+    if not get_store().delete_view(ctx, view_id):
+        raise HTTPException(status_code=404, detail="저장된 보기를 찾을 수 없습니다.")
+    return {"id": view_id, "deleted": True}

@@ -26,6 +26,9 @@ from .schemas import ENTITIES, EntitySpec
 
 SCHEMA_VERSION = 2  # 2: action_items.ref_type/ref_id (조치 ↔ 근거 알림·시나리오)
 ACTION_REF_TYPES = ("alert", "scenario")
+VIEWS_KEY = "saved_views"
+MAX_VIEWS = 50
+NON_CALC_SETTINGS = (VIEWS_KEY,)  # 계산 결과에 영향이 없는 설정 키 (Workbench 캐시를 깨지 않음)
 _TYPE = {"str": lambda: String(255), "int": Float, "float": Float, "date": Date,
          "bool": Boolean, "time": lambda: String(8)}
 
@@ -447,10 +450,42 @@ class Store:
         return default if r is None else json.loads(r.value_json)
 
     def settings_revision(self, ctx: UserContext) -> str:
+        """계산에 영향을 주는 설정의 리비전 (Workbench 캐시 키). 화면 즐겨찾기처럼 계산과 무관한 키는 제외."""
         with self.engine.connect() as c:
             r = c.execute(select(func.max(settings_t.c.updated_at), func.count())
-                          .where(settings_t.c.workspace_id == ctx.workspace_id)).first()
+                          .where(and_(settings_t.c.workspace_id == ctx.workspace_id,
+                                      settings_t.c.key.notin_(NON_CALC_SETTINGS)))).first()
         return f"{r[0]}|{r[1]}"
+
+    # ── 저장된 보기 (화면 + URL 쿼리 즐겨찾기, 워크스페이스 공유) ─────────────
+    def list_views(self, ctx: UserContext) -> list[dict]:
+        return list(self.get_setting(ctx, VIEWS_KEY, []) or [])
+
+    def save_view(self, ctx: UserContext, name: str, screen: str, query: str) -> dict:
+        require(ctx, "scenario.save")  # 분석가 이상 (조치 생성과 같은 기준)
+        name = (name or "").strip()[:80]
+        query = (query or "").lstrip("?")
+        if not name:
+            raise ValueError("이름이 필요합니다.")
+        if len(query) > 2000:
+            raise ValueError("조건이 너무 깁니다.")
+        views = [v for v in self.list_views(ctx) if v.get("name") != name]  # 같은 이름은 덮어쓰기
+        if len(views) >= MAX_VIEWS:
+            raise ValueError(f"저장된 보기는 최대 {MAX_VIEWS}개입니다. 사용하지 않는 보기를 지우세요.")
+        view = {"id": hashlib.sha1(f"{ctx.workspace_id}|{name}|{datetime.now().isoformat()}".encode()).hexdigest()[:12],
+                "name": name, "screen": screen, "query": query, "created_by": ctx.user_id,
+                "created_at": datetime.now().isoformat(timespec="seconds")}
+        self.set_setting(ctx, VIEWS_KEY, [view, *views], permission="scenario.save")
+        return view
+
+    def delete_view(self, ctx: UserContext, view_id: str) -> bool:
+        require(ctx, "scenario.save")
+        views = self.list_views(ctx)
+        rest = [v for v in views if v.get("id") != view_id]
+        if len(rest) == len(views):
+            return False
+        self.set_setting(ctx, VIEWS_KEY, rest, permission="scenario.save")
+        return True
 
     def set_setting(self, ctx: UserContext, key: str, value: Any, permission: str = "settings.manage"):
         require(ctx, permission)

@@ -136,3 +136,29 @@ test("빈 워크스페이스: 업로드 순서 체크리스트 → Data Hub 해�
   await page.goto("/data-hub/?entity=stores");
   await expect(page.getByRole("heading", { name: /배송지\(점포·거래처\) 업로드/ })).toBeVisible();
 });
+
+test("저장된 보기: 현재 필터·탭을 저장하고 다른 화면에서 다시 연다", async ({ page }) => {
+  await ws(page, "demo");
+  await page.goto("/inventory/?risk=%EA%B2%B0%ED%92%88&carriers=DEMO%EC%9A%B4%EC%86%A1B");
+  await page.getByRole("button", { name: /저장된 보기/ }).click();
+  await page.getByRole("menuitem", { name: /현재 화면을 보기로 저장/ }).click();
+  const name = `E2E 보기 ${Date.now()}`;
+  await page.getByLabel("보기 이름").fill(name);
+  await page.getByRole("button", { name: "저장", exact: true }).click();
+  await expect(page.getByText(`'${name}' 보기를 저장했습니다`)).toBeVisible();
+
+  await page.goto("/settings/");
+  await page.getByRole("button", { name: /저장된 보기/ }).click();
+  await page.getByRole("menuitem", { name: new RegExp(name) }).click();
+  await expect(page).toHaveURL(/\/inventory\/\?.*risk=%EA%B2%B0%ED%92%88/);
+  await expect(page).toHaveURL(/carriers=DEMO/);
+
+  // Ctrl+K 에서도 찾을 수 있고, 지우면 목록에서 사라진다
+  await page.keyboard.press("Control+k");
+  await page.getByPlaceholder(/화면 이름/).fill(name.slice(0, 8));
+  await expect(page.getByRole("option", { name: new RegExp(name) })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: /저장된 보기/ }).click();
+  await page.getByRole("button", { name: `${name} 보기 지우기` }).click();
+  await expect(page.getByText("보기를 지웠습니다")).toBeVisible();
+});
