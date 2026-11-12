@@ -106,3 +106,33 @@ test("입력을 바꾼 직후 탭을 눌러도 탭이 되돌아가지 않는다 
   await expect(page).toHaveURL(/tab=saved/);
   await expect(page.getByRole("tab", { name: "저장된 시나리오 · 승인" })).toHaveAttribute("aria-selected", "true");
 });
+
+test("Control Tower: 선택한 배송지 범위로 시나리오, 센터 중단 분석으로 바로 이동", async ({ page }) => {
+  await ws(page, "demo");
+  await page.goto("/control-tower/");
+  const table = page.getByRole("region", { name: "배송지 목록" });
+  await table.getByRole("checkbox", { name: "행 선택" }).first().click();
+  await page.getByRole("link", { name: /선택 1곳으로 시나리오/ }).click();
+  await expect(page).toHaveURL(/\/scenario-lab\/\?.*stores=/);
+  await expect(page.getByText("Baseline 총 운송비 (실적)")).toBeVisible();
+
+  await page.goto("/control-tower/");
+  await page.getByRole("button", { name: /센터 중단 분석/ }).click();
+  await page.getByRole("menuitem", { name: /중부/ }).click();
+  await expect(page).toHaveURL(/tab=outage/);
+  await expect(page.getByRole("combobox", { name: "중단 센터" })).toContainText("중부");
+});
+
+test("빈 워크스페이스: 업로드 순서 체크리스트 → Data Hub 해당 양식", async ({ page }) => {
+  await ws(page, "default");
+  await page.goto("/control-tower/");
+  const list = page.getByRole("list", { name: "업로드 순서" });
+  await expect(page.getByRole("heading", { name: /데이터 준비 0\/\d+/ })).toBeVisible();
+  await expect(list.getByRole("listitem")).not.toHaveCount(0);
+  await list.getByRole("link", { name: /업로드/ }).first().click();
+  await expect(page).toHaveURL(/\/data-hub\/(\?entity=warehouses)?$/);
+  await expect(page.getByRole("heading", { name: /물류센터\(창고\) 업로드/ })).toBeVisible();
+  // 다른 데이터 유형을 고르면 URL 에 남는다
+  await page.goto("/data-hub/?entity=stores");
+  await expect(page.getByRole("heading", { name: /배송지\(점포·거래처\) 업로드/ })).toBeVisible();
+});

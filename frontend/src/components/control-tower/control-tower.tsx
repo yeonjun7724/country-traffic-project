@@ -24,6 +24,7 @@ import { Insights } from "./insights";
 import { KpiGroups } from "./kpi-groups";
 import { Ledger } from "./ledger";
 import { NetworkSection } from "./network-section";
+import { Onboarding } from "./onboarding";
 
 const NAV = navByKey("control-tower");
 
@@ -44,6 +45,7 @@ export function ControlTower() {
     <>
       <PageHeader nav={NAV} title="통합 운영 현황" description={overview.data?.period ?? "기간·센터·권역·운송사 기준 KPI와 예외를 한 화면에서"} />
       <FilterBar className="mb-4" />
+      <Onboarding compact />
       <Insights kpis={overview.data?.kpis} filters={filters} />
 
       {overview.isError ? (
@@ -137,6 +139,9 @@ function NoData({ isDemo }: { isDemo: boolean }) {
               </div>
             }
           />
+          <div className="mt-4">
+            <Onboarding />
+          </div>
         </div>
         <div className="lg:col-span-4">
           <ExternalPanel />

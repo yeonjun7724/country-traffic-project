@@ -1,17 +1,23 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
+import { ChevronDown, FlaskConical } from "lucide-react";
 import dynamic from "next/dynamic";
+import Link from "next/link";
 
 import { DataTable } from "@/components/common/data-table";
 import { Deferred } from "@/components/common/deferred";
 import { Section } from "@/components/common/section";
 import { ErrorState } from "@/components/common/states";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Schemas } from "@/lib/api";
 import type { Filters } from "@/lib/filters";
 import { isNum, pct, won } from "@/lib/format";
+import { screenHref } from "@/lib/links";
 import { useNetwork } from "@/lib/queries";
+import { outageLink } from "@/lib/scenario-url";
 import { cn } from "@/lib/utils";
 
 const NetworkMap = dynamic(() => import("./network-map").then((m) => m.NetworkMap), {
@@ -78,10 +84,36 @@ export function NetworkSection({
       description="지도에서 배송지를 클릭하거나 표에서 선택하면 서로 강조되고 아래 원장이 좁혀집니다."
       actions={
         d && (
-          <span className="text-[12px] text-muted-foreground tabular">
-            배송지 {d.stores.length.toLocaleString()}곳
-            {d.idle_stores.length > 0 && ` · 기간 내 배송 없음 ${d.idle_stores.length}곳`} · 센터 {d.warehouses.length}곳
-          </span>
+          <>
+            <span className="text-[12px] text-muted-foreground tabular">
+              배송지 {d.stores.length.toLocaleString()}곳
+              {d.idle_stores.length > 0 && ` · 기간 내 배송 없음 ${d.idle_stores.length}곳`} · 센터 {d.warehouses.length}곳
+            </span>
+            {/* 원인 → 대안: 지금 보고 있는 범위로 바로 시나리오·센터 중단 분석 */}
+            {selected.length > 0 && (
+              <Button size="sm" variant="outline" asChild>
+                <Link href={screenHref("scenario-lab", {}, { ...filters, stores: selected })!}>
+                  <FlaskConical className="size-3.5" /> 선택 {selected.length}곳으로 시나리오
+                </Link>
+              </Button>
+            )}
+            {d.warehouses.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    센터 중단 분석 <ChevronDown className="size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {d.warehouses.map((w) => (
+                    <DropdownMenuItem key={w.warehouse_id} asChild>
+                      <Link href={outageLink(w.warehouse_id, filters)}>{w.name ?? w.warehouse_id}</Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
         )
       }
     >

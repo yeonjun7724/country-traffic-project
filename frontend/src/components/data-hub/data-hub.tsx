@@ -2,7 +2,6 @@
 
 import { Lock } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
 
 import { PageHeader } from "@/components/common/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -74,7 +73,17 @@ export function DataHub() {
 function UploadTab() {
   const { can, me } = useWorkspace();
   const ents = useEntities();
-  const [entity, setEntity] = useState("warehouses");
+  // 업로드 대상은 URL(?entity=) — 온보딩 체크리스트·데이터 갱신 알림에서 해당 양식으로 바로 들어온다
+  const sp = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const asked = sp.get("entity") ?? "warehouses";
+  const entity = !ents.data || ents.data.some((e) => e.entity === asked) ? asked : "warehouses";
+  const setEntity = (v: string) =>
+    replaceQuery(router, pathname, sp.toString(), (q) => {
+      if (v === "warehouses") q.delete("entity");
+      else q.set("entity", v);
+    });
   const label = ents.data?.find((e) => e.entity === entity)?.label ?? entity;
 
   if (!can("data.upload"))

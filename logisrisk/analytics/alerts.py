@@ -24,7 +24,7 @@ RULE_TARGETS: dict[str, tuple[str, dict[str, str]]] = {
     "late_rate": ("control-tower", {"ledger": "late"}),
     "cost_budget": ("transportation", {"tab": "cts"}),
     "stockout": ("inventory", {"risk": "결품"}),
-    "data_stale": ("data-hub", {"tab": "datasets"}),
+    "data_stale": ("data-hub", {}),  # + entity → 해당 데이터 업로드 양식
 }
 
 

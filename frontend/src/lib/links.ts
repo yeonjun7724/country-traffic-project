@@ -26,5 +26,5 @@ export const TARGET_LABEL: Record<string, string> = {
   "control-tower": "지연 원장 보기",
   transportation: "운송비 분석 보기",
   inventory: "결품 SKU 보기",
-  "data-hub": "데이터셋 보기",
+  "data-hub": "다시 업로드",
 };

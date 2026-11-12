@@ -106,7 +106,7 @@ def test_every_alert_has_a_cause_target():
     assert by["otif"]["target"] == {"screen": "control-tower", "params": {"ledger": "late"}}
     assert by["cost_budget"]["target"] == {"screen": "transportation", "params": {"tab": "cts"}}
     assert by["stockout"]["target"] == {"screen": "inventory", "params": {"risk": "결품"}}
-    assert by["data_stale"]["target"]["params"] == {"tab": "datasets", "entity": "orders"}
+    assert by["data_stale"]["target"]["params"] == {"entity": "orders"}  # 업로드 양식으로
 
 
 # ── 검증·보안 ─────────────────────────────────────────────────────────
