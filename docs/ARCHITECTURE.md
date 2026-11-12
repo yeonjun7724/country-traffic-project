@@ -161,3 +161,21 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 - 검증: pytest 149(API 화면 테스트 8 추가) · vitest 11 · Playwright 55(화면 40 + 흐름 15).
 - 남은 한계: Streamlit 코드 제거(사용자 확인 필요), 시간창 VRP, 서버측 PDF, SSO, Copilot 토큰 스트리밍,
   업로드 임시 보관이 메모리(재시작 시 진행 중 업로드 소실).
+
+## 12. 개선 1차 (2026-11-12) — 성능·흐름·디자인 (상세: [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md))
+
+| 영역 | 변경 | 결정·이유 |
+|---|---|---|
+| 번들 | 지도 공용 타입·`popupHtml` → `lib/map-utils`, `SimpleTable` → `common/` | `common/geo-map` 은 `next/dynamic` 으로만 import (정적 import 1개가 maplibre ~1MB 를 페이지에 끌어옴) |
+| 전송 | `GZipMiddleware(minimum_size=1024)`, `/_next/static/*` immutable, HTML no-cache | GZip 은 http 미들웨어보다 **먼저** 등록(안쪽) — 바깥이면 스트리밍 응답이라 작은 응답까지 압축 |
+| 프리페치 | 사이드바 링크 `prefetch={false}` + 호버/포커스 시 `router.prefetch` | 모든 화면이 진입 시 전 라우트 JS 를 받던 문제 |
+| 계산 | `cost.prepare_trips`(필터·연료 기준·운행 집계)를 민감도 12개·A/B 비교가 공유 | 결과 동일(부동소수 합산 순서 차이만) → CALC_VERSION 유지. 민감도 97,520행 15.8s→0.19s |
+| 알림 | 규칙에 `key`·`target`(화면·파라미터). 목적지는 `alerts.RULE_TARGETS` 한 곳 | 링크는 프런트 `lib/links.screenHref` 가 전역 필터를 유지해 생성 |
+| URL 상태 | 원장 탭 `?ledger`, Inventory `?risk`, Scenario A/B `?a=&an=&b=&bn=`·`?wh=`·`?id=` | 공유·새로고침·다른 화면에서의 진입. 링크 값은 편집기 범위로 잘라 주입 방지 |
+| 스키마 v2 | `action_items.ref_type`('alert'·'scenario')·`ref_id` (nullable) | **추가형 마이그레이션**: 기동 시 누락 컬럼만 `ADD COLUMN`, `schema_meta.schema_version` 1→2. Alembic 미도입(의존성 추가 없음). 시나리오 근거는 같은 워크스페이스만 |
+| 접근성 | `@axe-core/playwright` 4.14.0(고정), 라이트 의미 색 토큰 한 단계 진하게, `--primary-text` 토큰, 다크 primary 버튼 글자 어둡게 | 10개 화면 × 라이트/다크 serious·critical 0 을 E2E 로 강제 |
+| 모바일 | 상단 바 검색 아이콘화, Section 헤더 동작 줄바꿈 | `isMobile` 은 레이아웃 뷰포트를 내용 폭으로 넓히므로 테스트는 기기 폭(390)과 비교 |
+
+- 검증: pytest 165 · vitest 22 · Playwright 91 (화면 40 · 흐름 15 · 딥링크 6 · 모바일 10 · 접근성 20).
+- 남은 한계(2차 후보): Control Tower 메인 스레드 비용(CPU 4× 스로틀 LCP·TBT 미개선), 공통 CLS ≈0.08,
+  타이포 스케일(임의 글꼴 크기 18종)·차트 색 토큰화, 필터 결과 메모이제이션.
