@@ -5,7 +5,7 @@ import { Check, Copy, Loader2, PencilLine, Save, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, Cell, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 import { KindBadge, Pill } from "@/components/common/badges";
 import { FilterBar } from "@/components/common/filter-bar";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 
 import { SimpleTable } from "@/components/common/simple-table";
+import { niceCeil, waterfallSteps, type WaterfallStep } from "@/lib/waterfall";
 import { decodeScenario, encodeScenario, outageLink, savedScenarioLink, scenarioLink } from "@/lib/scenario-url";
 
 const NAV = navByKey("scenario-lab");
@@ -318,44 +319,46 @@ function ScenarioTile({ r, tag, tone }: { r: EngineResult; tag: string; tone: st
 }
 
 function Waterfall({ r, title, color }: { r: EngineResult; title: string; color: string }) {
-  const steps = Object.entries(r.contribution);
-  let acc = r.baseline.total ?? 0;
-  const data = [{ name: "기준", base: 0, val: acc, kind: "total" }];
-  steps.forEach(([k, v]) => {
-    const start = acc;
-    acc += v;
-    data.push({ name: CONTRIB_LABEL[k] ?? k, base: Math.min(start, acc), val: Math.abs(v), kind: v >= 0 ? "up" : "down" });
-  });
-  data.push({ name: "결과", base: 0, val: acc, kind: "total" });
-  const min = Math.min(...data.filter((d) => d.kind !== "total").map((d) => d.base), r.baseline.total ?? 0) * 0.97;
+  const data = waterfallSteps(r.contribution, CONTRIB_LABEL);
+  const base = r.baseline.total ?? 0;
+  const delta = data.at(-1)!.value;
+  const sign = (v: number) => (v > 0 ? "+" : v < 0 ? "−" : "±");
+  const fmt = (v: number) => `${sign(v)}${won(Math.abs(v))}`;
   return (
     <div>
-      <p className="mb-1 truncate text-[12px] font-medium text-muted-foreground">{title}</p>
-      <div style={{ height: 200 }} role="img" aria-label={`${title} 기여도 워터폴`}>
+      <p className="truncate text-[12px] font-medium text-muted-foreground">{title}</p>
+      <p className="mb-1 text-[11.5px] text-subtle-foreground tabular">
+        기준 {won(base)} → 결과 {won(base + delta)} ({fmt(delta)}
+        {base ? `, ${delta >= 0 ? "+" : ""}${((delta / base) * 100).toFixed(2)}%` : ""})
+      </p>
+      <div style={{ height: 200 }} role="img" aria-label={`${title} 요인별 변화 워터폴: ${data.map((d) => `${d.name} ${fmt(d.value)}원`).join(", ")}`}>
         <ResponsiveContainer>
-          <BarChart data={data} margin={{ top: 6, right: 4, left: 0, bottom: 0 }}>
+          <BarChart data={data} margin={{ top: 18, right: 4, left: 0, bottom: 0 }}>
             <CartesianGrid vertical={false} stroke="var(--chart-grid)" />
             <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 10.5, fill: "var(--subtle-foreground)" }} interval={0} />
-            <YAxis domain={[min, "auto"]} tickFormatter={(v) => won(v)} tickLine={false} axisLine={false} width={52} tick={{ fontSize: 10.5, fill: "var(--subtle-foreground)" }} />
+            <YAxis domain={[(lo: number) => -niceCeil(-Math.min(0, lo)), (hi: number) => niceCeil(Math.max(0, hi))]} tickCount={6} tickFormatter={(v) => won(v)} tickLine={false} axisLine={false} width={52} tick={{ fontSize: 10.5, fill: "var(--subtle-foreground)" }} />
+            <ReferenceLine y={0} stroke="var(--border-strong)" />
             <Tooltip
               cursor={{ fill: "var(--muted)", opacity: 0.5 }}
-              content={({ active, payload }) =>
-                active && payload?.length ? (
+              content={({ active, payload }) => {
+                if (!active || !payload?.length) return null;
+                const d = payload[0].payload as WaterfallStep;
+                return (
                   <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
-                    <div className="font-medium">{(payload[0].payload as { name: string }).name}</div>
+                    <div className="font-medium">{d.name}</div>
                     <div className="tabular text-muted-foreground">
-                      {(payload[0].payload as { kind: string }).kind === "down" ? "−" : (payload[0].payload as { kind: string }).kind === "up" ? "+" : ""}
-                      {won((payload[0].payload as { val: number }).val, { compact: false })}원
+                      {sign(d.value)}
+                      {won(Math.abs(d.value), { compact: false })}원
                     </div>
                   </div>
-                ) : null
-              }
+                );
+              }}
             />
-            <Bar dataKey="base" stackId="w" fill="transparent" />
-            <Bar dataKey="val" stackId="w" radius={[3, 3, 0, 0]} maxBarSize={34}>
+            <Bar dataKey="range" radius={3} maxBarSize={34} isAnimationActive={false}>
               {data.map((d, i) => (
-                <Cell key={i} fill={d.kind === "total" ? color : d.kind === "up" ? "var(--danger)" : "var(--success)"} fillOpacity={d.kind === "total" ? 0.85 : 0.75} />
+                <Cell key={i} fill={d.kind === "total" ? color : d.kind === "up" ? "var(--danger)" : "var(--success)"} fillOpacity={d.kind === "total" ? 0.9 : 0.75} />
               ))}
+              <LabelList dataKey="value" position="top" formatter={(v) => (Number(v) ? fmt(Number(v)) : "")} style={{ fontSize: 10.5, fill: "var(--muted-foreground)" }} />
             </Bar>
           </BarChart>
         </ResponsiveContainer>
