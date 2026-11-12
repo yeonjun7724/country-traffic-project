@@ -93,7 +93,7 @@ function ImpactTab() {
       <FilterBar />
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
         <Field label="경유가 변화율">
-          <ToggleGroup type="multiple" variant="outline" size="sm" value={pcts} onValueChange={(v) => v.length && setPcts(v)} aria-label="경유가 변화율">
+          <ToggleGroup type="multiple" variant="outline" size="sm" value={pcts} onValueChange={(v) => v.length && setPcts(v)} aria-label="경유가 변화율" className="max-w-full flex-wrap">
             {PCTS.map((p) => (
               <ToggleGroupItem key={p} value={String(p)} className="px-2.5 text-[12px] tabular">
                 {p > 0 ? "+" : ""}

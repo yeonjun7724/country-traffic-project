@@ -56,7 +56,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 function Topbar() {
   return (
     <header className="sticky top-0 z-30 shrink-0 border-b border-border bg-canvas/85 backdrop-blur supports-[backdrop-filter]:bg-canvas/70">
-      <div className="flex h-14 items-center gap-2 px-3 md:px-4">
+      <div className="flex h-14 min-w-0 items-center gap-2 px-3 md:px-4">
         <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2 focus:rounded focus:bg-card focus:px-3 focus:py-1.5">
           본문으로 건너뛰기
         </a>
@@ -66,9 +66,10 @@ function Topbar() {
         <Suspense>
           <Crumb />
         </Suspense>
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <Freshness />
-          <div className="w-56 lg:w-72">
+          {/* 좁은 화면: 아이콘 버튼만 (고정 폭 검색창이 390px 에서 가로 스크롤을 만들던 문제) */}
+          <div className="sm:w-56 lg:w-72">
             <CommandPalette />
           </div>
           <ThemeButton />

@@ -66,11 +66,11 @@ export function CommandPalette() {
       <Button
         variant="outline"
         onClick={() => setOpen(true)}
-        className="h-8 w-full justify-start gap-2 rounded-md bg-card px-2.5 font-normal text-muted-foreground shadow-none"
+        className="h-8 w-8 justify-center gap-2 rounded-md bg-card px-0 font-normal text-muted-foreground shadow-none sm:w-full sm:justify-start sm:px-2.5"
         aria-label="검색 열기"
       >
         <Search className="size-4" />
-        <span className="flex-1 truncate text-left">검색</span>
+        <span className="hidden flex-1 truncate text-left sm:block">검색</span>
         <kbd className="hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:inline">
           Ctrl K
         </kbd>

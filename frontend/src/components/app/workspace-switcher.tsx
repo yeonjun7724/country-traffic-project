@@ -21,7 +21,7 @@ export function WorkspaceSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-8 gap-2 px-2 font-medium" aria-label="워크스페이스 전환">
           {cur?.is_demo ? <FlaskConical className="size-4 text-kind-demo" /> : <Building2 className="size-4 text-muted-foreground" />}
-          <span className="max-w-48 truncate">{cur ? displayName(cur.name, cur.is_demo) : "워크스페이스"}</span>
+          <span className="max-w-24 truncate sm:max-w-48">{cur ? displayName(cur.name, cur.is_demo) : "워크스페이스"}</span>
           {cur?.is_demo && (
             <span className="rounded-sm bg-kind-demo/12 px-1.5 py-px text-[10.5px] font-semibold text-kind-demo">샘플</span>
           )}
