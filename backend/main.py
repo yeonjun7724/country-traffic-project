@@ -14,6 +14,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
@@ -55,14 +56,25 @@ def create_app(seed: bool = True) -> FastAPI:
         app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True,
                            allow_methods=["*"], allow_headers=["*"])
 
+    # 응답 압축 (JS·JSON·CSV). 아래 http 미들웨어보다 먼저 등록해 앱 바로 바깥(안쪽 계층)에 둔다 —
+    # BaseHTTPMiddleware 를 거친 스트리밍 응답은 minimum_size 판단이 안 되어 작은 응답까지 압축되기 때문.
+    app.add_middleware(GZipMiddleware, minimum_size=1024)
+
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
         resp = await call_next(request)
         resp.headers.setdefault("X-Content-Type-Options", "nosniff")
         resp.headers.setdefault("X-Frame-Options", "DENY")
         resp.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        if request.url.path.startswith("/api/"):
+        path = request.url.path
+        if path.startswith("/api/"):
             resp.headers.setdefault("Cache-Control", "no-store")
+        elif path.startswith("/_next/static/") and resp.status_code == 200:
+            # 파일명에 콘텐츠 해시가 들어간 빌드 산출물 — 배포마다 이름이 바뀌므로 영구 캐시
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        else:
+            # HTML·비해시 자원(vendor 워커 등): 매번 재검증 (새 배포가 바로 반영되도록)
+            resp.headers.setdefault("Cache-Control", "no-cache")
         return resp
 
     @app.exception_handler(PermissionDenied)

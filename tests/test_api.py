@@ -260,3 +260,44 @@ def test_workbench_cache_invalidates_on_upload(fresh):
     assert c.get("/api/me", headers=MINE).json()["has_ops_data"] is True
     wb = Workbench.load(s, s.context_for("local", "default"), deps.get_external())
     assert "warehouses" in wb.frames
+
+
+# ── 전송 최적화 (P2) ─────────────────────────────────────────────────────────
+def test_api_responses_are_gzipped_and_not_cached(api):
+    r = api.get("/api/control-tower/ledger", headers={**DEMO, "Accept-Encoding": "gzip"})
+    assert r.status_code == 200
+    assert r.headers.get("content-encoding") == "gzip"
+    assert r.headers["cache-control"] == "no-store"
+    assert r.json()  # 클라이언트가 투명하게 해제
+
+
+def test_small_responses_are_not_compressed(api):
+    r = api.get("/api/health", headers={"Accept-Encoding": "gzip"})
+    assert "content-encoding" not in r.headers
+
+
+def test_hashed_static_assets_are_immutable(tmp_path, monkeypatch, demo_store):
+    import importlib
+
+    import backend.main as main_mod
+
+    chunk = tmp_path / "_next" / "static" / "chunks"
+    chunk.mkdir(parents=True)
+    (chunk / "app-abc123.js").write_text("console.log(1);" * 200, encoding="utf-8")
+    (tmp_path / "index.html").write_text("<html></html>", encoding="utf-8")
+    monkeypatch.setenv("LOGISRISK_FRONTEND_DIR", str(tmp_path))
+    mod = importlib.reload(main_mod)
+    try:
+        deps.reset_singletons(demo_store[0])
+        with TestClient(mod.create_app(seed=False)) as c:
+            js = c.get("/_next/static/chunks/app-abc123.js", headers={"Accept-Encoding": "gzip"})
+            assert js.status_code == 200
+            assert js.headers["cache-control"] == "public, max-age=31536000, immutable"
+            assert js.headers.get("content-encoding") == "gzip"
+            html = c.get("/")
+            assert html.headers["cache-control"] == "no-cache"
+            assert c.get("/_next/static/chunks/missing.js").headers.get("cache-control") != "public, max-age=31536000, immutable"
+    finally:
+        monkeypatch.delenv("LOGISRISK_FRONTEND_DIR")
+        importlib.reload(main_mod)
+        deps.reset_singletons(None)
