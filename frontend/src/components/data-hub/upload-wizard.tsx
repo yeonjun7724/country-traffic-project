@@ -128,7 +128,7 @@ export function UploadWizard({ entity, label, isDemo }: { entity: string; label:
       ) : !upload ? (
         <div className="space-y-3">
           <Dropzone onFile={(f) => uploadMut.mutate(f)} busy={uploadMut.isPending} label={label} />
-          <div className="flex flex-wrap items-center justify-between gap-2 text-[12.5px] text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-body text-muted-foreground">
             <span>한글·영문 컬럼명은 자동으로 매핑됩니다. 저장 전까지 데이터는 바뀌지 않습니다.</span>
             <Button
               variant="link"
@@ -154,7 +154,7 @@ export function UploadWizard({ entity, label, isDemo }: { entity: string; label:
             onChange={(f, c) => setMapping((m) => ({ ...m, [f]: c }))}
           />
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/30 px-4 py-3">
-            <p className="text-[12.5px] text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {dupSources.size > 0 ? (
                 <span className="font-medium text-danger">하나의 원본 컬럼을 여러 필드에 매핑할 수 없습니다.</span>
               ) : stale ? (
@@ -201,7 +201,7 @@ function Stepper({ step }: { step: number }) {
         <li key={s} className="flex flex-1 items-center gap-2" aria-current={i === step ? "step" : undefined}>
           <span
             className={cn(
-              "flex size-6 shrink-0 items-center justify-center rounded-full text-[11.5px] font-semibold",
+              "flex size-6 shrink-0 items-center justify-center rounded-full text-small font-semibold",
               i < step && "bg-success text-white",
               i === step && "bg-primary text-primary-foreground",
               i > step && "bg-muted text-subtle-foreground",
@@ -209,7 +209,7 @@ function Stepper({ step }: { step: number }) {
           >
             {i < step ? <Check className="size-3.5" strokeWidth={3} /> : i + 1}
           </span>
-          <span className={cn("hidden text-[12.5px] sm:inline", i === step ? "font-semibold text-foreground" : "text-muted-foreground")}>{s}</span>
+          <span className={cn("hidden text-body sm:inline", i === step ? "font-semibold text-foreground" : "text-muted-foreground")}>{s}</span>
           {i < STEPS.length - 1 && <span className={cn("h-px flex-1", i < step ? "bg-success/50" : "bg-border")} />}
         </li>
       ))}
@@ -222,8 +222,8 @@ function FileBar({ upload, onReset, onSheet, sheetBusy }: { upload: Upload; onRe
     <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-3 py-2.5">
       <FileSpreadsheet className="size-5 text-success" />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[13px] font-medium">{upload.filename}</p>
-        <p className="text-[12px] text-muted-foreground tabular">
+        <p className="truncate text-body font-medium">{upload.filename}</p>
+        <p className="text-small text-muted-foreground tabular">
           {num(upload.n_rows)}행 × {upload.columns.length}열
         </p>
       </div>
@@ -252,11 +252,11 @@ function Preview({ upload }: { upload: Upload }) {
   const cols = upload.columns.slice(0, 30);
   return (
     <details className="group rounded-lg border border-border bg-card" open={false}>
-      <summary className="cursor-pointer list-none px-3 py-2 text-[12.5px] font-medium text-muted-foreground hover:text-foreground">
+      <summary className="cursor-pointer list-none px-3 py-2 text-body font-medium text-muted-foreground hover:text-foreground">
         <span className="mr-1 inline-block transition-transform group-open:rotate-90">›</span> 원본 미리보기 (상위 {Math.min(20, upload.n_rows)}행)
       </summary>
       <div className="max-h-72 overflow-auto border-t border-border">
-        <table className="w-full text-[12px]">
+        <table className="w-full text-small">
           <thead className="sticky top-0 bg-muted">
             <tr>
               {cols.map((c) => (
@@ -302,8 +302,8 @@ function MappingTable({
   return (
     <div className="rounded-lg border border-border bg-card">
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-        <h3 className="text-[13px] font-semibold">컬럼 매핑</h3>
-        <span className="text-[12px] text-muted-foreground tabular">
+        <h3 className="text-body font-semibold">컬럼 매핑</h3>
+        <span className="text-small text-muted-foreground tabular">
           {mapped}/{fields.length} 필드 매핑 · <span className="text-danger">*</span> 필수
         </span>
       </div>
@@ -317,11 +317,11 @@ function MappingTable({
               return (
                 <div key={f.name} className="flex items-center gap-3 px-4 py-2">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1 text-[13px] font-medium">
+                    <div className="flex items-center gap-1 text-body font-medium">
                       {f.label}
                       {f.required && <span className="text-danger">*</span>}
                     </div>
-                    <div className="truncate font-mono text-[11px] text-subtle-foreground">
+                    <div className="truncate font-mono text-caption text-subtle-foreground">
                       {f.name}
                       {f.unit ? ` · ${f.unit}` : ""}
                       {f.allowed?.length ? ` · ${f.allowed.join("/")}` : ""}
@@ -348,7 +348,7 @@ function MappingTable({
                   </Select>
                   <span className="w-11 shrink-0">
                     {isAuto && (
-                      <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-primary/10 px-1 text-[10.5px] font-medium text-primary" title="컬럼명으로 자동 매핑">
+                      <span className="inline-flex items-center gap-0.5 whitespace-nowrap rounded-sm bg-primary/10 px-1 text-caption font-medium text-primary" title="컬럼명으로 자동 매핑">
                         <Sparkles className="size-2.5" />
                         자동
                       </span>
@@ -366,12 +366,12 @@ function MappingTable({
 
 const ERR_COLS: ColumnDef<Record<string, unknown>, unknown>[] = [
   { accessorKey: "row", header: "행", meta: { align: "right" } },
-  { accessorKey: "column", header: "컬럼", cell: (c) => <span className="font-mono text-[12px]">{String(c.getValue() ?? "")}</span> },
+  { accessorKey: "column", header: "컬럼", cell: (c) => <span className="font-mono text-small">{String(c.getValue() ?? "")}</span> },
   { accessorKey: "message", header: "사유" },
   {
     accessorKey: "value",
     header: "값",
-    cell: (c) => <span className="font-mono text-[12px] text-muted-foreground">{c.getValue() == null ? "—" : String(c.getValue())}</span>,
+    cell: (c) => <span className="font-mono text-small text-muted-foreground">{c.getValue() == null ? "—" : String(c.getValue())}</span>,
   },
 ];
 
@@ -414,7 +414,7 @@ function Results({
       {r.error_summary.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h4 className="text-[13px] font-semibold">오류 요약</h4>
+            <h4 className="text-body font-semibold">오류 요약</h4>
             <Button
               variant="outline"
               size="sm"
@@ -429,15 +429,15 @@ function Results({
           </div>
           <div className="flex flex-wrap gap-1.5">
             {r.error_summary.map((s) => (
-              <span key={`${s.column}-${s.message}`} className="inline-flex items-center gap-1.5 rounded-md border border-danger/20 bg-danger/[0.05] px-2 py-1 text-[12px]">
-                <span className="font-mono text-[11.5px]">{s.column}</span>
+              <span key={`${s.column}-${s.message}`} className="inline-flex items-center gap-1.5 rounded-md border border-danger/20 bg-danger/[0.05] px-2 py-1 text-small">
+                <span className="font-mono text-small">{s.column}</span>
                 <span className="text-muted-foreground">{s.message}</span>
                 <b className="text-danger tabular">{num(s.count)}</b>
               </span>
             ))}
           </div>
           <DataTable data={r.errors} columns={ERR_COLS} rowKey={(x) => `${x.row}-${x.column}-${x.message}`} height={240} ariaLabel="오류 상세" />
-          <p className="text-[11.5px] text-muted-foreground">행 번호는 파일 기준입니다 (헤더 = 1행). 상위 500건 표시.</p>
+          <p className="text-small text-muted-foreground">행 번호는 파일 기준입니다 (헤더 = 1행). 상위 500건 표시.</p>
         </div>
       )}
       {r.ok && r.n_valid > 0 && (
@@ -445,13 +445,13 @@ function Results({
           {r.n_error_rows > 0 && (
             <div className="flex items-start gap-2">
               <Checkbox id="ack" checked={ack} onCheckedChange={(v) => onAck(v === true)} className="mt-0.5" />
-              <Label htmlFor="ack" className="text-[13px] font-normal leading-snug">
+              <Label htmlFor="ack" className="text-body font-normal leading-snug">
                 오류 행 {num(r.n_error_rows)}건을 제외하고 유효 행 {num(r.n_valid)}건만 저장합니다.
               </Label>
             </div>
           )}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[12.5px] text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {r.current_version
                 ? `저장하면 ${label} v${r.current_version + 1} 이 활성화되고 v${r.current_version} 은 보존됩니다 (롤백 가능).`
                 : `${label} 첫 버전(v1)으로 저장됩니다.`}{" "}
@@ -478,7 +478,7 @@ function Done({ label, done, onAnother }: { label: string; done: Schemas["Commit
         <p className="text-base font-semibold">
           {label} v{done.version} 저장 완료
         </p>
-        <p className="mt-1 text-[13px] text-muted-foreground tabular">
+        <p className="mt-1 text-body text-muted-foreground tabular">
           {num(done.rows)}행 · dataset #{done.dataset_id} · 모든 화면에 즉시 반영됩니다
         </p>
       </div>
@@ -506,7 +506,7 @@ function DemoReload() {
   });
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-kind-demo/25 bg-kind-demo/[0.05] px-4 py-3">
-      <p className="text-[12.5px] text-foreground/80">샘플 워크스페이스에서는 시연용 가상 데이터를 한 번에 다시 불러올 수 있습니다.</p>
+      <p className="text-body text-foreground/80">샘플 워크스페이스에서는 시연용 가상 데이터를 한 번에 다시 불러올 수 있습니다.</p>
       <Button variant="outline" size="sm" onClick={() => m.mutate()} disabled={m.isPending}>
         {m.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <RotateCcw className="size-3.5" />} 샘플 데이터 다시 불러오기
       </Button>
@@ -517,10 +517,10 @@ function DemoReload() {
 function Stat({ k, v, tone }: { k: string; v: string; tone?: "success" | "danger" | "warning" }) {
   return (
     <div className="rounded-lg border border-border px-3 py-2.5">
-      <p className="text-[11.5px] text-muted-foreground">{k}</p>
+      <p className="text-small text-muted-foreground">{k}</p>
       <p
         className={cn(
-          "mt-0.5 text-[20px] font-semibold tracking-tight tabular",
+          "mt-0.5 text-heading font-semibold tracking-tight tabular",
           tone === "success" && "text-success",
           tone === "danger" && "text-danger",
           tone === "warning" && "text-warning",
@@ -547,7 +547,7 @@ function Callout({
     <div
       role={tone === "danger" ? "alert" : undefined}
       className={cn(
-        "flex items-start gap-2 rounded-lg px-3 py-2 text-[12.5px]",
+        "flex items-start gap-2 rounded-lg px-3 py-2 text-body",
         tone === "danger" ? "bg-danger/[0.07] text-foreground" : "bg-warning/[0.08] text-foreground",
       )}
     >

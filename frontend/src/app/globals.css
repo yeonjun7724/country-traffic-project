@@ -311,3 +311,26 @@
 html[data-demo="0"] .sample-banner {
   display: none;
 }
+
+/* ── 글자 크기 단계 (7) — 화면 코드에서 text-[Npx] 대신 사용. 크기만 지정하고 줄 높이는 상위 요소를 따른다 ── */
+@utility text-caption {
+  font-size: 11px; /* 배지·축 눈금·보조 표기 */
+}
+@utility text-small {
+  font-size: 12px; /* 표 머리·설명 문구 */
+}
+@utility text-body {
+  font-size: 13px; /* 본문·표 셀 */
+}
+@utility text-title {
+  font-size: 15px; /* 카드·패널 제목, 강조 값 */
+}
+@utility text-heading {
+  font-size: 18px; /* 섹션 제목·보조 지표 값 */
+}
+@utility text-metric {
+  font-size: 22px; /* 주요 지표 값 */
+}
+@utility text-display {
+  font-size: 24px; /* 화면 제목·대표 KPI */
+}

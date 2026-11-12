@@ -23,8 +23,8 @@ export function Section({
       {(title || actions) && (
         <header className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2 border-b border-border px-4 py-3">
           <div className="min-w-0 space-y-0.5">
-            {title && <h2 className="text-[14px] font-semibold tracking-tight text-foreground">{title}</h2>}
-            {description && <p className="text-[12.5px] text-muted-foreground">{description}</p>}
+            {title && <h2 className="text-title font-semibold tracking-tight text-foreground">{title}</h2>}
+            {description && <p className="text-body text-muted-foreground">{description}</p>}
           </div>
           {actions && <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div>}
         </header>

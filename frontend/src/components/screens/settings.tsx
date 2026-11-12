@@ -114,8 +114,8 @@ function RolesTab({ data }: { data: SettingsView }) {
       </Callout>
       <Section title="역할별 권한" description="권한마다 필요한 최소 역할 — 상위 역할은 하위 권한을 모두 포함" bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-[12.5px]">
-            <thead className="text-[11.5px] text-muted-foreground">
+          <table className="w-full text-body">
+            <thead className="text-small text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="px-4 py-2 text-left font-medium">권한</th>
                 {ROLE_ORDER.map((r) => (
@@ -131,7 +131,7 @@ function RolesTab({ data }: { data: SettingsView }) {
                 <tr key={p.permission} className="border-b border-border last:border-0">
                   <td className="px-4 py-2">
                     <div className="font-medium">{PERM_LABEL[p.permission] ?? p.permission}</div>
-                    <div className="font-mono text-[11px] text-subtle-foreground">{p.permission}</div>
+                    <div className="font-mono text-caption text-subtle-foreground">{p.permission}</div>
                   </td>
                   {ROLE_ORDER.map((r) => {
                     const ok = ROLE_ORDER.indexOf(r) >= ROLE_ORDER.indexOf(p.min_role);
@@ -156,7 +156,7 @@ function SystemTab({ data }: { data: SettingsView }) {
     <Section title="시스템 상태" bodyClassName="p-0">
       <dl className="divide-y divide-border">
         {data.system.map((s) => (
-          <div key={s.item} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-[13px]">
+          <div key={s.item} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-body">
             <dt className="text-muted-foreground">{s.item}</dt>
             <dd className="font-medium">
               {s.value.includes("미구현") ? <Pill>{s.value}</Pill> : s.value.includes("미설정") ? <Pill tone="warning">{s.value}</Pill> : s.value}
@@ -164,7 +164,7 @@ function SystemTab({ data }: { data: SettingsView }) {
           </div>
         ))}
       </dl>
-      <p className="border-t border-border px-4 py-3 text-[11.5px] text-subtle-foreground">API 키는 서버 환경변수로만 설정하며 화면·로그에 노출하지 않습니다.</p>
+      <p className="border-t border-border px-4 py-3 text-small text-subtle-foreground">API 키는 서버 환경변수로만 설정하며 화면·로그에 노출하지 않습니다.</p>
     </Section>
   );
 }
@@ -172,9 +172,9 @@ function SystemTab({ data }: { data: SettingsView }) {
 const ACOLS: ColumnDef<AuditRow, unknown>[] = [
   { accessorKey: "at", header: "시각", cell: (c) => <span className="tabular">{dateTimeLabel(c.getValue() as string)}</span> },
   { accessorKey: "user_id", header: "사용자" },
-  { accessorKey: "action", header: "작업", cell: (c) => <span className="font-mono text-[12px]">{String(c.getValue())}</span> },
+  { accessorKey: "action", header: "작업", cell: (c) => <span className="font-mono text-small">{String(c.getValue())}</span> },
   { accessorKey: "target", header: "대상", cell: (c) => <span className="block max-w-72 truncate">{String(c.getValue() ?? "")}</span> },
-  { accessorKey: "detail_json", header: "상세", cell: (c) => <span className="block max-w-96 truncate font-mono text-[11px] text-muted-foreground" title={String(c.getValue() ?? "")}>{String(c.getValue() ?? "")}</span> },
+  { accessorKey: "detail_json", header: "상세", cell: (c) => <span className="block max-w-96 truncate font-mono text-caption text-muted-foreground" title={String(c.getValue() ?? "")}>{String(c.getValue() ?? "")}</span> },
 ];
 
 function AuditTab() {

@@ -43,7 +43,7 @@ const COLUMNS: ColumnDef<Store, unknown>[] = [
     cell: (c) => (
       <div className="max-w-44 leading-tight">
         <div className="truncate font-medium">{c.row.original.name ?? c.row.original.store_id}</div>
-        <div className="truncate text-[11px] text-muted-foreground">{c.row.original.region}</div>
+        <div className="truncate text-caption text-muted-foreground">{c.row.original.region}</div>
       </div>
     ),
   },
@@ -86,7 +86,7 @@ export function NetworkSection({
       actions={
         d && (
           <>
-            <span className="text-[12px] text-muted-foreground tabular">
+            <span className="text-small text-muted-foreground tabular">
               배송지 {d.stores.length.toLocaleString()}곳
               {d.idle_stores.length > 0 && ` · 기간 내 배송 없음 ${d.idle_stores.length}곳`} · 센터 {d.warehouses.length}곳
             </span>
@@ -126,7 +126,7 @@ export function NetworkSection({
           <Skeleton className="h-[460px] rounded-lg" />
         </div>
       ) : d.stores.length + d.idle_stores.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-[13px] text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border-strong px-4 py-10 text-center text-body text-muted-foreground">
           좌표가 있는 배송지가 없습니다. 배송지(stores) 데이터에 위도·경도를 포함해 업로드하세요.
         </p>
       ) : (
@@ -137,7 +137,7 @@ export function NetworkSection({
             threshold={0.5}
             label="지도"
             placeholder={
-              <div className="flex h-[460px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-[12.5px] text-muted-foreground">
+              <div className="flex h-[460px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-body text-muted-foreground">
                 지도를 불러오는 중…
               </div>
             }

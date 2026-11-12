@@ -49,12 +49,12 @@ function LoginForm() {
           <BrandMark className="size-10" />
           <div>
             <h1 className="text-xl font-semibold tracking-tight">LogisRisk</h1>
-            <p className="mt-1 text-[13px] text-muted-foreground">물류·유통 운영 분석 플랫폼</p>
+            <p className="mt-1 text-body text-muted-foreground">물류·유통 운영 분석 플랫폼</p>
           </div>
         </div>
         <form onSubmit={onSubmit} className="space-y-4 rounded-xl border border-border bg-card p-6 shadow-card" noValidate>
           <div className="space-y-1.5">
-            <Label htmlFor="code" className="text-[13px]">
+            <Label htmlFor="code" className="text-body">
               접근 코드
             </Label>
             <div className="relative">
@@ -71,11 +71,11 @@ function LoginForm() {
                 {...form.register("code")}
               />
             </div>
-            <p id="code-help" className="text-[12px] text-muted-foreground">
+            <p id="code-help" className="text-small text-muted-foreground">
               관리자에게 받은 공용 접근 코드를 입력하세요.
             </p>
             {(form.formState.errors.code || serverError || locked) && (
-              <p role="alert" className="text-[12.5px] font-medium text-danger">
+              <p role="alert" className="text-body font-medium text-danger">
                 {locked ? "시도 횟수를 초과했습니다. 잠시 후 다시 시도하세요." : (form.formState.errors.code?.message ?? serverError)}
               </p>
             )}
@@ -84,7 +84,7 @@ function LoginForm() {
             {form.formState.isSubmitting && <Loader2 className="size-4 animate-spin" />} 입장
           </Button>
         </form>
-        <p className="mt-4 text-center text-[11.5px] text-subtle-foreground">
+        <p className="mt-4 text-center text-small text-subtle-foreground">
           접근 코드는 공개 배포 환경의 최소 보호 장치이며 개인 계정(SSO)을 대체하지 않습니다.
         </p>
       </div>

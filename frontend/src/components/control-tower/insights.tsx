@@ -76,8 +76,8 @@ export function Insights({ kpis, filters }: { kpis: Metric[] | undefined; filter
               <i.icon className="size-4" />
             </span>
             <div className="min-w-0">
-              <p className="text-[13.5px] font-semibold">{i.title}</p>
-              <p className="mt-0.5 text-[12.5px] text-muted-foreground tabular">{i.body}</p>
+              <p className="text-body font-semibold">{i.title}</p>
+              <p className="mt-0.5 text-body text-muted-foreground tabular">{i.body}</p>
             </div>
           </div>
         </div>

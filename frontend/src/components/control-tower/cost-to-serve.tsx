@@ -36,7 +36,7 @@ export function CostToServe({ filters, dim, onDim }: { filters: Filters; dim: Ct
           aria-label="집계 기준"
         >
           {DIMS.map((d) => (
-            <ToggleGroupItem key={d.v} value={d.v} className="px-2.5 text-[12px]">
+            <ToggleGroupItem key={d.v} value={d.v} className="px-2.5 text-small">
               {d.label}
             </ToggleGroupItem>
           ))}
@@ -54,11 +54,11 @@ export function CostToServe({ filters, dim, onDim }: { filters: Filters; dim: Ct
           ))}
         </div>
       ) : rows.length === 0 ? (
-        <p className="px-4 py-10 text-center text-[13px] text-muted-foreground">해당 기간에 운송비가 있는 배송이 없습니다.</p>
+        <p className="px-4 py-10 text-center text-body text-muted-foreground">해당 기간에 운송비가 있는 배송이 없습니다.</p>
       ) : (
         <div className={cn("overflow-auto", q.isFetching && "opacity-70 transition-opacity")} style={{ maxHeight: 300 }}>
-          <table className="w-full text-[12.5px]">
-            <thead className="sticky top-0 bg-card text-[11.5px] text-muted-foreground">
+          <table className="w-full text-body">
+            <thead className="sticky top-0 bg-card text-small text-muted-foreground">
               <tr className="border-b border-border">
                 <th className="px-4 py-2 text-left font-medium">{DIMS.find((d) => d.v === dim)?.label}</th>
                 <th className="px-2 py-2 text-right font-medium">운송비 · 비중</th>
@@ -78,7 +78,7 @@ export function CostToServe({ filters, dim, onDim }: { filters: Filters; dim: Ct
                         <span className="relative h-1.5 w-14 overflow-hidden rounded-full bg-muted" aria-hidden>
                           <span className="absolute inset-y-0 left-0 rounded-full bg-chart-1" style={{ width: `${share * 100}%` }} />
                         </span>
-                        <span className="w-10 text-right text-[11.5px] text-muted-foreground tabular">{pct(share, 0)}</span>
+                        <span className="w-10 text-right text-small text-muted-foreground tabular">{pct(share, 0)}</span>
                       </div>
                     </td>
                     <td className="px-2 py-2 text-right tabular">{isNum(r.cost_per_order) ? `${won(r.cost_per_order)}원` : "—"}</td>

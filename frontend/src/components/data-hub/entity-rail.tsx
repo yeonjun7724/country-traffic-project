@@ -41,11 +41,11 @@ export function EntityRail({ items, value, onChange }: { items: E[] | undefined;
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5">
-                  <span className="text-[11px] text-subtle-foreground tabular">{e.order}</span>
-                  <span className={cn("truncate text-[13px] font-medium", active && "text-primary")}>{e.label}</span>
-                  {e.demo && <span className="rounded-sm bg-kind-demo/10 px-1 text-[10px] font-semibold text-kind-demo">샘플</span>}
+                  <span className="text-caption text-subtle-foreground tabular">{e.order}</span>
+                  <span className={cn("truncate text-body font-medium", active && "text-primary")}>{e.label}</span>
+                  {e.demo && <span className="rounded-sm bg-kind-demo/10 px-1 text-caption font-semibold text-kind-demo">샘플</span>}
                 </span>
-                <span className="block truncate text-[11.5px] text-muted-foreground tabular">
+                <span className="block truncate text-small text-muted-foreground tabular">
                   {e.loaded ? `v${e.version} · ${num(e.rows)}행${e.period ? ` · ${e.period}` : ""}` : missingRefs.length ? `먼저 필요: ${missingRefs.join(", ")}` : "미적재"}
                 </span>
               </span>

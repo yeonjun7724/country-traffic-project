@@ -43,7 +43,7 @@ export function ReportsScreen() {
             v: "actions",
             label: (
               <span className="inline-flex items-center gap-1.5">
-                조치 워크플로{open > 0 && <span className="rounded-full bg-warning/10 px-1.5 text-[11px] font-semibold text-warning tabular">{open}</span>}
+                조치 워크플로{open > 0 && <span className="rounded-full bg-warning/10 px-1.5 text-caption font-semibold text-warning tabular">{open}</span>}
               </span>
             ),
           },
@@ -78,7 +78,7 @@ function ReportTab() {
                   <label
                     key={s}
                     className={cn(
-                      "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-[13px] transition-colors",
+                      "flex cursor-pointer items-center gap-2.5 rounded-lg border px-3 py-2.5 text-body transition-colors",
                       on ? "border-primary/40 bg-primary/[0.04]" : "border-border hover:bg-muted/40",
                     )}
                   >
@@ -97,7 +97,7 @@ function ReportTab() {
           ) : (
             <ul className="divide-y divide-border rounded-lg border border-border">
               {preview.data.map((p) => (
-                <li key={p.sheet} className="flex items-center justify-between px-3 py-2 text-[12.5px]">
+                <li key={p.sheet} className="flex items-center justify-between px-3 py-2 text-body">
                   <span className="flex items-center gap-2">
                     <FileSpreadsheet className="size-3.5 text-success" />
                     {p.sheet}
@@ -111,7 +111,7 @@ function ReportTab() {
             <DownloadButton path="/api/reports/excel" params={params} filename="logisrisk_report.xlsx" label="Excel 리포트" variant="default" disabled={!sections.length} />
             <DownloadButton path="/api/reports/summary.html" params={params} filename="executive_summary.html" label="경영진 요약 (HTML)" />
           </div>
-          <p className="flex items-start gap-1.5 text-[11.5px] text-subtle-foreground">
+          <p className="flex items-start gap-1.5 text-small text-subtle-foreground">
             <FileText className="mt-px size-3.5 shrink-0" />
             PDF: 내려받은 HTML 을 브라우저로 열고 인쇄 → ‘PDF로 저장’. 서버에서 PDF 를 직접 만들지는 않습니다 (한글 글꼴 번들 필요).
           </p>
@@ -156,7 +156,7 @@ function AlertsTab() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
         <Section title={`현재 발생 알림 ${q.data.alerts.length}`} description={q.data.period} bodyClassName="p-0">
           {q.data.alerts.length === 0 ? (
-            <p className="flex items-center gap-2 px-4 py-6 text-[13px] text-muted-foreground">
+            <p className="flex items-center gap-2 px-4 py-6 text-body text-muted-foreground">
               <CheckCircle2 className="size-4 text-success" /> 기준을 벗어난 항목이 없습니다.
             </p>
           ) : (
@@ -168,8 +168,8 @@ function AlertsTab() {
                   <li key={i} className="flex items-start gap-3 px-4 py-3">
                     <s.icon className={cn("mt-0.5 size-4 shrink-0", s.cls)} aria-label={s.label} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-[13px] font-medium">{a.rule}</p>
-                      <p className="text-[12.5px] text-muted-foreground tabular">{a.message}</p>
+                      <p className="text-body font-medium">{a.rule}</p>
+                      <p className="text-body text-muted-foreground tabular">{a.message}</p>
                     </div>
                     {href && (
                       <Button size="xs" variant="ghost" asChild>
@@ -254,7 +254,7 @@ function ActionsTab() {
           </Button>
         </form>
       )}
-      {!manage && <p className="text-[12px] text-muted-foreground">상태 변경은 운영 관리자 이상 권한이 필요합니다.</p>}
+      {!manage && <p className="text-small text-muted-foreground">상태 변경은 운영 관리자 이상 권한이 필요합니다.</p>}
       {q.data.length === 0 ? (
         <EmptyState title="조치 항목이 없습니다" description="알림에서 ‘조치 생성’을 누르거나 위 입력란으로 조치를 만들 수 있습니다." />
       ) : (
@@ -264,14 +264,14 @@ function ActionsTab() {
             return (
               <section key={c.status} className="flex flex-col rounded-xl border border-border bg-muted/30">
                 <header className="flex items-center justify-between px-3 py-2.5">
-                  <span className="text-[12.5px] font-semibold">{c.title}</span>
-                  <span className="rounded-full bg-card px-1.5 text-[11px] text-muted-foreground tabular ring-1 ring-border">{items.length}</span>
+                  <span className="text-body font-semibold">{c.title}</span>
+                  <span className="rounded-full bg-card px-1.5 text-caption text-muted-foreground tabular ring-1 ring-border">{items.length}</span>
                 </header>
                 <div className="flex-1 space-y-2 px-2 pb-2">
                   {items.map((a) => (
                     <article key={a.id} className="rounded-lg border border-border bg-card p-3 shadow-card">
-                      <p className="text-[13px] font-medium leading-snug">{a.title}</p>
-                      <p className="mt-1 text-[11.5px] text-muted-foreground">
+                      <p className="text-body font-medium leading-snug">{a.title}</p>
+                      <p className="mt-1 text-small text-muted-foreground">
                         #{a.id} · {a.source || "근거 없음"} · {dateTimeLabel(a.created_at)}
                       </p>
                       <RefLink action={a} />
@@ -279,7 +279,7 @@ function ActionsTab() {
                         {a.owner && <Pill>{a.owner}</Pill>}
                         {manage ? (
                           <Select value={a.status} onValueChange={(s) => update.mutate({ id: a.id, status: s, owner: a.owner })}>
-                            <SelectTrigger size="sm" className="ml-auto h-7 w-28 text-[12px]" aria-label="상태 변경">
+                            <SelectTrigger size="sm" className="ml-auto h-7 w-28 text-small" aria-label="상태 변경">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -298,7 +298,7 @@ function ActionsTab() {
                       </div>
                     </article>
                   ))}
-                  {items.length === 0 && <p className="px-2 py-4 text-center text-[12px] text-subtle-foreground">없음</p>}
+                  {items.length === 0 && <p className="px-2 py-4 text-center text-small text-subtle-foreground">없음</p>}
                 </div>
               </section>
             );
@@ -317,7 +317,7 @@ function RefLink({ action }: { action: Action }) {
   if (!href) return null;
   const label = action.ref_type === "scenario" ? `근거 시나리오 #${action.ref_id}` : "근거 알림의 원인 보기";
   return (
-    <Link href={href} className="mt-1 inline-flex items-center gap-0.5 text-[11.5px] font-medium text-primary hover:underline">
+    <Link href={href} className="mt-1 inline-flex items-center gap-0.5 text-small font-medium text-primary hover:underline">
       {label} <ArrowRight className="size-3" />
     </Link>
   );

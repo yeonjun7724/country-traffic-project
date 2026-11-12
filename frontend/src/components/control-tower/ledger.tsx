@@ -25,7 +25,7 @@ type Row = Record<string, unknown>;
 const s = (v: unknown) => (v == null ? "—" : String(v));
 
 const COLUMNS: ColumnDef<Row, unknown>[] = [
-  { accessorKey: "shipment_id", header: "운송장", cell: (c) => <span className="font-mono text-[12px]">{s(c.getValue())}</span> },
+  { accessorKey: "shipment_id", header: "운송장", cell: (c) => <span className="font-mono text-small">{s(c.getValue())}</span> },
   { accessorKey: "ship_date", header: "출고일", cell: (c) => dateLabel(c.getValue() as string) },
   {
     accessorKey: "store_name",
@@ -33,13 +33,13 @@ const COLUMNS: ColumnDef<Row, unknown>[] = [
     cell: (c) => (
       <div className="leading-tight">
         <div className="font-medium">{s(c.getValue())}</div>
-        <div className="text-[11px] text-muted-foreground">{s(c.row.original.region)}</div>
+        <div className="text-caption text-muted-foreground">{s(c.row.original.region)}</div>
       </div>
     ),
   },
   { accessorKey: "warehouse_id", header: "센터" },
   { accessorKey: "carrier", header: "운송사" },
-  { accessorKey: "vehicle_id", header: "차량", cell: (c) => <span className="font-mono text-[12px]">{s(c.getValue())}</span> },
+  { accessorKey: "vehicle_id", header: "차량", cell: (c) => <span className="font-mono text-small">{s(c.getValue())}</span> },
   { accessorKey: "planned_delivery_date", header: "약속일", cell: (c) => dateLabel(c.getValue() as string) },
   { accessorKey: "actual_delivery_date", header: "실제 배송", cell: (c) => dateLabel(c.getValue() as string) },
   {
@@ -74,7 +74,7 @@ const COLUMNS: ColumnDef<Row, unknown>[] = [
   {
     accessorKey: "cost_source",
     header: "비용 출처",
-    cell: (c) => <span className="text-[11.5px] text-muted-foreground">{s(c.getValue())}</span>,
+    cell: (c) => <span className="text-small text-muted-foreground">{s(c.getValue())}</span>,
   },
 ];
 
@@ -153,7 +153,7 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
               <TabsTrigger key={t.v} value={t.v} className="gap-1.5 px-3" aria-controls={undefined}>
                 {t.label}
                 {c !== undefined && (
-                  <span className="rounded-full bg-background/80 px-1.5 text-[11px] text-muted-foreground tabular">{c.toLocaleString()}</span>
+                  <span className="rounded-full bg-background/80 px-1.5 text-caption text-muted-foreground tabular">{c.toLocaleString()}</span>
                 )}
               </TabsTrigger>
             );
@@ -161,7 +161,7 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
         </TabsList>
       </Tabs>
       {kind === "cost" && d?.rule && (
-        <p className="text-[12px] text-muted-foreground">
+        <p className="text-small text-muted-foreground">
           판정 규칙: <span className="font-medium text-foreground">{d.rule}</span>
         </p>
       )}
@@ -170,7 +170,7 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
       ) : active.isLoading ? (
         <Skeleton className="h-80" />
       ) : !d?.available ? (
-        <p className="rounded-lg border border-dashed border-border-strong px-4 py-8 text-center text-[13px] text-muted-foreground">
+        <p className="rounded-lg border border-dashed border-border-strong px-4 py-8 text-center text-body text-muted-foreground">
           {d?.reason ?? "판정할 수 없습니다."}
         </p>
       ) : (
@@ -184,7 +184,7 @@ export function Ledger({ filters, selected, onClearSelection }: { filters: Filte
             empty={kind === "late" ? "지연된 배송이 없습니다." : "해당 조건의 배송이 없습니다."}
           />
           {d.total > d.rows.length && (
-            <p className="mt-2 text-[12px] text-muted-foreground">
+            <p className="mt-2 text-small text-muted-foreground">
               {d.total.toLocaleString()}건 중 {d.rows.length.toLocaleString()}건 표시 · 전체는 CSV 로 내려받으세요.
             </p>
           )}

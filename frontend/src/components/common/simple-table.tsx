@@ -5,8 +5,8 @@ export function SimpleTable({ rows }: { rows: Record<string, unknown>[] }) {
   const cols = Object.keys(rows[0] ?? {});
   return (
     <div className="max-h-72 overflow-auto rounded-lg border border-border">
-      <table className="w-full text-[12.5px]">
-        <thead className="sticky top-0 bg-muted text-[11.5px] text-muted-foreground">
+      <table className="w-full text-body">
+        <thead className="sticky top-0 bg-muted text-small text-muted-foreground">
           <tr>
             {cols.map((c) => (
               <th key={c} className="whitespace-nowrap px-3 py-1.5 text-left font-medium">

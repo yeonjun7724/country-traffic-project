@@ -26,8 +26,8 @@ export function PageHeader({
           <Icon className="size-5" strokeWidth={1.75} />
         </span>
         <div className="min-w-0">
-          <h1 className="text-[24px] font-semibold leading-tight tracking-[-0.02em] text-foreground">{title}</h1>
-          {description && <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{description}</p>}
+          <h1 className="text-display font-semibold leading-tight tracking-[-0.02em] text-foreground">{title}</h1>
+          {description && <p className="mt-1 text-body leading-relaxed text-muted-foreground">{description}</p>}
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">

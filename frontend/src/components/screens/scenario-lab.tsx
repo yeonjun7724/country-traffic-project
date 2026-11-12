@@ -111,8 +111,8 @@ function Editor({ tag, value, onChange, tone }: { tag: string; value: ScenarioIn
   return (
     <section className="rounded-xl border border-border bg-card shadow-card">
       <header className="flex items-center gap-2 border-b border-border px-4 py-2.5">
-        <span className={cn("flex size-6 items-center justify-center rounded-md text-[12px] font-bold text-white", tone)}>{tag}</span>
-        <Input value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value.slice(0, 100) })} className="h-8 flex-1 border-transparent px-1 text-[14px] font-semibold shadow-none hover:border-input focus-visible:border-input" aria-label={`시나리오 ${tag} 이름`} />
+        <span className={cn("flex size-6 items-center justify-center rounded-md text-small font-bold text-white", tone)}>{tag}</span>
+        <Input value={value.name} onChange={(e) => onChange({ ...value, name: e.target.value.slice(0, 100) })} className="h-8 flex-1 border-transparent px-1 text-title font-semibold shadow-none hover:border-input focus-visible:border-input" aria-label={`시나리오 ${tag} 이름`} />
         <Select value="" onValueChange={(p) => onChange({ ...BASE, ...PRESETS[p], name: p })}>
           <SelectTrigger size="sm" className="w-28" aria-label={`시나리오 ${tag} 프리셋`}>
             <SelectValue placeholder="프리셋" />
@@ -203,8 +203,8 @@ function CostTab() {
           </div>
           <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
             <Section title="Baseline 대비 비교" bodyClassName="p-0">
-              <table className="w-full text-[12.5px]">
-                <thead className="text-[11.5px] text-muted-foreground">
+              <table className="w-full text-body">
+                <thead className="text-small text-muted-foreground">
                   <tr className="border-b border-border">
                     <th className="px-4 py-2 text-left font-medium">지표</th>
                     <th className="px-3 py-2 text-right font-medium">Baseline</th>
@@ -216,7 +216,7 @@ function CostTab() {
                   {d.rows.map((r) => (
                     <tr key={r.key} className="border-b border-border last:border-0">
                       <td className="px-4 py-2">
-                        {r.label} <span className="text-[11px] text-subtle-foreground">{r.unit}</span>
+                        {r.label} <span className="text-caption text-subtle-foreground">{r.unit}</span>
                       </td>
                       <td className="px-3 py-2 text-right tabular">{fmt(r.baseline, r.unit)}</td>
                       <td className="px-3 py-2 text-right tabular">
@@ -242,12 +242,12 @@ function CostTab() {
               {!sens.data ? <Skeleton className="h-56" /> : <Tornado data={sens.data} />}
             </Section>
             <Section title="가정 · 데이터 품질" description="저장 시 계산 버전·데이터 버전과 함께 기록됩니다">
-              <ul className="space-y-1.5 text-[12.5px] text-muted-foreground">
+              <ul className="space-y-1.5 text-body text-muted-foreground">
                 {d.a.assumptions.map((x) => (
                   <li key={x}>• {x}</li>
                 ))}
               </ul>
-              <p className="mt-3 text-[12px] text-subtle-foreground tabular">
+              <p className="mt-3 text-small text-subtle-foreground tabular">
                 용량 정보 있는 운행 {num(d.a.data_quality.trips_with_capacity)}/{num(d.a.data_quality.trips_total)} · 차량 미배정 배송 {num(d.a.data_quality.shipments_without_vehicle)}건
               </p>
             </Section>
@@ -257,7 +257,7 @@ function CostTab() {
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
                 {save.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />} A · B 저장
               </Button>
-              <span className="text-[12px] text-muted-foreground">초안으로 저장되며 승인 요청·복제·Excel 내보내기는 ‘저장된 시나리오’에서 합니다.</span>
+              <span className="text-small text-muted-foreground">초안으로 저장되며 승인 요청·복제·Excel 내보내기는 ‘저장된 시나리오’에서 합니다.</span>
             </div>
           )}
         </div>
@@ -288,7 +288,7 @@ function fmt(v: number | null, unit: string) {
 function Delta({ v, unit }: { v: number | null; unit: string }) {
   if (!isNum(v) || Math.abs(v) < 1e-9) return null;
   return (
-    <span className={cn("ml-1 text-[11px]", v > 0 ? "text-danger" : "text-success")}>
+    <span className={cn("ml-1 text-caption", v > 0 ? "text-danger" : "text-success")}>
       ({v > 0 ? "+" : ""}
       {unit === "원" ? won(v) : num(v, 1)})
     </span>
@@ -299,20 +299,20 @@ function ScenarioTile({ r, tag, tone }: { r: EngineResult; tag: string; tone: st
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-3.5 shadow-card">
       <div className="flex items-center justify-between gap-2">
-        <span className={cn("truncate text-[12px] font-semibold", tone)}>
+        <span className={cn("truncate text-small font-semibold", tone)}>
           {tag} · {r.params.name}
         </span>
         <KindBadge kind="assumption" />
       </div>
       <div className="mt-1.5 flex items-baseline gap-2">
-        <span className="text-[22px] font-semibold leading-none tracking-tight tabular">{won(r.scenario.total)}</span>
-        <span className="text-[12.5px] text-muted-foreground">원</span>
-        <span className={cn("ml-auto rounded-md px-1.5 py-0.5 text-[12px] font-semibold tabular", r.delta_pct > 0 ? "bg-danger/10 text-danger" : "bg-success/10 text-success")}>
+        <span className="text-metric font-semibold leading-none tracking-tight tabular">{won(r.scenario.total)}</span>
+        <span className="text-body text-muted-foreground">원</span>
+        <span className={cn("ml-auto rounded-md px-1.5 py-0.5 text-small font-semibold tabular", r.delta_pct > 0 ? "bg-danger/10 text-danger" : "bg-success/10 text-success")}>
           {r.delta_pct > 0 ? "+" : ""}
           {r.delta_pct.toFixed(2)}%
         </span>
       </div>
-      <div className="mt-1.5 text-[11.5px] text-subtle-foreground tabular">Baseline 대비 {r.delta_total > 0 ? "+" : ""}{won(r.delta_total)}원</div>
+      <div className="mt-1.5 text-small text-subtle-foreground tabular">Baseline 대비 {r.delta_total > 0 ? "+" : ""}{won(r.delta_total)}원</div>
     </div>
   );
 }
@@ -325,8 +325,8 @@ function Waterfall({ r, title, color }: { r: EngineResult; title: string; color:
   const fmt = (v: number) => `${sign(v)}${won(Math.abs(v))}`;
   return (
     <div>
-      <p className="truncate text-[12px] font-medium text-muted-foreground">{title}</p>
-      <p className="mb-1 text-[11.5px] text-subtle-foreground tabular">
+      <p className="truncate text-small font-medium text-muted-foreground">{title}</p>
+      <p className="mb-1 text-small text-subtle-foreground tabular">
         기준 {won(base)} → 결과 {won(base + delta)} ({fmt(delta)}
         {base ? `, ${delta >= 0 ? "+" : ""}${((delta / base) * 100).toFixed(2)}%` : ""})
       </p>
@@ -343,7 +343,7 @@ function Waterfall({ r, title, color }: { r: EngineResult; title: string; color:
                 if (!active || !payload?.length) return null;
                 const d = payload[0].payload as WaterfallStep;
                 return (
-                  <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                  <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                     <div className="font-medium">{d.name}</div>
                     <div className="tabular text-muted-foreground">
                       {sign(d.value)}
@@ -390,7 +390,7 @@ function Tornado({ data }: { data: Sens[] }) {
               cursor={{ fill: "var(--muted)", opacity: 0.4 }}
               content={({ active, payload }) =>
                 active && payload?.length ? (
-                  <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                  <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                     <div className="mb-1 font-medium">{String((payload[0].payload as { factor: string }).factor)}</div>
                     {payload.map((p) => (
                       <div key={String(p.dataKey)} className="flex justify-between gap-4 tabular">
@@ -408,7 +408,7 @@ function Tornado({ data }: { data: Sens[] }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
-      <div className="mt-1 flex flex-wrap justify-center gap-3 text-[11px] text-muted-foreground">
+      <div className="mt-1 flex flex-wrap justify-center gap-3 text-caption text-muted-foreground">
         {keys.map((k) => (
           <span key={k} className="flex items-center gap-1">
             <span className="size-2 rounded-sm" style={{ background: color[k], opacity: alpha[k] }} />
@@ -481,8 +481,8 @@ function OutageTab() {
             <StatTile label="평균 거리 증가" value={num(d.stores.reduce((s, x) => s + x.dist_change_km, 0) / (d.stores.length || 1), 1)} unit="km" tone="warning" />
           </div>
           <Section title="대체 센터 처리용량" bodyClassName="p-0">
-            <table className="w-full text-[12.5px]">
-              <thead className="text-[11.5px] text-muted-foreground">
+            <table className="w-full text-body">
+              <thead className="text-small text-muted-foreground">
                 <tr className="border-b border-border">
                   {["대체 센터", "현재 일 주문", "추가 일 주문", "일 처리용량", "중단 후 가동률"].map((h, i) => (
                     <th key={h} className={cn("px-4 py-2 font-medium", i ? "text-right" : "text-left")}>
@@ -553,7 +553,7 @@ function SavedTab() {
         {["all", "cost_scenario", "route_plan", "warehouse_outage", "risk_weights"].map((k) => (
           <Button key={k} size="sm" variant={kind === k ? "secondary" : "ghost"} className="h-7" onClick={() => setKind(k)}>
             {k === "all" ? "전체" : KIND_LABEL[k]}
-            <span className="text-[11px] text-subtle-foreground tabular">{k === "all" ? q.data.length : q.data.filter((r) => r.kind === k).length}</span>
+            <span className="text-caption text-subtle-foreground tabular">{k === "all" ? q.data.length : q.data.filter((r) => r.kind === k).length}</span>
           </Button>
         ))}
         {pending > 0 && <Pill tone="warning" dot className="ml-auto">승인 대기 {pending}</Pill>}
@@ -565,14 +565,14 @@ function SavedTab() {
             return (
               <li key={r.id}>
                 <button type="button" onClick={() => setOpen(r.id)} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/40">
-                  <span className="w-10 text-[12px] text-subtle-foreground tabular">#{r.id}</span>
+                  <span className="w-10 text-small text-subtle-foreground tabular">#{r.id}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13.5px] font-medium">{r.name}</p>
-                    <p className="text-[11.5px] text-muted-foreground">
+                    <p className="truncate text-body font-medium">{r.name}</p>
+                    <p className="text-small text-muted-foreground">
                       {KIND_LABEL[r.kind] ?? r.kind} · {r.created_by} · {dateTimeLabel(r.created_at)}
                     </p>
                   </div>
-                  <span className="hidden font-mono text-[11px] text-subtle-foreground md:inline">{r.calc_version}</span>
+                  <span className="hidden font-mono text-caption text-subtle-foreground md:inline">{r.calc_version}</span>
                   <Pill tone={st.tone}>{st.label}</Pill>
                 </button>
               </li>
@@ -609,13 +609,13 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
         {!s ? (
           <Skeleton className="m-5 h-64" />
         ) : (
-          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 text-[13px]">
+          <div className="flex-1 space-y-5 overflow-y-auto px-5 py-5 text-body">
             {s.status === "proposed" && (
               <div className="space-y-2 rounded-lg border border-warning/30 bg-warning/[0.06] p-3">
                 <p className="font-medium">승인 대기 중</p>
                 {can("plan.approve") ? (
                   <>
-                    <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="검토 의견 (선택)" className="min-h-16 bg-card text-[13px]" />
+                    <Textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="검토 의견 (선택)" className="min-h-16 bg-card text-body" />
                     <div className="flex gap-2">
                       <Button size="sm" onClick={() => status.mutate({ status: "approved" })} disabled={status.isPending}>
                         <Check className="size-3.5" /> 승인
@@ -624,10 +624,10 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
                         <X className="size-3.5" /> 반려
                       </Button>
                     </div>
-                    <p className="text-[11.5px] text-muted-foreground">승인은 기록만 남깁니다. 실제 배차·발주는 기존 시스템에서 담당자가 확정합니다.</p>
+                    <p className="text-small text-muted-foreground">승인은 기록만 남깁니다. 실제 배차·발주는 기존 시스템에서 담당자가 확정합니다.</p>
                   </>
                 ) : (
-                  <p className="text-[12px] text-muted-foreground">승인/반려는 운영 관리자 이상 권한이 필요합니다.</p>
+                  <p className="text-small text-muted-foreground">승인/반려는 운영 관리자 이상 권한이 필요합니다.</p>
                 )}
               </div>
             )}
@@ -648,7 +648,7 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
             </Block>
             {s.assumptions && s.assumptions.length > 0 && (
               <Block title="가정">
-                <ul className="space-y-1 text-[12.5px] text-muted-foreground">
+                <ul className="space-y-1 text-body text-muted-foreground">
                   {s.assumptions.map((a) => (
                     <li key={a}>• {a}</li>
                   ))}
@@ -660,7 +660,7 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
               <Block title="데이터 버전">
                 <div className="flex flex-wrap gap-1.5">
                   {Object.entries(s.data_versions).map(([k, v]) => (
-                    <span key={k} className="rounded-md bg-muted px-1.5 py-0.5 text-[11.5px] tabular">
+                    <span key={k} className="rounded-md bg-muted px-1.5 py-0.5 text-small tabular">
                       {k} v{v.version}
                     </span>
                   ))}
@@ -700,14 +700,14 @@ function ScenarioActions({ id, name }: { id: number; name: string }) {
         <ul className="space-y-1.5">
           {q.data.map((a) => (
             <li key={a.id} className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
-              <span className="text-[11.5px] text-subtle-foreground tabular">#{a.id}</span>
-              <span className="min-w-0 flex-1 truncate text-[12.5px]">{a.title}</span>
+              <span className="text-small text-subtle-foreground tabular">#{a.id}</span>
+              <span className="min-w-0 flex-1 truncate text-body">{a.title}</span>
               <Pill tone={STATUS_LABEL[a.status].tone}>{STATUS_LABEL[a.status].label}</Pill>
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-[12px] text-muted-foreground">{q.data ? "이 시나리오를 근거로 만든 조치가 없습니다." : "불러오는 중"}</p>
+        <p className="text-small text-muted-foreground">{q.data ? "이 시나리오를 근거로 만든 조치가 없습니다." : "불러오는 중"}</p>
       )}
       {can("scenario.save") && (
         <form
@@ -730,7 +730,7 @@ function ScenarioActions({ id, name }: { id: number; name: string }) {
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-[11.5px] font-semibold uppercase tracking-wide text-subtle-foreground">{title}</h3>
+      <h3 className="text-small font-semibold uppercase tracking-wide text-subtle-foreground">{title}</h3>
       {children}
     </div>
   );
@@ -741,8 +741,8 @@ function KV({ obj }: { obj: Record<string, unknown> }) {
     <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-lg border border-border bg-border">
       {Object.entries(obj).map(([k, v]) => (
         <div key={k} className="bg-card px-3 py-2">
-          <dt className="text-[11px] text-muted-foreground">{k}</dt>
-          <dd className="mt-0.5 break-words text-[12.5px] font-medium tabular">{typeof v === "object" ? JSON.stringify(v) : String(v ?? "—")}</dd>
+          <dt className="text-caption text-muted-foreground">{k}</dt>
+          <dd className="mt-0.5 break-words text-body font-medium tabular">{typeof v === "object" ? JSON.stringify(v) : String(v ?? "—")}</dd>
         </div>
       ))}
     </dl>
@@ -764,8 +764,8 @@ function ScopeTab() {
   ];
   return (
     <Section title="시나리오 지원 범위" description="미지원 항목은 화면에 버튼을 두지 않습니다." bodyClassName="p-0">
-      <table className="w-full text-[13px]">
-        <thead className="text-[11.5px] text-muted-foreground">
+      <table className="w-full text-body">
+        <thead className="text-small text-muted-foreground">
           <tr className="border-b border-border">
             <th className="px-4 py-2 text-left font-medium">시나리오</th>
             <th className="px-4 py-2 text-left font-medium">지원</th>

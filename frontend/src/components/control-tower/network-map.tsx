@@ -183,7 +183,7 @@ export function NetworkMap({
         popup
           .setLngLat((f.geometry as GeoJSON.Point).coordinates as [number, number])
           .setHTML(
-            `<div style="padding:10px 12px;font-size:12.5px;line-height:1.5">
+            `<div style="padding:10px 12px;font-size:13px;line-height:1.5">
               <div style="font-weight:600;font-size:13px">${esc(String(p.name))}</div>
               <div style="color:var(--muted-foreground)">${esc(String(p.region))} · ${esc(String(p.id))}</div>
               <div style="margin-top:6px;display:grid;grid-template-columns:auto auto;gap:2px 14px">
@@ -222,7 +222,7 @@ export function NetworkMap({
       .map((w) => {
         const node = document.createElement("div");
         node.className =
-          "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-background shadow-md";
+          "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-caption font-semibold text-background shadow-md";
         node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:var(--primary);align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.name ?? w.warehouse_id)}`;
         node.setAttribute("role", "img");
         node.setAttribute("aria-label", `센터 ${w.name ?? w.warehouse_id}`);
@@ -248,7 +248,7 @@ export function NetworkMap({
       <div ref={el} className="h-full w-full" role="application" aria-label="배송 네트워크 지도" />
       <Legend />
       {basemapFailed && (
-        <div className="absolute right-12 top-2 rounded-md bg-card/90 px-2 py-1 text-[11px] text-muted-foreground shadow">
+        <div className="absolute right-12 top-2 rounded-md bg-card/90 px-2 py-1 text-caption text-muted-foreground shadow">
           배경지도를 불러오지 못해 단순 배경으로 표시합니다
         </div>
       )}
@@ -258,7 +258,7 @@ export function NetworkMap({
 
 function Legend() {
   return (
-    <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg border border-border bg-card/92 px-3 py-2 text-[11px] shadow-sm backdrop-blur">
+    <div className="pointer-events-none absolute bottom-2 left-2 rounded-lg border border-border bg-card/92 px-3 py-2 text-caption shadow-sm backdrop-blur">
       <div className="mb-1 font-medium text-foreground">배송지 지연율</div>
       <div className="flex items-center gap-1.5">
         <span className="tabular text-muted-foreground">0%</span>

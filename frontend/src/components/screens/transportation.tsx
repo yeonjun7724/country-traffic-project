@@ -106,7 +106,7 @@ function CtsTab() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <ToggleGroup type="single" variant="outline" size="sm" value={dim} onValueChange={(v) => v && setDim(v as Dim)} aria-label="집계 기준">
           {(Object.keys(DIMS) as Dim[]).map((k) => (
-            <ToggleGroupItem key={k} value={k} className="px-3 text-[12.5px]">
+            <ToggleGroupItem key={k} value={k} className="px-3 text-body">
               {DIMS[k]}
             </ToggleGroupItem>
           ))}
@@ -119,7 +119,7 @@ function CtsTab() {
           {!q.data ? (
             <Skeleton className="h-72" />
           ) : top.length === 0 ? (
-            <p className="py-16 text-center text-[13px] text-muted-foreground">대상 배송이 없습니다.</p>
+            <p className="py-16 text-center text-body text-muted-foreground">대상 배송이 없습니다.</p>
           ) : (
             <div style={{ height: 300 }} role="img" aria-label="운송비 차트">
               <ResponsiveContainer>
@@ -132,7 +132,7 @@ function CtsTab() {
                     cursor={{ fill: "var(--muted)", opacity: 0.5 }}
                     content={({ active, payload }) =>
                       active && payload?.length ? (
-                        <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                        <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                           <div className="font-medium">{String((payload[0].payload as { label: string }).label)}</div>
                           <div className="tabular text-muted-foreground">
                             운송비 {won((payload[0].payload as CtsRow).cost, { compact: false })}원 · 주문당 {won((payload[0].payload as CtsRow).cost_per_order)}원
@@ -165,7 +165,7 @@ function CtsTab() {
 // ── 연료비 · 연비 ──────────────────────────────────────────────────────
 type V = NonNullable<Fuel["vehicles"]>[number];
 const VCOLS: ColumnDef<V, unknown>[] = [
-  { accessorKey: "vehicle_id", header: "차량", cell: (c) => <span className="font-mono text-[12px]">{String(c.getValue() ?? "미배정")}</span> },
+  { accessorKey: "vehicle_id", header: "차량", cell: (c) => <span className="font-mono text-small">{String(c.getValue() ?? "미배정")}</span> },
   { accessorKey: "carrier", header: "운송사" },
   { accessorKey: "vehicle_type", header: "차종" },
   { accessorKey: "shipments", header: "배송", meta: { align: "right" } },
@@ -220,10 +220,10 @@ function SourceList({ title, data }: { title: string; data: Record<string, numbe
   const total = Object.values(data).reduce((a, b) => a + b, 0) || 1;
   return (
     <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-      <h3 className="mb-2.5 text-[13px] font-semibold">{title}</h3>
+      <h3 className="mb-2.5 text-body font-semibold">{title}</h3>
       <ul className="space-y-2">
         {Object.entries(data).map(([k, v]) => (
-          <li key={k} className="text-[12.5px]">
+          <li key={k} className="text-body">
             <div className="flex justify-between gap-2">
               <span className="truncate">{k}</span>
               <span className="tabular text-muted-foreground">{num(v)}건</span>
@@ -278,8 +278,8 @@ function PlanTab() {
       <Section title="계획 조건" bodyClassName="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="계획 대상" className="sm:col-span-2">
           <ToggleGroup type="single" variant="outline" size="sm" value={source} onValueChange={(v) => v && setSource(v as typeof source)} className="w-full">
-            <ToggleGroupItem value="orders" className="flex-1 text-[12px]">미출고 주문</ToggleGroupItem>
-            <ToggleGroupItem value="shipments" className="flex-1 text-[12px]">과거 실적 재계획</ToggleGroupItem>
+            <ToggleGroupItem value="orders" className="flex-1 text-small">미출고 주문</ToggleGroupItem>
+            <ToggleGroupItem value="shipments" className="flex-1 text-small">과거 실적 재계획</ToggleGroupItem>
           </ToggleGroup>
         </Field>
         <Field label={source === "orders" ? "납기일" : "출고일"}>
@@ -363,7 +363,7 @@ function PlanTab() {
               <Button size="sm" onClick={() => save.mutate()} disabled={save.isPending}>
                 {save.isPending ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />} 승인 요청으로 저장
               </Button>
-              <span className="text-[12px] text-muted-foreground">배차 확정이 아닙니다. 승인해도 외부 TMS 는 자동 실행되지 않습니다.</span>
+              <span className="text-small text-muted-foreground">배차 확정이 아닙니다. 승인해도 외부 TMS 는 자동 실행되지 않습니다.</span>
             </div>
           )}
         </div>
@@ -431,8 +431,8 @@ function RouteMap({ plan }: { plan: Plan }) {
 
 function CompareTable({ rows }: { rows: Record<string, number | string | null>[] }) {
   return (
-    <table className="w-full whitespace-nowrap text-[12.5px]">
-      <thead className="text-[11.5px] text-muted-foreground">
+    <table className="w-full whitespace-nowrap text-body">
+      <thead className="text-small text-muted-foreground">
         <tr className="border-b border-border">
           <th className="px-4 py-2 text-left font-medium">지표</th>
           <th className="px-3 py-2 text-right font-medium">현행(재구성)</th>
@@ -446,7 +446,7 @@ function CompareTable({ rows }: { rows: Record<string, number | string | null>[]
           return (
             <tr key={i} className="border-b border-border last:border-0">
               <td className="px-4 py-2">
-                {String(r["지표"])} <span className="text-[11px] text-subtle-foreground">{String(r["단위"] ?? "")}</span>
+                {String(r["지표"])} <span className="text-caption text-subtle-foreground">{String(r["단위"] ?? "")}</span>
               </td>
               <td className="px-3 py-2 text-right tabular">{num(r["현행(재구성)"] as number, 1)}</td>
               <td className="px-3 py-2 text-right font-medium tabular">{num(r["제안"] as number, 1)}</td>
@@ -464,8 +464,8 @@ function CompareTable({ rows }: { rows: Record<string, number | string | null>[]
 function RoutesTable({ plan }: { plan: Plan }) {
   return (
     <div className="overflow-x-auto">
-    <table className="w-full whitespace-nowrap text-[12.5px]">
-      <thead className="text-[11.5px] text-muted-foreground">
+    <table className="w-full whitespace-nowrap text-body">
+      <thead className="text-small text-muted-foreground">
         <tr className="border-b border-border">
           {["경로", "차량", "배송지", "적재", "적재율", "거리", "시간", "추정 비용"].map((h, i) => (
             <th key={h} className={cn("px-3 py-2 font-medium", i >= 2 ? "text-right" : "text-left", i === 0 && "pl-4", i === 7 && "pr-4")}>
@@ -484,7 +484,7 @@ function RoutesTable({ plan }: { plan: Plan }) {
                   <span className="size-2 rounded-full" style={{ background: `var(${routeToken(r.route as number)})` }} />R{String(r.route)}
                 </span>
               </td>
-              <td className="px-3 py-2 font-mono text-[12px]">{String(r.vehicle_id)}</td>
+              <td className="px-3 py-2 font-mono text-small">{String(r.vehicle_id)}</td>
               <td className="px-3 py-2 text-right tabular">{num(r.stops as number)}</td>
               <td className="px-3 py-2 text-right tabular">{num(r.load_kg as number)}kg</td>
               <td className="px-3 py-2 text-right">

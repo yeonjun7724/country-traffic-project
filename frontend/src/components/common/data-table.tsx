@@ -93,7 +93,7 @@ export function DataTable<T>({
       aria-label={ariaLabel}
       role="region"
     >
-      <table className="w-full border-separate border-spacing-0 text-[12.5px]">
+      <table className="w-full border-separate border-spacing-0 text-body">
         <thead className="sticky top-0 z-10 bg-muted/95 backdrop-blur">
           {table.getHeaderGroups().map((hg) => (
             <tr key={hg.id}>
@@ -117,7 +117,7 @@ export function DataTable<T>({
                     scope="col"
                     aria-sort={sort === "asc" ? "ascending" : sort === "desc" ? "descending" : "none"}
                     className={cn(
-                      "h-9 whitespace-nowrap border-b border-border px-3 text-[11.5px] font-medium text-muted-foreground",
+                      "h-9 whitespace-nowrap border-b border-border px-3 text-small font-medium text-muted-foreground",
                       meta?.align === "right" ? "text-right" : "text-left",
                     )}
                   >
@@ -151,7 +151,7 @@ export function DataTable<T>({
         <tbody>
           {rows.length === 0 && (
             <tr>
-              <td colSpan={colCount} className="px-3 py-10 text-center text-[13px] text-muted-foreground">
+              <td colSpan={colCount} className="px-3 py-10 text-center text-body text-muted-foreground">
                 {empty ?? "표시할 데이터가 없습니다."}
               </td>
             </tr>

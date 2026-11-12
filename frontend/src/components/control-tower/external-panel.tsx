@@ -15,10 +15,10 @@ export function ExternalPanel() {
     <section className="flex h-full flex-col rounded-xl border border-external/20 bg-gradient-to-b from-external/[0.05] to-card shadow-card">
       <header className="flex items-start justify-between gap-2 border-b border-external/15 px-4 py-3">
         <div className="space-y-0.5">
-          <h2 className="flex items-center gap-1.5 text-[14px] font-semibold tracking-tight">
+          <h2 className="flex items-center gap-1.5 text-title font-semibold tracking-tight">
             <Globe2 className="size-4 text-external" /> 외부 위험 지표
           </h2>
-          <p className="text-[12.5px] text-muted-foreground">고속도로 영업소·전국 유가 (공공 데이터 분석)</p>
+          <p className="text-body text-muted-foreground">고속도로 영업소·전국 유가 (공공 데이터 분석)</p>
         </div>
         <Pill tone="external">기업 실적 아님</Pill>
       </header>
@@ -26,7 +26,7 @@ export function ExternalPanel() {
         {q.isLoading ? (
           <Skeleton className="h-24" />
         ) : !d?.available ? (
-          <p className="text-[13px] text-muted-foreground">외부 위험 데이터 파일이 없습니다.</p>
+          <p className="text-body text-muted-foreground">외부 위험 데이터 파일이 없습니다.</p>
         ) : (
           <dl className="grid grid-cols-3 gap-3">
             <Stat k="분석 영업소" v={`${num(d.units)}개`} sub="좌표 보유" />
@@ -43,7 +43,7 @@ export function ExternalPanel() {
           </dl>
         )}
         {d && d.audit_warnings > 0 && (
-          <p className="mt-3 rounded-md bg-warning/[0.08] px-2.5 py-1.5 text-[12px] text-foreground/80">
+          <p className="mt-3 rounded-md bg-warning/[0.08] px-2.5 py-1.5 text-small text-foreground/80">
             외부 데이터 감사 경고 {d.audit_warnings}건 — 저장된 유가 예측은 과거 기간이라 미래 전망으로 쓰지 않습니다.
           </p>
         )}
@@ -55,9 +55,9 @@ export function ExternalPanel() {
 function Stat({ k, v, sub }: { k: string; v: string; sub?: string }) {
   return (
     <div className="min-w-0">
-      <dt className="truncate text-[11.5px] text-muted-foreground">{k}</dt>
-      <dd className="mt-0.5 text-[18px] font-semibold tracking-tight tabular">{v}</dd>
-      {sub && <dd className="truncate text-[11px] text-subtle-foreground">{sub}</dd>}
+      <dt className="truncate text-small text-muted-foreground">{k}</dt>
+      <dd className="mt-0.5 text-heading font-semibold tracking-tight tabular">{v}</dd>
+      {sub && <dd className="truncate text-caption text-subtle-foreground">{sub}</dd>}
     </div>
   );
 }

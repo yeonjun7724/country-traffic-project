@@ -44,7 +44,7 @@ export function DataHub() {
             <TabsTrigger
               key={t.v}
               value={t.v}
-              className="h-9 flex-none rounded-none border-0 border-b-2 border-transparent px-0.5 text-[13px] data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+              className="h-9 flex-none rounded-none border-0 border-b-2 border-transparent px-0.5 text-body data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
             >
               {t.label}
             </TabsTrigger>
@@ -91,8 +91,8 @@ function UploadTab() {
       <div className="flex items-start gap-3 rounded-xl border border-border bg-card p-5 shadow-card">
         <Lock className="mt-0.5 size-4 text-muted-foreground" />
         <div>
-          <p className="text-[13.5px] font-medium">업로드 권한이 없습니다</p>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground">데이터 업로드는 분석가 이상 권한이 필요합니다. 현재 역할: {me?.role_label}</p>
+          <p className="text-body font-medium">업로드 권한이 없습니다</p>
+          <p className="mt-0.5 text-body text-muted-foreground">데이터 업로드는 분석가 이상 권한이 필요합니다. 현재 역할: {me?.role_label}</p>
         </div>
       </div>
     );
@@ -101,15 +101,15 @@ function UploadTab() {
     <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
       <aside className="h-fit rounded-xl border border-border bg-card shadow-card lg:sticky lg:top-[72px]">
         <div className="border-b border-border px-4 py-3">
-          <h2 className="text-[13.5px] font-semibold">데이터 유형</h2>
-          <p className="mt-0.5 text-[12px] text-muted-foreground">참조 관계 때문에 위에서부터 순서대로 올리세요.</p>
+          <h2 className="text-body font-semibold">데이터 유형</h2>
+          <p className="mt-0.5 text-small text-muted-foreground">참조 관계 때문에 위에서부터 순서대로 올리세요.</p>
         </div>
         <EntityRail items={ents.data} value={entity} onChange={setEntity} />
       </aside>
       <section className="min-w-0 rounded-xl border border-border bg-card p-5 shadow-card">
         <div className="mb-4">
-          <h2 className="text-[15px] font-semibold">{label} 업로드</h2>
-          <p className="mt-0.5 text-[12.5px] text-muted-foreground">
+          <h2 className="text-title font-semibold">{label} 업로드</h2>
+          <p className="mt-0.5 text-body text-muted-foreground">
             {me?.is_demo ? "샘플 워크스페이스 — 올린 데이터도 샘플로 표시되며 내 워크스페이스와 분리됩니다." : "저장하면 새 버전으로 활성화되고, 이전 버전은 보존됩니다."}
           </p>
         </div>

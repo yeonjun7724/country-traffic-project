@@ -23,12 +23,12 @@ export function KpiGroups({ kpis, loading }: { kpis: Metric[] | undefined; loadi
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {GROUPS.map((g) => (
           <section key={g.title} className="overflow-hidden rounded-xl border border-border bg-card shadow-card" aria-label={g.title}>
-            <h2 className="border-b border-border bg-muted/30 px-4 py-2 text-[12px] font-semibold text-muted-foreground">{g.title}</h2>
+            <h2 className="border-b border-border bg-muted/30 px-4 py-2 text-small font-semibold text-muted-foreground">{g.title}</h2>
             <div className="divide-y divide-border">
               {g.keys.map((k) => {
                 const m = by.get(k);
                 return loading || !m ? (
-                  <div key={k} className="flex h-[71px] items-center justify-between px-4">
+                  <div key={k} className="flex h-[72px] items-center justify-between px-4">
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-6 w-24" />
                   </div>

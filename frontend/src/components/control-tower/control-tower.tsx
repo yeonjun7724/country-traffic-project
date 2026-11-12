@@ -98,7 +98,7 @@ function DailySection({ filters }: { filters: Filters }) {
       ) : daily.isLoading ? (
         <Skeleton className="h-[260px]" />
       ) : (daily.data ?? []).length === 0 ? (
-        <p className="py-20 text-center text-[13px] text-muted-foreground">해당 기간에 출고된 배송이 없습니다.</p>
+        <p className="py-20 text-center text-body text-muted-foreground">해당 기간에 출고된 배송이 없습니다.</p>
       ) : (
         <DailyChart data={daily.data!} />
       )}

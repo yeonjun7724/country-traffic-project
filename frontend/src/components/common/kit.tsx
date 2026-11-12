@@ -34,14 +34,14 @@ export function StatTile({
 }) {
   return (
     <div className={cn("rounded-xl border border-border bg-card px-4 py-3.5 shadow-card", className)}>
-      <div className="flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground">
+      <div className="flex items-center gap-1.5 text-small font-medium text-muted-foreground">
         {Icon && <Icon className="size-3.5" />}
         {label}
       </div>
       <div className="mt-1.5 flex items-baseline gap-1">
         <span
           className={cn(
-            "text-[22px] font-semibold leading-none tracking-tight tabular",
+            "text-metric font-semibold leading-none tracking-tight tabular",
             tone === "success" && "text-success",
             tone === "warning" && "text-warning",
             tone === "danger" && "text-danger",
@@ -51,9 +51,9 @@ export function StatTile({
         >
           {value}
         </span>
-        {unit && <span className="text-[12.5px] font-medium text-muted-foreground">{unit}</span>}
+        {unit && <span className="text-body font-medium text-muted-foreground">{unit}</span>}
       </div>
-      {sub && <div className="mt-1.5 text-[11.5px] text-subtle-foreground tabular">{sub}</div>}
+      {sub && <div className="mt-1.5 text-small text-subtle-foreground tabular">{sub}</div>}
     </div>
   );
 }
@@ -80,7 +80,7 @@ export function Callout({
   const c = CALLOUT[tone];
   const Icon = c.icon;
   return (
-    <div role={tone === "danger" ? "alert" : undefined} className={cn("flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-[12.5px] leading-relaxed", c.box, className)}>
+    <div role={tone === "danger" ? "alert" : undefined} className={cn("flex items-start gap-2.5 rounded-lg border px-3.5 py-2.5 text-body leading-relaxed", c.box, className)}>
       <Icon className={cn("mt-0.5 size-4 shrink-0", c.ic)} />
       <div className="min-w-0 text-foreground/85">
         {title && <span className="mr-1 font-semibold text-foreground">{title}</span>}
@@ -115,7 +115,7 @@ export function LineTabs({ items, value, onChange }: { items: { v: string; label
             value={t.v}
             // 탭 패널(TabsContent)을 쓰지 않고 화면이 직접 내용을 바꾸므로, 존재하지 않는 패널을 가리키는 aria-controls 제거 (axe critical)
             aria-controls={undefined}
-            className="h-9 flex-none rounded-none border-0 border-b-2 border-transparent px-0.5 text-[13px] data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
+            className="h-9 flex-none rounded-none border-0 border-b-2 border-transparent px-0.5 text-body data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:shadow-none"
           >
             {t.label}
           </TabsTrigger>
@@ -203,7 +203,7 @@ export function NumberField({
 }) {
   return (
     <div className="space-y-1">
-      <Label htmlFor={id} className="text-[12px] font-medium text-muted-foreground">
+      <Label htmlFor={id} className="text-small font-medium text-muted-foreground">
         {label}
       </Label>
       <div className="relative">
@@ -221,14 +221,14 @@ export function NumberField({
             if (!Number.isNaN(v)) onChange(min !== undefined && v < min ? min : max !== undefined && v > max ? max : v);
           }}
           className={cn(
-            "h-8 w-full rounded-md border border-input bg-card px-2.5 text-[13px] tabular shadow-none outline-none transition-colors",
+            "h-8 w-full rounded-md border border-input bg-card px-2.5 text-body tabular shadow-none outline-none transition-colors",
             "focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-60",
             suffix && "pr-9",
           )}
         />
-        {suffix && <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[11.5px] text-subtle-foreground">{suffix}</span>}
+        {suffix && <span className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-small text-subtle-foreground">{suffix}</span>}
       </div>
-      {hint && <p className="text-[11px] text-subtle-foreground">{hint}</p>}
+      {hint && <p className="text-caption text-subtle-foreground">{hint}</p>}
     </div>
   );
 }
@@ -236,7 +236,7 @@ export function NumberField({
 export function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={cn("space-y-1", className)}>
-      <div className="text-[12px] font-medium text-muted-foreground">{label}</div>
+      <div className="text-small font-medium text-muted-foreground">{label}</div>
       {children}
     </div>
   );

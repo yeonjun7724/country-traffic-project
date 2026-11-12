@@ -75,7 +75,7 @@ export function MultiSelect({
                       {on && <Check className="size-3" />}
                     </span>
                     <span className="flex-1 truncate">{o.label}</span>
-                    {o.label !== o.value && <span className="text-[11px] text-subtle-foreground">{o.value}</span>}
+                    {o.label !== o.value && <span className="text-caption text-subtle-foreground">{o.value}</span>}
                   </CommandItem>
                 );
               })}

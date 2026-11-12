@@ -52,7 +52,7 @@ export function DatasetsTab() {
   return (
     <div className="space-y-3">
       {!admin && (
-        <p className="rounded-lg bg-muted px-3 py-2 text-[12.5px] text-muted-foreground">버전 활성화(롤백)·비활성화는 관리자 권한이 필요합니다.</p>
+        <p className="rounded-lg bg-muted px-3 py-2 text-body text-muted-foreground">버전 활성화(롤백)·비활성화는 관리자 권한이 필요합니다.</p>
       )}
       {Object.entries(groups).map(([entity, list]) => {
         const active = list.find((d) => d.is_active);
@@ -60,8 +60,8 @@ export function DatasetsTab() {
           <section key={entity} className="overflow-hidden rounded-xl border border-border bg-card shadow-card">
             <header className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-4 py-2.5">
               <div className="flex items-center gap-2">
-                <h3 className="text-[13.5px] font-semibold">{list[0].label}</h3>
-                <span className="font-mono text-[11.5px] text-subtle-foreground">{entity}</span>
+                <h3 className="text-body font-semibold">{list[0].label}</h3>
+                <span className="font-mono text-small text-subtle-foreground">{entity}</span>
                 {active ? <Pill tone="success" dot>v{active.version} 사용 중</Pill> : <Pill>비활성</Pill>}
               </div>
               {admin && active && (
@@ -71,8 +71,8 @@ export function DatasetsTab() {
               )}
             </header>
             <div className="overflow-x-auto">
-              <table className="w-full text-[12.5px]">
-                <thead className="text-[11.5px] text-muted-foreground">
+              <table className="w-full text-body">
+                <thead className="text-small text-muted-foreground">
                   <tr className="border-b border-border">
                     {["버전", "파일", "출처", "행", "제외", "기간", "업로드", ""].map((h, i) => (
                       <th key={i} className={cn("px-4 py-2 font-medium", i >= 3 && i <= 4 ? "text-right" : "text-left")}>
@@ -86,7 +86,7 @@ export function DatasetsTab() {
                     <tr key={d.id} className={cn("border-b border-border last:border-0", d.is_active && "bg-success/[0.04]")}>
                       <td className="px-4 py-2 font-medium tabular">
                         v{d.version}
-                        {d.is_demo && <span className="ml-1.5 rounded-sm bg-kind-demo/10 px-1 text-[10px] font-semibold text-kind-demo">샘플</span>}
+                        {d.is_demo && <span className="ml-1.5 rounded-sm bg-kind-demo/10 px-1 text-caption font-semibold text-kind-demo">샘플</span>}
                       </td>
                       <td className="max-w-56 truncate px-4 py-2">{d.filename ?? "—"}</td>
                       <td className="px-4 py-2 text-muted-foreground">{d.source === "demo_fixture" ? "샘플" : d.source === "upload" ? "업로드" : d.source}</td>

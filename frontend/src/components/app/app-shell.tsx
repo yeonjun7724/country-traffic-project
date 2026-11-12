@@ -100,7 +100,7 @@ function Crumb() {
   const item = sec?.items.find((i) => pathname.startsWith(i.href.replace(/\/$/, "")));
   if (!sec || !item) return null;
   return (
-    <nav aria-label="현재 위치" className="hidden items-center gap-1.5 text-[13px] md:flex">
+    <nav aria-label="현재 위치" className="hidden items-center gap-1.5 text-body md:flex">
       <ChevronRight className="size-3.5 text-subtle-foreground" />
       <span className="text-subtle-foreground">{sec.section}</span>
       <ChevronRight className="size-3.5 text-subtle-foreground" />
@@ -113,7 +113,7 @@ function Freshness() {
   const { me } = useWorkspace();
   if (!me) return null;
   return (
-    <span className="hidden items-center gap-1.5 text-[12px] text-muted-foreground xl:inline-flex" title="마지막 데이터 업로드 시각">
+    <span className="hidden items-center gap-1.5 text-small text-muted-foreground xl:inline-flex" title="마지막 데이터 업로드 시각">
       <span className={cn("size-1.5 rounded-full", me.data_updated_at ? "bg-success" : "bg-border-strong")} />
       {me.data_updated_at ? `데이터 ${dateTimeLabel(me.data_updated_at)}` : "운영 데이터 없음"}
     </span>
@@ -137,7 +137,7 @@ function SampleBanner() {
   const mine = me?.workspaces.find((w) => !w.is_demo);
   return (
     // me 응답 전에는 html[data-demo] (첫 페인트 전 인라인 스크립트)로 자리만 결정 → 배너가 늦게 끼어들며 본문이 밀리지 않음
-    <div className="sample-banner flex h-[30px] items-center gap-2 border-t border-kind-demo/20 bg-kind-demo/[0.07] px-4 text-[12px] text-foreground/80">
+    <div className="sample-banner flex h-[30px] items-center gap-2 border-t border-kind-demo/20 bg-kind-demo/[0.07] px-4 text-small text-foreground/80">
       <FlaskConical className="size-3.5 shrink-0 text-kind-demo" />
       <span className="truncate">
         <b className="font-semibold text-kind-demo">샘플 워크스페이스</b> · 화면의 운영 수치는 시연용 가상 데이터로 계산한 값이며 실제 성과가 아닙니다.

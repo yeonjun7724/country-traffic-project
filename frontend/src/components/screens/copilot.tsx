@@ -112,8 +112,8 @@ export function CopilotScreen() {
                 <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow">
                   <Sparkles className="size-5" />
                 </div>
-                <h2 className="mt-4 text-[17px] font-semibold">무엇을 분석할까요?</h2>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+                <h2 className="mt-4 text-heading font-semibold">무엇을 분석할까요?</h2>
+                <p className="mt-1.5 text-body leading-relaxed text-muted-foreground">
                   KPI·운송비·배차·재고·외부 위험을 도구로 계산해 답합니다. 데이터 변경·배차 확정·외부 발송은 하지 않습니다.
                   {!m?.llm && " 지금은 API 키가 없어 정해진 질문 유형만 규칙 기반으로 답합니다."}
                 </p>
@@ -123,7 +123,7 @@ export function CopilotScreen() {
                       key={q}
                       type="button"
                       onClick={() => send(q)}
-                      className="rounded-lg border border-border bg-card px-3 py-2.5 text-left text-[12.5px] text-foreground/85 transition-colors hover:border-primary/40 hover:bg-primary/[0.04]"
+                      className="rounded-lg border border-border bg-card px-3 py-2.5 text-left text-body text-foreground/85 transition-colors hover:border-primary/40 hover:bg-primary/[0.04]"
                     >
                       {q}
                     </button>
@@ -137,7 +137,7 @@ export function CopilotScreen() {
             {ask.isPending && (
               <div className="flex items-center gap-3">
                 <Avatar role="assistant" />
-                <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-[13px] text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-body text-muted-foreground">
                   <Loader2 className="size-3.5 animate-spin" /> 도구 실행 · 분석 중…
                 </div>
               </div>
@@ -163,14 +163,14 @@ export function CopilotScreen() {
                 }}
                 rows={1}
                 placeholder="질문을 입력하세요 (예: 경유가 10% 상승 시 운송사별 연료비)"
-                className="max-h-40 min-h-6 flex-1 resize-none bg-transparent text-[13.5px] outline-none placeholder:text-subtle-foreground"
+                className="max-h-40 min-h-6 flex-1 resize-none bg-transparent text-body outline-none placeholder:text-subtle-foreground"
                 aria-label="질문 입력"
               />
               <Button type="submit" size="icon-sm" className="rounded-lg" disabled={!text.trim() || ask.isPending} aria-label="보내기">
                 <ArrowUp className="size-4" />
               </Button>
             </div>
-            <div className="mt-1.5 flex items-center justify-between px-1 text-[11px] text-subtle-foreground">
+            <div className="mt-1.5 flex items-center justify-between px-1 text-caption text-subtle-foreground">
               <span>Enter 전송 · Shift+Enter 줄바꿈</span>
               {msgs.length > 0 && (
                 <button type="button" className="inline-flex items-center gap-1 hover:text-foreground" onClick={() => setMsgs([])}>
@@ -182,18 +182,18 @@ export function CopilotScreen() {
         </section>
         <aside className="space-y-4">
           <section className="rounded-xl border border-border bg-card p-4 shadow-card">
-            <h3 className="text-[13px] font-semibold">이번 세션 LLM 호출</h3>
+            <h3 className="text-body font-semibold">이번 세션 LLM 호출</h3>
             <div className="mt-2 flex items-baseline gap-1">
-              <span className="text-[22px] font-semibold tabular">{used}</span>
-              <span className="text-[12.5px] text-muted-foreground">/ {max}</span>
+              <span className="text-metric font-semibold tabular">{used}</span>
+              <span className="text-body text-muted-foreground">/ {max}</span>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted">
               <div className="h-full rounded-full bg-primary" style={{ width: `${max ? Math.min(100, (used / max) * 100) : 0}%` }} />
             </div>
-            <p className="mt-2 text-[11.5px] text-subtle-foreground">예산을 넘으면 추가 호출 없이 도구 결과를 그대로 요약합니다.</p>
+            <p className="mt-2 text-small text-subtle-foreground">예산을 넘으면 추가 호출 없이 도구 결과를 그대로 요약합니다.</p>
           </section>
           <section className="rounded-xl border border-border bg-card shadow-card">
-            <h3 className="flex items-center gap-1.5 border-b border-border px-4 py-3 text-[13px] font-semibold">
+            <h3 className="flex items-center gap-1.5 border-b border-border px-4 py-3 text-body font-semibold">
               <Wrench className="size-3.5 text-muted-foreground" /> 사용 가능한 도구 {m?.tools.length ?? ""}
             </h3>
             {!m ? (
@@ -202,8 +202,8 @@ export function CopilotScreen() {
               <ul className="max-h-[420px] divide-y divide-border overflow-y-auto" tabIndex={0} aria-label="사용 가능한 도구 목록">
                 {m.tools.map((t) => (
                   <li key={t.name} className="px-4 py-2">
-                    <p className="font-mono text-[11.5px] text-primary">{t.name}</p>
-                    <p className="text-[12px] leading-snug text-muted-foreground">{t.description}</p>
+                    <p className="font-mono text-small text-primary">{t.name}</p>
+                    <p className="text-small leading-snug text-muted-foreground">{t.description}</p>
                   </li>
                 ))}
               </ul>
@@ -233,7 +233,7 @@ function Bubble({ msg }: { msg: Msg }) {
   if (msg.role === "user")
     return (
       <div className="flex justify-end gap-3">
-        <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-[13.5px] text-primary-foreground">{msg.content}</div>
+        <div className="max-w-[80%] whitespace-pre-wrap rounded-2xl rounded-tr-sm bg-primary px-4 py-2.5 text-body text-primary-foreground">{msg.content}</div>
         <Avatar role="user" />
       </div>
     );
@@ -243,7 +243,7 @@ function Bubble({ msg }: { msg: Msg }) {
     <div className="flex gap-3">
       <Avatar role="assistant" />
       <div className="min-w-0 max-w-[88%] space-y-2">
-        <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-[13.5px] leading-relaxed">
+        <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-body leading-relaxed">
           <Markdownish text={msg.content} />
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -252,12 +252,12 @@ function Bubble({ msg }: { msg: Msg }) {
         </div>
         {r && r.results.length > 0 && (
           <Collapsible>
-            <CollapsibleTrigger className="group inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground">
+            <CollapsibleTrigger className="group inline-flex items-center gap-1 text-small font-medium text-muted-foreground hover:text-foreground">
               <ChevronRight className="size-3.5 transition-transform group-data-[state=open]:rotate-90" />
               근거: 도구 호출 결과 ({r.steps.map((s) => s.tool).join(", ")})
             </CollapsibleTrigger>
             <CollapsibleContent>
-              <pre className="mt-2 max-h-80 overflow-auto rounded-lg border border-border bg-card p-3 font-mono text-[11px] leading-relaxed text-foreground/80">
+              <pre className="mt-2 max-h-80 overflow-auto rounded-lg border border-border bg-card p-3 font-mono text-caption leading-relaxed text-foreground/80">
                 {JSON.stringify(r.results, null, 2)}
               </pre>
             </CollapsibleContent>
@@ -282,7 +282,7 @@ function Markdownish({ text }: { text: string }) {
               {p.slice(2, -2)}
             </b>
           ) : p.startsWith("`") && p.endsWith("`") && p.length > 1 ? (
-            <span key={j} className="text-[12px] text-muted-foreground">
+            <span key={j} className="text-small text-muted-foreground">
               {p.slice(1, -1)}
             </span>
           ) : (

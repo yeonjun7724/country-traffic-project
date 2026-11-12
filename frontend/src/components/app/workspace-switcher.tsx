@@ -24,7 +24,7 @@ export function WorkspaceSwitcher() {
           {cur?.is_demo ? <FlaskConical className="size-4 text-kind-demo" /> : <Building2 className="size-4 text-muted-foreground" />}
           <span className="max-w-24 truncate sm:max-w-48">{cur ? displayName(cur.name, cur.is_demo) : "워크스페이스"}</span>
           {cur?.is_demo && (
-            <span className="rounded-sm bg-kind-demo/12 px-1.5 py-px text-[10.5px] font-semibold text-kind-demo">샘플</span>
+            <span className="rounded-sm bg-kind-demo/12 px-1.5 py-px text-caption font-semibold text-kind-demo">샘플</span>
           )}
           <ChevronDown className="size-3.5 text-subtle-foreground" />
         </Button>
@@ -44,7 +44,7 @@ export function WorkspaceSwitcher() {
           </DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
-        <div className="px-2 py-1.5 text-[11px] leading-relaxed text-subtle-foreground">
+        <div className="px-2 py-1.5 text-caption leading-relaxed text-subtle-foreground">
           워크스페이스 간 데이터는 섞이지 않습니다.
         </div>
       </DropdownMenuContent>

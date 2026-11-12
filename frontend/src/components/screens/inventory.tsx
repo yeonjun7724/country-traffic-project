@@ -33,7 +33,7 @@ const COLS: ColumnDef<InvRow, unknown>[] = [
     cell: (c) => (
       <div className="max-w-52 leading-tight">
         <div className="truncate font-medium">{c.row.original.sku_name ?? c.row.original.sku_id}</div>
-        <div className="font-mono text-[11px] text-muted-foreground">{c.row.original.sku_id}</div>
+        <div className="font-mono text-caption text-muted-foreground">{c.row.original.sku_id}</div>
       </div>
     ),
   },
@@ -69,7 +69,7 @@ const COLS: ColumnDef<InvRow, unknown>[] = [
       return v ? <span className="font-semibold text-primary">{num(v)}</span> : <span className="text-subtle-foreground">0</span>;
     },
   },
-  { accessorKey: "basis", header: "근거", cell: (c) => <span className="block max-w-80 truncate text-[11.5px] text-muted-foreground" title={String(c.getValue() ?? "")}>{String(c.getValue() ?? "—")}</span> },
+  { accessorKey: "basis", header: "근거", cell: (c) => <span className="block max-w-80 truncate text-small text-muted-foreground" title={String(c.getValue() ?? "")}>{String(c.getValue() ?? "—")}</span> },
 ];
 
 export function InventoryScreen() {
@@ -103,7 +103,7 @@ export function InventoryScreen() {
             <Field label="목표 서비스 수준">
               <ToggleGroup type="single" variant="outline" size="sm" value={sl} onValueChange={(v) => v && setSl(v)}>
                 {["0.9", "0.95", "0.975", "0.99"].map((v) => (
-                  <ToggleGroupItem key={v} value={v} className="px-2.5 text-[12px] tabular">
+                  <ToggleGroupItem key={v} value={v} className="px-2.5 text-small tabular">
                     {pct(Number(v), Number(v) === 0.975 ? 1 : 0)}
                   </ToggleGroupItem>
                 ))}
@@ -112,7 +112,7 @@ export function InventoryScreen() {
             <Field label="수요 산정 기간">
               <ToggleGroup type="single" variant="outline" size="sm" value={win} onValueChange={(v) => v && setWin(v)}>
                 {["14", "28", "56", "84"].map((v) => (
-                  <ToggleGroupItem key={v} value={v} className="px-2.5 text-[12px] tabular">
+                  <ToggleGroupItem key={v} value={v} className="px-2.5 text-small tabular">
                     {v}일
                   </ToggleGroupItem>
                 ))}
@@ -122,7 +122,7 @@ export function InventoryScreen() {
               <NumberField id="rev" label="검토 주기" value={rev} onChange={setRev} min={1} max={60} suffix="일" />
             </div>
             {d?.status === "ok" && (
-              <p className="ml-auto text-[11.5px] text-subtle-foreground tabular">
+              <p className="ml-auto text-small text-subtle-foreground tabular">
                 재고 기준일 {dateLabel(d.snapshot_date)} · 수요 기간 {d.demand_window} · z = {d.z.toFixed(3)}
               </p>
             )}
@@ -145,7 +145,7 @@ export function InventoryScreen() {
                     <>
                       <ToggleGroup type="multiple" variant="outline" size="sm" value={risks} onValueChange={setRisks} aria-label="위험 구분 필터">
                         {RISKS.map((r) => (
-                          <ToggleGroupItem key={r} value={r} className="px-2.5 text-[12px]">
+                          <ToggleGroupItem key={r} value={r} className="px-2.5 text-small">
                             {r} <span className="ml-1 text-muted-foreground tabular">{d.rows.filter((x) => x.stockout_risk === r).length}</span>
                           </ToggleGroupItem>
                         ))}
@@ -163,7 +163,7 @@ export function InventoryScreen() {
                     ariaLabel="보충 추천 목록"
                     empty="선택한 위험 구분에 해당하는 SKU 가 없습니다."
                   />
-                  <ul className="grid gap-1 text-[11.5px] text-muted-foreground md:grid-cols-2">
+                  <ul className="grid gap-1 text-small text-muted-foreground md:grid-cols-2">
                     {d.assumptions.map((a) => (
                       <li key={a} className="flex gap-1.5">
                         <span className="text-subtle-foreground">•</span>
@@ -248,7 +248,7 @@ function ForecastSection() {
                 <Tooltip
                   content={({ active, payload }) =>
                     active && payload?.length ? (
-                      <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                      <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                         <div className="font-medium">{dateLabel((payload[0].payload as { date: string }).date)}</div>
                         <div className="tabular text-muted-foreground">주문수량 {num((payload[0].payload as { qty: number }).qty)}</div>
                       </div>
@@ -259,8 +259,8 @@ function ForecastSection() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <table className="w-full self-start text-[12.5px]">
-            <thead className="text-[11.5px] text-muted-foreground">
+          <table className="w-full self-start text-body">
+            <thead className="text-small text-muted-foreground">
               <tr className="border-b border-border">
                 {["모델", "WAPE", "MAE", "Bias", "MAPE"].map((h, i) => (
                   <th key={h} className={cn("py-2 font-medium", i ? "text-right" : "text-left")}>

@@ -93,9 +93,9 @@ function ImpactTab() {
       <FilterBar />
       <div className="flex flex-wrap items-end gap-4 rounded-xl border border-border bg-card px-4 py-3 shadow-card">
         <Field label="경유가 변화율">
-          <ToggleGroup type="multiple" variant="outline" size="sm" value={pcts} onValueChange={(v) => v.length && setPcts(v)} aria-label="경유가 변화율" className="max-w-full flex-wrap">
+          <ToggleGroup type="multiple" variant="outline" size="sm" value={pcts} onValueChange={(v) => v.length && setPcts(v)} aria-label="경유가 변화율">
             {PCTS.map((p) => (
-              <ToggleGroupItem key={p} value={String(p)} className="px-2.5 text-[12px] tabular">
+              <ToggleGroupItem key={p} value={String(p)} className="px-2.5 text-small tabular">
                 {p > 0 ? "+" : ""}
                 {p}%
               </ToggleGroupItem>
@@ -133,20 +133,20 @@ function ImpactTab() {
             {d.rows.map((r) => (
               <div key={r.diesel_pct} className="rounded-xl border border-border bg-card p-4 shadow-card">
                 <div className="flex items-center justify-between">
-                  <span className="text-[12.5px] font-medium text-muted-foreground">경유가 {r.diesel_pct > 0 ? "+" : ""}{r.diesel_pct}%</span>
+                  <span className="text-body font-medium text-muted-foreground">경유가 {r.diesel_pct > 0 ? "+" : ""}{r.diesel_pct}%</span>
                   <KindBadge kind="assumption" />
                 </div>
-                <div className={cn("mt-2 text-[22px] font-semibold tracking-tight tabular", r.fuel_cost_delta > 0 ? "text-danger" : "text-success")}>
+                <div className={cn("mt-2 text-metric font-semibold tracking-tight tabular", r.fuel_cost_delta > 0 ? "text-danger" : "text-success")}>
                   {r.fuel_cost_delta > 0 ? "+" : ""}
                   {won(r.fuel_cost_delta)}
-                  <span className="ml-0.5 text-[13px] font-medium text-muted-foreground">원</span>
+                  <span className="ml-0.5 text-body font-medium text-muted-foreground">원</span>
                 </div>
-                <div className="mt-1 text-[11.5px] text-subtle-foreground tabular">
+                <div className="mt-1 text-small text-subtle-foreground tabular">
                   총 운송비 대비 {isNum(r.total_cost_delta_pct) ? `${r.total_cost_delta_pct > 0 ? "+" : ""}${r.total_cost_delta_pct.toFixed(2)}%` : "—"}
                 </div>
                 <Link
                   href={scenarioLink({ diesel_pct: r.diesel_pct }, { diesel_pct: r.diesel_pct, demand_pct: 10 }, filters)}
-                  className="mt-3 inline-flex items-center gap-1 text-[12px] font-medium text-primary hover:underline"
+                  className="mt-3 inline-flex items-center gap-1 text-small font-medium text-primary hover:underline"
                 >
                   Scenario Lab 에서 단가·물동량과 함께 비교 <ArrowRight className="size-3" />
                 </Link>
@@ -158,7 +158,7 @@ function ImpactTab() {
           </Section>
           <div className="grid gap-3 md:grid-cols-2">
             <Section title="데이터 출처">
-              <dl className="space-y-1.5 text-[12.5px]">
+              <dl className="space-y-1.5 text-body">
                 {Object.entries(d.fuel_l_sources).map(([k, v]) => (
                   <div key={k} className="flex justify-between gap-2">
                     <dt className="text-muted-foreground">연료량 · {k}</dt>
@@ -174,7 +174,7 @@ function ImpactTab() {
               </dl>
             </Section>
             <Section title="가정">
-              <ul className="space-y-1.5 text-[12.5px] text-muted-foreground">
+              <ul className="space-y-1.5 text-body text-muted-foreground">
                 {d.assumptions.map((a) => (
                   <li key={a}>• {a}</li>
                 ))}
@@ -235,7 +235,7 @@ function MarketTab() {
                 <Tooltip
                   content={({ active, payload, label }) =>
                     active && payload?.length ? (
-                      <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                      <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                         <div className="mb-1 font-medium">{dateLabel(String(label))}</div>
                         {payload
                           .filter((p) => p.dataKey !== "band" && isNum(p.value as number))
@@ -267,7 +267,7 @@ function MarketTab() {
         <div className="space-y-3">
           <Section title="앙상블 재가중" description="저장된 Prophet·LSTM 예측을 다시 가중합합니다. 모델을 재학습하지 않습니다." bodyClassName="space-y-4">
             <div className="space-y-2">
-              <div className="flex justify-between text-[12.5px]">
+              <div className="flex justify-between text-body">
                 <span className="font-medium">Prophet 가중치</span>
                 <span className="tabular text-muted-foreground">
                   {weight.toFixed(2)} / LSTM {(1 - weight).toFixed(2)}
@@ -275,10 +275,10 @@ function MarketTab() {
               </div>
               <Slider value={[weight]} min={0} max={1} step={0.05} onValueChange={([v]) => setW(v)} aria-label="Prophet 가중치" />
               {isNum(d.inferred_weight) && (
-                <p className="text-[11.5px] text-subtle-foreground">저장된 앙상블 가중치(역산): Prophet {d.inferred_weight.toFixed(2)}</p>
+                <p className="text-small text-subtle-foreground">저장된 앙상블 가중치(역산): Prophet {d.inferred_weight.toFixed(2)}</p>
               )}
             </div>
-            <label className="flex items-center justify-between gap-2 text-[12.5px]">
+            <label className="flex items-center justify-between gap-2 text-body">
               구성 모델 표시
               <Switch checked={comp} onCheckedChange={setComp} />
             </label>
@@ -324,7 +324,7 @@ function TrafficTab() {
               <Tooltip
                 content={({ active, payload, label }) =>
                   active && payload?.length ? (
-                    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                    <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                       <div className="mb-1 font-medium">{dateLabel(String(label))} 주</div>
                       {payload.map((p) => (
                         <div key={String(p.dataKey)} className="flex justify-between gap-4">
@@ -363,7 +363,7 @@ function AuditTab() {
   const counts = d.findings.reduce<Record<string, number>>((a, f) => ((a[f.level] = (a[f.level] ?? 0) + 1), a), {});
   return (
     <div className="space-y-4">
-      <p className="text-[13px] text-muted-foreground">기존 공모전 산출물을 파일에서 매번 다시 계산해 점검한 결과입니다.</p>
+      <p className="text-body text-muted-foreground">기존 공모전 산출물을 파일에서 매번 다시 계산해 점검한 결과입니다.</p>
       <div className="flex flex-wrap gap-2">
         {(["error", "warn", "info", "ok"] as const).map((l) => (
           <Pill key={l} tone={l === "error" ? "danger" : l === "warn" ? "warning" : l === "ok" ? "success" : "info"}>
@@ -379,8 +379,8 @@ function AuditTab() {
               <li key={i} className="flex items-start gap-3 px-4 py-3">
                 <L.icon className={cn("mt-0.5 size-4 shrink-0", L.cls)} aria-label={L.label} />
                 <div className="min-w-0">
-                  <p className="text-[13px] font-medium">{f.title}</p>
-                  <p className="mt-0.5 text-[12.5px] leading-relaxed text-muted-foreground">{f.detail}</p>
+                  <p className="text-body font-medium">{f.title}</p>
+                  <p className="mt-0.5 text-body leading-relaxed text-muted-foreground">{f.detail}</p>
                 </div>
               </li>
             );
@@ -389,8 +389,8 @@ function AuditTab() {
       </Section>
       <Section title="데이터 출처" bodyClassName="p-0">
         <div className="overflow-x-auto">
-          <table className="w-full text-[12.5px]">
-            <thead className="text-[11.5px] text-muted-foreground">
+          <table className="w-full text-body">
+            <thead className="text-small text-muted-foreground">
               <tr className="border-b border-border">
                 {["데이터", "성격", "기간", "표본", "주의"].map((h) => (
                   <th key={h} className="px-4 py-2 text-left font-medium">
@@ -404,14 +404,14 @@ function AuditTab() {
                 <tr key={p.key} className="border-b border-border align-top last:border-0">
                   <td className="px-4 py-2">
                     <div className="font-medium">{p.key}</div>
-                    <div className="max-w-72 truncate text-[11px] text-subtle-foreground">{p.source}</div>
+                    <div className="max-w-72 truncate text-caption text-subtle-foreground">{p.source}</div>
                   </td>
                   <td className="px-4 py-2">
                     <KindBadge kind={p.kind} />
                   </td>
                   <td className="px-4 py-2 text-muted-foreground tabular">{p.period_start ? `${p.period_start} ~ ${p.period_end}` : "—"}</td>
                   <td className="px-4 py-2 tabular">{num(p.n)}</td>
-                  <td className="max-w-96 px-4 py-2 text-[12px] text-warning">{p.warnings.join(" · ") || <span className="text-subtle-foreground">—</span>}</td>
+                  <td className="max-w-96 px-4 py-2 text-small text-warning">{p.warnings.join(" · ") || <span className="text-subtle-foreground">—</span>}</td>
                 </tr>
               ))}
             </tbody>

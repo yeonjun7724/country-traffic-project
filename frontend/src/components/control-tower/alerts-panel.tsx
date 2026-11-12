@@ -26,7 +26,7 @@ export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: bo
         <span className="flex items-center gap-2">
           확인이 필요한 항목
           {alerts.length > 0 && (
-            <span className="rounded-full bg-danger/10 px-1.5 text-[11px] font-semibold text-danger tabular">{alerts.length}</span>
+            <span className="rounded-full bg-danger/10 px-1.5 text-caption font-semibold text-danger tabular">{alerts.length}</span>
           )}
         </span>
       }
@@ -37,7 +37,7 @@ export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: bo
       {loading ? (
         <div className="h-28" />
       ) : sorted.length === 0 ? (
-        <div className="flex items-center gap-2 px-4 py-6 text-[13px] text-muted-foreground">
+        <div className="flex items-center gap-2 px-4 py-6 text-body text-muted-foreground">
           <CheckCircle2 className="size-4 text-success" /> 현재 기준을 벗어난 항목이 없습니다.
         </div>
       ) : (
@@ -50,12 +50,12 @@ export function AlertsPanel({ alerts, loading }: { alerts: Alert[]; loading?: bo
               <li key={i} className="flex items-start gap-3 px-4 py-2.5">
                 <Icon className={cn("mt-0.5 size-4 shrink-0", s.cls)} aria-label={s.label} />
                 <div className="min-w-0 flex-1">
-                  <p className="text-[13px] font-medium text-foreground">{a.rule}</p>
-                  <p className="text-[12.5px] text-muted-foreground tabular">{a.message}</p>
+                  <p className="text-body font-medium text-foreground">{a.rule}</p>
+                  <p className="text-body text-muted-foreground tabular">{a.message}</p>
                 </div>
-                <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">{a.source}</span>
+                <span className="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-caption text-muted-foreground">{a.source}</span>
                 {href && (
-                  <Link href={href} className="inline-flex shrink-0 items-center gap-0.5 text-[12px] font-medium text-primary hover:underline">
+                  <Link href={href} className="inline-flex shrink-0 items-center gap-0.5 text-small font-medium text-primary hover:underline">
                     {TARGET_LABEL[a.target!.screen] ?? "원인 보기"}
                     <ArrowRight className="size-3" />
                   </Link>

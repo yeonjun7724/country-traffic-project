@@ -25,8 +25,8 @@ export function Brand() {
     <div className="flex items-center gap-2.5">
       <BrandMark />
       <div className="grid leading-tight group-data-[collapsible=icon]:hidden">
-        <span className="text-[13.5px] font-semibold tracking-tight text-foreground">LogisRisk</span>
-        <span className="text-[11px] text-subtle-foreground">Logistics Intelligence</span>
+        <span className="text-body font-semibold tracking-tight text-foreground">LogisRisk</span>
+        <span className="text-caption text-subtle-foreground">Logistics Intelligence</span>
       </div>
     </div>
   );

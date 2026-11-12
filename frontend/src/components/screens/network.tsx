@@ -149,9 +149,9 @@ export function NetworkScreen() {
       <div className="mb-4 flex flex-wrap items-end gap-3 rounded-xl border border-border bg-card px-3 py-2.5 shadow-card">
         <Field label="레이어">
           <ToggleGroup type="multiple" variant="outline" size="sm" value={layers} onValueChange={(v) => setLayers(v as Layer[])} aria-label="지도 레이어">
-            <ToggleGroupItem value="units" className="px-2.5 text-[12px]">영업소(외부)</ToggleGroupItem>
-            <ToggleGroupItem value="warehouses" className="px-2.5 text-[12px]" disabled={!me?.has_ops_data}>센터</ToggleGroupItem>
-            <ToggleGroupItem value="stores" className="px-2.5 text-[12px]" disabled={!me?.has_ops_data}>배송지</ToggleGroupItem>
+            <ToggleGroupItem value="units" className="px-2.5 text-small">영업소(외부)</ToggleGroupItem>
+            <ToggleGroupItem value="warehouses" className="px-2.5 text-small" disabled={!me?.has_ops_data}>센터</ToggleGroupItem>
+            <ToggleGroupItem value="stores" className="px-2.5 text-small" disabled={!me?.has_ops_data}>배송지</ToggleGroupItem>
           </ToggleGroup>
         </Field>
         <Field label="영업소 색상">
@@ -206,7 +206,7 @@ export function NetworkScreen() {
           >
             {comps.map((c) => (
               <div key={c.key} className="space-y-1.5">
-                <div className="flex items-center justify-between text-[12.5px]">
+                <div className="flex items-center justify-between text-body">
                   <span className="font-medium">{c.label}</span>
                   <span className="tabular text-muted-foreground">
                     {weights[c.key]?.toFixed(2)} <span className="text-subtle-foreground">→ {wsum ? pct((weights[c.key] ?? 0) / wsum, 0) : "—"}</span>
@@ -222,11 +222,11 @@ export function NetworkScreen() {
                 />
               </div>
             ))}
-            {wsum <= 0 && <p className="text-[12px] font-medium text-danger">가중치 합이 0 보다 커야 합니다.</p>}
+            {wsum <= 0 && <p className="text-small font-medium text-danger">가중치 합이 0 보다 커야 합니다.</p>}
             {sc && (
-              <div className="space-y-2 rounded-lg bg-muted/50 px-3 py-2.5 text-[12px]">
+              <div className="space-y-2 rounded-lg bg-muted/50 px-3 py-2.5 text-small">
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="font-mono text-[11.5px]">{sc.id}</span>
+                  <span className="font-mono text-small">{sc.id}</span>
                   {sc.is_base ? <Pill tone="success">기존 결과 재현</Pill> : <Pill tone="warning">시뮬레이션</Pill>}
                 </div>
                 <p className="text-muted-foreground tabular">
@@ -268,16 +268,16 @@ export function NetworkScreen() {
             {!prox.data ? (
               <Skeleton className="m-4 h-24" />
             ) : prox.data.length === 0 ? (
-              <p className="px-4 py-6 text-[12.5px] text-muted-foreground">센터 데이터가 있어야 계산합니다.</p>
+              <p className="px-4 py-6 text-body text-muted-foreground">센터 데이터가 있어야 계산합니다.</p>
             ) : (
               <ul className="divide-y divide-border">
                 {prox.data.map((p) => (
                   <li key={p.warehouse_id} className="px-4 py-2.5">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-[13px] font-medium">{p.name}</span>
-                      <span className="text-[12px] text-muted-foreground tabular">영업소 {p.units_in_radius}개</span>
+                      <span className="truncate text-body font-medium">{p.name}</span>
+                      <span className="text-small text-muted-foreground tabular">영업소 {p.units_in_radius}개</span>
                     </div>
-                    <div className="mt-1 flex flex-wrap gap-1.5 text-[11.5px]">
+                    <div className="mt-1 flex flex-wrap gap-1.5 text-small">
                       <Pill tone={p.very_high ? "external" : "neutral"}>Very High {p.very_high}</Pill>
                       <Pill tone={p.high_high ? "external" : "neutral"}>High-High {p.high_high}</Pill>
                       <span className="text-subtle-foreground">
@@ -310,7 +310,7 @@ export function NetworkScreen() {
                       cursor={{ fill: "var(--muted)", opacity: 0.5 }}
                       content={({ active, payload }) =>
                         active && payload?.length ? (
-                          <div className="rounded-lg border border-border bg-popover px-3 py-2 text-[12px] shadow-lg">
+                          <div className="rounded-lg border border-border bg-popover px-3 py-2 text-small shadow-lg">
                             <div className="font-medium">{(payload[0].payload as { routeName: string }).routeName}</div>
                             <div className="text-muted-foreground tabular">
                               평균 {(payload[0].payload as { mean_score: number }).mean_score.toFixed(3)} · 영업소 {(payload[0].payload as { units: number }).units}개 · HH{" "}
@@ -401,11 +401,11 @@ function LisaDonut({ counts }: { counts: Record<string, number> }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-[22px] font-semibold tabular">{total}</span>
-          <span className="text-[11px] text-muted-foreground">영업소</span>
+          <span className="text-metric font-semibold tabular">{total}</span>
+          <span className="text-caption text-muted-foreground">영업소</span>
         </div>
       </div>
-      <ul className="w-full space-y-1.5 text-[12.5px]">
+      <ul className="w-full space-y-1.5 text-body">
         {data
           .sort((a, b) => b.value - a.value)
           .map((d) => (
@@ -428,7 +428,7 @@ const COLS: ColumnDef<Unit, unknown>[] = [
     cell: (c) => (
       <div className="leading-tight">
         <div className="font-medium">{c.row.original.unitName}</div>
-        <div className="text-[11px] text-muted-foreground">{c.row.original.routeName}</div>
+        <div className="text-caption text-muted-foreground">{c.row.original.routeName}</div>
       </div>
     ),
   },

@@ -27,7 +27,7 @@ export function Onboarding({ compact = false }: { compact?: boolean }) {
   if (compact) {
     if (!missingCore.length) return null;
     return (
-      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-warning/30 bg-warning/[0.06] px-4 py-2.5 text-[12.5px]">
+      <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-warning/30 bg-warning/[0.06] px-4 py-2.5 text-body">
         <span className="font-medium">KPI 계산에 필요한 데이터가 아직 없습니다</span>
         <span className="text-muted-foreground">미업로드: {missingCore.map((i) => i.label).join(" · ")}</span>
         {next && (
@@ -52,17 +52,17 @@ export function Onboarding({ compact = false }: { compact?: boolean }) {
               ) : (
                 <Circle className={cn("size-4 shrink-0", isNext ? "text-primary" : "text-border-strong")} aria-label="미완료" />
               )}
-              <span className="w-5 text-[12px] text-subtle-foreground tabular">{i.order}</span>
+              <span className="w-5 text-small text-subtle-foreground tabular">{i.order}</span>
               <div className="min-w-0 flex-1">
-                <p className={cn("text-[13px]", i.loaded ? "text-muted-foreground" : "font-medium")}>
+                <p className={cn("text-body", i.loaded ? "text-muted-foreground" : "font-medium")}>
                   {i.label}
-                  {CORE.includes(i.entity) && <span className="ml-1.5 text-[11px] font-normal text-subtle-foreground">KPI 필수</span>}
+                  {CORE.includes(i.entity) && <span className="ml-1.5 text-caption font-normal text-subtle-foreground">KPI 필수</span>}
                 </p>
-                {blocked && <p className="text-[11.5px] text-subtle-foreground">먼저 필요: {i.required_refs.filter((r) => !loaded.has(r)).map((r) => items.find((x) => x.entity === r)?.label ?? r).join(" · ")}</p>}
-                {i.loaded && i.rows != null && <p className="text-[11.5px] text-subtle-foreground tabular">{i.rows.toLocaleString()}행 · v{i.version}</p>}
+                {blocked && <p className="text-small text-subtle-foreground">먼저 필요: {i.required_refs.filter((r) => !loaded.has(r)).map((r) => items.find((x) => x.entity === r)?.label ?? r).join(" · ")}</p>}
+                {i.loaded && i.rows != null && <p className="text-small text-subtle-foreground tabular">{i.rows.toLocaleString()}행 · v{i.version}</p>}
               </div>
               {!i.loaded && !blocked && (
-                <Link href={`/data-hub/?entity=${i.entity}`} className={cn("inline-flex shrink-0 items-center gap-0.5 text-[12.5px] font-medium hover:underline", isNext ? "text-primary-text" : "text-muted-foreground")}>
+                <Link href={`/data-hub/?entity=${i.entity}`} className={cn("inline-flex shrink-0 items-center gap-0.5 text-body font-medium hover:underline", isNext ? "text-primary-text" : "text-muted-foreground")}>
                   업로드 <ArrowRight className="size-3" />
                 </Link>
               )}

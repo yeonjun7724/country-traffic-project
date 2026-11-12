@@ -70,7 +70,7 @@ export function CommandPalette() {
       >
         <Search className="size-4" />
         <span className="sr-only sm:not-sr-only sm:flex-1 sm:truncate sm:text-left">검색</span>
-        <kbd className="hidden rounded border border-border bg-muted px-1.5 font-mono text-[10px] text-muted-foreground sm:inline">
+        <kbd className="hidden rounded border border-border bg-muted px-1.5 font-mono text-caption text-muted-foreground sm:inline">
           Ctrl K
         </kbd>
       </Button>

@@ -60,7 +60,7 @@ export function AppSidebar() {
       <SidebarContent className="gap-0 py-2">
         {NAV.map((sec) => (
           <SidebarGroup key={sec.section} className="py-1.5">
-            <SidebarGroupLabel className="h-7 text-[11px] font-medium tracking-wide text-subtle-foreground">
+            <SidebarGroupLabel className="h-7 text-caption font-medium tracking-wide text-subtle-foreground">
               {sec.section}
             </SidebarGroupLabel>
             <SidebarMenu className="gap-0.5">
@@ -73,7 +73,7 @@ export function AppSidebar() {
                       asChild
                       isActive={active}
                       tooltip={it.ready ? it.title : `${it.title} · 준비 중`}
-                      className="relative h-8 gap-2.5 text-[13px] font-medium before:absolute before:inset-y-1.5 before:-left-2 before:w-[3px] before:rounded-r-full before:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:bg-primary group-data-[collapsible=icon]:before:hidden"
+                      className="relative h-8 gap-2.5 text-body font-medium before:absolute before:inset-y-1.5 before:-left-2 before:w-[3px] before:rounded-r-full before:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:bg-primary group-data-[collapsible=icon]:before:hidden"
                     >
                       <Link href={`${it.href}${qs ? `?${qs}` : ""}`} {...intent(it.href)} aria-current={active ? "page" : undefined}>
                         <Icon className={active ? "text-primary" : "text-subtle-foreground"} />
@@ -81,7 +81,7 @@ export function AppSidebar() {
                       </Link>
                     </SidebarMenuButton>
                     {!it.ready && (
-                      <SidebarMenuBadge className="rounded-sm border border-sidebar-border px-1 text-[10px] font-medium text-subtle-foreground">
+                      <SidebarMenuBadge className="rounded-sm border border-sidebar-border px-1 text-caption font-medium text-subtle-foreground">
                         준비 중
                       </SidebarMenuBadge>
                     )}
@@ -112,12 +112,12 @@ function UserMenu() {
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton size="lg" className="data-[state=open]:bg-sidebar-accent">
               <span className="sr-only">사용자 메뉴:</span>
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[13px] font-semibold text-primary">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-body font-semibold text-primary">
                 {initials}
               </span>
               <div className="grid flex-1 text-left leading-tight">
-                <span className="truncate text-[13px] font-medium text-foreground">{me?.display_name ?? "—"}</span>
-                <span className="truncate text-[11px] text-subtle-foreground">{me?.role_label ?? " "}</span>
+                <span className="truncate text-body font-medium text-foreground">{me?.display_name ?? "—"}</span>
+                <span className="truncate text-caption text-subtle-foreground">{me?.role_label ?? " "}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-subtle-foreground" />
             </SidebarMenuButton>
@@ -153,7 +153,7 @@ function UserMenu() {
             </DropdownMenuGroup>
             )}
             <DropdownMenuSeparator />
-            <div className="px-2 py-1.5 text-[11px] text-subtle-foreground">
+            <div className="px-2 py-1.5 text-caption text-subtle-foreground">
               v{me?.app_version} · 계산 {me?.calc_version}
             </div>
           </DropdownMenuContent>

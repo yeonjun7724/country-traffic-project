@@ -33,7 +33,7 @@ export function EmptyState({
         </div>
       )}
       <p className="text-sm font-semibold text-foreground">{title}</p>
-      {description && <p className="max-w-md text-[13px] leading-relaxed text-muted-foreground">{description}</p>}
+      {description && <p className="max-w-md text-body leading-relaxed text-muted-foreground">{description}</p>}
       {action && <div className="mt-3">{action}</div>}
     </div>
   );
@@ -44,7 +44,7 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
   return (
     <div
       role="alert"
-      className={cn("flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/[0.05] p-4 text-[13px]", className)}
+      className={cn("flex items-start gap-3 rounded-xl border border-danger/25 bg-danger/[0.05] p-4 text-body", className)}
     >
       <AlertCircle className="mt-0.5 size-4 shrink-0 text-danger" />
       <div className="flex-1 space-y-1">
@@ -62,7 +62,7 @@ export function ErrorState({ error, onRetry, className }: { error: unknown; onRe
 
 export function NotComputable({ reason, className }: { reason?: string; className?: string }) {
   return (
-    <div className={cn("text-[13px] text-muted-foreground", className)}>
+    <div className={cn("text-body text-muted-foreground", className)}>
       <span className="font-medium text-warning">계산 불가</span>
       {reason ? ` · ${reason}` : ""}
     </div>

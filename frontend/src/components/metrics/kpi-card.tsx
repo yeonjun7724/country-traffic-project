@@ -15,12 +15,12 @@ export function deltaTone(m: Metric): "good" | "bad" | "flat" | "none" {
 
 export function DeltaChip({ m, className }: { m: Metric; className?: string }) {
   const t = deltaTone(m);
-  if (t === "none") return <span className={cn("text-[11.5px] text-subtle-foreground", className)}>직전 기간 없음</span>;
+  if (t === "none") return <span className={cn("text-small text-subtle-foreground", className)}>직전 기간 없음</span>;
   const Icon = t === "flat" ? Minus : (m.delta_pct ?? 0) > 0 ? ArrowUpRight : ArrowDownRight;
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-md px-1 py-px text-[12px] font-semibold tabular",
+        "inline-flex items-center gap-0.5 rounded-md px-1 py-px text-small font-semibold tabular",
         t === "good" && "bg-success/10 text-success",
         t === "bad" && "bg-danger/10 text-danger",
         t === "flat" && "bg-muted text-muted-foreground",
@@ -60,8 +60,8 @@ export function KpiCard({
       )}
     >
       <div className="flex items-center justify-between gap-2">
-        <span className="truncate text-[12.5px] font-medium text-muted-foreground">{m.label}</span>
-        <span className="text-[11px] text-subtle-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+        <span className="truncate text-body font-medium text-muted-foreground">{m.label}</span>
+        <span className="text-caption text-subtle-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
           정의 보기
         </span>
       </div>
@@ -72,31 +72,31 @@ export function KpiCard({
             <span
               className={cn(
                 "font-semibold leading-none tracking-tight text-foreground tabular",
-                variant === "card" ? "text-[26px]" : "text-[23px]",
+                variant === "card" ? "text-display" : "text-metric",
               )}
             >
               {parts.value}
             </span>
-            <span className="text-[13px] font-medium text-muted-foreground">{parts.unit}</span>
+            <span className="text-body font-medium text-muted-foreground">{parts.unit}</span>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
             <DeltaChip m={m} />
             {hasTarget && (
-              <span className={cn("text-[11.5px] font-medium", meets ? "text-success" : "text-danger")}>
+              <span className={cn("text-small font-medium", meets ? "text-success" : "text-danger")}>
                 {meets ? "목표 달성" : "목표 미달"} · {metricText(m.target, m.unit)}
               </span>
             )}
           </div>
           {hasTarget && m.unit === "%" && <TargetBar value={m.value!} target={m.target!} good={!!meets} higher={m.higher_is_better} />}
-          <div className="mt-auto pt-2 text-[11px] text-subtle-foreground tabular">
+          <div className="mt-auto pt-2 text-caption text-subtle-foreground tabular">
             n={m.n?.toLocaleString() ?? "—"}
             {(m.warnings?.length ?? 0) > 0 && <span className="ml-1.5 text-warning">· 주의 {m.warnings!.length}</span>}
           </div>
         </>
       ) : (
         <div className="mt-2 space-y-1.5">
-          <div className="text-[15px] font-semibold text-warning">계산 불가</div>
-          <p className="line-clamp-2 text-[12px] leading-snug text-muted-foreground">{m.reason}</p>
+          <div className="text-title font-semibold text-warning">계산 불가</div>
+          <p className="line-clamp-2 text-small leading-snug text-muted-foreground">{m.reason}</p>
         </div>
       )}
     </button>
@@ -124,11 +124,11 @@ export function KpiRow({ m, onOpen }: { m: Metric; onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group flex min-h-[71px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+      className="group flex min-h-[72px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
     >
       <div className="min-w-0 flex-1">
-        <div className="text-[13px] font-medium text-foreground/85">{m.label}</div>
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11.5px] text-subtle-foreground tabular">
+        <div className="text-body font-medium text-foreground/85">{m.label}</div>
+        <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-small text-subtle-foreground tabular">
           {m.ok ? (
             <>
               {hasTarget ? (
@@ -148,13 +148,13 @@ export function KpiRow({ m, onOpen }: { m: Metric; onOpen: () => void }) {
       {m.ok ? (
         <div className="flex shrink-0 flex-col items-end gap-1">
           <div className="flex items-baseline gap-0.5">
-            <span className="text-[21px] font-semibold leading-none tracking-tight text-foreground tabular">{parts.value}</span>
-            <span className="text-[12px] font-medium text-muted-foreground">{parts.unit}</span>
+            <span className="text-metric font-semibold leading-none tracking-tight text-foreground tabular">{parts.value}</span>
+            <span className="text-small font-medium text-muted-foreground">{parts.unit}</span>
           </div>
-          <DeltaChip m={m} className="text-[11.5px]" />
+          <DeltaChip m={m} className="text-small" />
         </div>
       ) : (
-        <span className="shrink-0 text-[14px] font-semibold text-warning">계산 불가</span>
+        <span className="shrink-0 text-title font-semibold text-warning">계산 불가</span>
       )}
       {/* 이름 = 보이는 내용 전체 + 동작 (WCAG 2.5.3: 보이는 글자가 접근 가능한 이름에 포함) */}
       <span className="sr-only">정의·산식 보기</span>

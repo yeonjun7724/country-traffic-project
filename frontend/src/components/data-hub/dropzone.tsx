@@ -45,10 +45,10 @@ export function Dropzone({ onFile, busy, label }: { onFile: (f: File) => void; b
         <div className="flex size-11 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border">
           {busy ? <Loader2 className="size-5 animate-spin text-primary" /> : <UploadCloud className="size-5 text-primary" />}
         </div>
-        <p className="text-[14px] font-medium">
+        <p className="text-title font-medium">
           {busy ? "파일 읽는 중…" : <>{label} 파일을 끌어다 놓거나 <span className="text-primary">찾아보기</span></>}
         </p>
-        <p className="flex items-center gap-1 text-[12px] text-muted-foreground">
+        <p className="flex items-center gap-1 text-small text-muted-foreground">
           <FileSpreadsheet className="size-3.5" /> CSV(UTF-8·CP949) · Excel(.xlsx) · 최대 100MB
         </p>
       </button>
@@ -65,7 +65,7 @@ export function Dropzone({ onFile, busy, label }: { onFile: (f: File) => void; b
         }}
       />
       {err && (
-        <p role="alert" className="mt-2 text-[12.5px] font-medium text-danger">
+        <p role="alert" className="mt-2 text-body font-medium text-danger">
           {err}
         </p>
       )}

@@ -20,7 +20,7 @@ export function MetricSheet({ metric, onClose }: { metric: Metric | null; onClos
             <SheetHeader className="border-b border-border px-5 py-4">
               <div className="flex items-center gap-2">
                 <KindBadge kind={m.kind} />
-                <span className="text-[11.5px] text-subtle-foreground">{m.period ? `기간 ${m.period}` : ""}</span>
+                <span className="text-small text-subtle-foreground">{m.period ? `기간 ${m.period}` : ""}</span>
               </div>
               <SheetTitle className="text-lg">{m.label}</SheetTitle>
               <SheetDescription className="sr-only">{m.label} 지표의 정의와 산식</SheetDescription>
@@ -36,13 +36,13 @@ export function MetricSheet({ metric, onClose }: { metric: Metric | null; onClos
                 </p>
               )}
             </SheetHeader>
-            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 text-[13px]">
+            <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5 text-body">
               <Block title="정의">
                 <p className="leading-relaxed text-foreground/90">{m.definition || "—"}</p>
               </Block>
               {m.formula && (
                 <Block title="산식">
-                  <code className="block rounded-md border border-border bg-muted/60 px-3 py-2 font-mono text-[12px] leading-relaxed">
+                  <code className="block rounded-md border border-border bg-muted/60 px-3 py-2 font-mono text-small leading-relaxed">
                     {m.formula}
                   </code>
                 </Block>
@@ -61,7 +61,7 @@ export function MetricSheet({ metric, onClose }: { metric: Metric | null; onClos
                 <Block title="데이터 주의사항">
                   <ul className="space-y-1.5">
                     {m.warnings!.map((w) => (
-                      <li key={w} className="flex gap-2 rounded-md bg-warning/[0.07] px-2.5 py-2 text-[12.5px]">
+                      <li key={w} className="flex gap-2 rounded-md bg-warning/[0.07] px-2.5 py-2 text-body">
                         <AlertTriangle className="mt-px size-3.5 shrink-0 text-warning" />
                         <span>{w}</span>
                       </li>
@@ -69,7 +69,7 @@ export function MetricSheet({ metric, onClose }: { metric: Metric | null; onClos
                   </ul>
                 </Block>
               )}
-              <p className="text-[11.5px] leading-relaxed text-subtle-foreground">
+              <p className="text-small leading-relaxed text-subtle-foreground">
                 값은 업로드된 데이터로 계산한 {m.kind_label} 수치입니다. 직전 기간은 선택 기간과 같은 길이의 바로 앞 기간입니다.
               </p>
             </div>
@@ -83,7 +83,7 @@ export function MetricSheet({ metric, onClose }: { metric: Metric | null; onClos
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <h3 className="text-[11.5px] font-semibold uppercase tracking-wide text-subtle-foreground">{title}</h3>
+      <h3 className="text-small font-semibold uppercase tracking-wide text-subtle-foreground">{title}</h3>
       {children}
     </div>
   );
@@ -92,7 +92,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
 function Cell({ k, v }: { k: string; v: string }) {
   return (
     <div className="bg-card px-3 py-2.5">
-      <dt className="text-[11.5px] text-muted-foreground">{k}</dt>
+      <dt className="text-small text-muted-foreground">{k}</dt>
       <dd className="mt-0.5 font-medium tabular">{v}</dd>
     </div>
   );

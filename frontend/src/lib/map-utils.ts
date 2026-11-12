@@ -15,7 +15,7 @@ export function esc(s: string) {
 
 /** 팝업 HTML (토큰 색 사용) */
 export function popupHtml(title: string, sub: string, rows: [string, string][]) {
-  return `<div style="padding:10px 12px;font-size:12.5px;line-height:1.5">
+  return `<div style="padding:10px 12px;font-size:13px;line-height:1.5">
     <div style="font-weight:600;font-size:13px">${esc(title)}</div>
     <div style="color:var(--muted-foreground)">${esc(sub)}</div>
     <div style="margin-top:6px;display:grid;grid-template-columns:auto auto;gap:2px 14px">

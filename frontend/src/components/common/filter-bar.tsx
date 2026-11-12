@@ -38,7 +38,7 @@ export function FilterBar({ className }: { className?: string }) {
   const m = meta.data;
   if (!m?.bounds || !m.default) {
     return (
-      <div className={cn("rounded-lg border border-dashed border-border-strong px-3 py-2.5 text-[12.5px] text-muted-foreground", className)}>
+      <div className={cn("rounded-lg border border-dashed border-border-strong px-3 py-2.5 text-body text-muted-foreground", className)}>
         운영 데이터를 업로드하면 기간·센터·권역·운송사 필터가 활성화됩니다.
       </div>
     );
@@ -145,12 +145,12 @@ function DateRangeButton({
           <span className="tabular">
             {dateLabel(start)} – {dateLabel(end)}
           </span>
-          <span className="rounded bg-muted px-1.5 py-px text-[11px] font-normal text-muted-foreground tabular">{days}일</span>
+          <span className="rounded bg-muted px-1.5 py-px text-caption font-normal text-muted-foreground tabular">{days}일</span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="flex w-auto gap-0 p-0" align="start">
         <div className="flex w-36 flex-col gap-0.5 border-r border-border p-2">
-          <p className="px-2 pb-1 pt-0.5 text-[11px] font-medium text-subtle-foreground">데이터 최신일 기준</p>
+          <p className="px-2 pb-1 pt-0.5 text-caption font-medium text-subtle-foreground">데이터 최신일 기준</p>
           {presets.map((p) => (
             <Button
               key={p.label}
@@ -179,7 +179,7 @@ function DateRangeButton({
             endMonth={parse(max)}
           />
           <div className="flex items-center justify-between gap-2 border-t border-border px-2 pt-2">
-            <p className="text-[11.5px] text-muted-foreground">
+            <p className="text-small text-muted-foreground">
               데이터 범위 {dateLabel(min)} – {dateLabel(max)}
             </p>
             <Button

@@ -26,7 +26,7 @@ export function Pill({
   return (
     <span
       className={cn(
-        "inline-flex h-5 shrink-0 items-center gap-1 rounded-full px-2 text-[11px] font-medium whitespace-nowrap ring-1 ring-inset",
+        "inline-flex h-5 shrink-0 items-center gap-1 rounded-full px-2 text-caption font-medium whitespace-nowrap ring-1 ring-inset",
         TONE[tone],
         className,
       )}
@@ -52,7 +52,7 @@ export function KindBadge({ kind, className }: { kind: string; className?: strin
   return (
     <span
       className={cn(
-        "inline-flex h-5 items-center rounded-full px-2 text-[11px] font-medium whitespace-nowrap ring-1 ring-inset",
+        "inline-flex h-5 items-center rounded-full px-2 text-caption font-medium whitespace-nowrap ring-1 ring-inset",
         k.cls,
         className,
       )}

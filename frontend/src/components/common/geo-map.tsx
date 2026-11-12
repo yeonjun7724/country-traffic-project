@@ -208,7 +208,7 @@ export function GeoMap({
     mk.current = markers.map((w) => {
       const node = document.createElement("div");
       node.className =
-        "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-[11px] font-semibold text-background shadow-md";
+        "flex items-center gap-1.5 rounded-full border border-background/70 bg-foreground py-0.5 pl-0.5 pr-2 text-caption font-semibold text-background shadow-md";
       node.innerHTML = `<span style="display:inline-flex;width:18px;height:18px;border-radius:9999px;background:var(--primary);align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M3 21V9l9-6 9 6v12"/><path d="M9 21v-6h6v6"/></svg></span>${esc(w.label)}`;
       node.setAttribute("role", "img");
       node.setAttribute("aria-label", w.label);
@@ -234,12 +234,12 @@ export function GeoMap({
     <div className={cn("relative overflow-hidden rounded-lg border border-border", className)} style={{ height }}>
       <div ref={el} className="h-full w-full" role="application" aria-label={ariaLabel} />
       {legend && (
-        <div className="pointer-events-none absolute bottom-2 left-2 max-w-[70%] rounded-lg border border-border bg-card/92 px-3 py-2 text-[11px] shadow-sm backdrop-blur">
+        <div className="pointer-events-none absolute bottom-2 left-2 max-w-[70%] rounded-lg border border-border bg-card/92 px-3 py-2 text-caption shadow-sm backdrop-blur">
           {legend}
         </div>
       )}
       {failed && (
-        <div className="absolute right-12 top-2 rounded-md bg-card/90 px-2 py-1 text-[11px] text-muted-foreground shadow">
+        <div className="absolute right-12 top-2 rounded-md bg-card/90 px-2 py-1 text-caption text-muted-foreground shadow">
           배경지도를 불러오지 못해 단순 배경으로 표시합니다
         </div>
       )}
