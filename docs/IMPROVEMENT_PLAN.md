@@ -42,7 +42,7 @@ pytest 178 (pandas 3: 117) · vitest 31 · Playwright 95 · 번들 가드 통과
 ### 커밋 (3차)
 `cd68f16` 저장된 보기 · `bfac9e1` Copilot 스트리밍 · `faeab02` 첫 화면 번들·선요청
 
-### 남은 후보
+### 남은 후보 → [BACKLOG.md](BACKLOG.md) 에 상세 정리
 1. Control Tower LCP — (b) 첫 화면 서버 렌더 (배포 구조 변경, 결정 필요).
 2. 다른 화면의 차트(recharts)도 지연 로딩 → 라우트당 ~100 kB 추가 절감 여지.
 3. 이전부터의 큰 항목: 시간창 배차(VRPTW), 서버 PDF, SSO, 업로드 임시 보관 영속화.
