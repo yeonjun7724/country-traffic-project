@@ -196,3 +196,14 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 
 - 검증: pytest 171 · vitest 27(PowerShell 실행) · Playwright 94 (화면 40 · 흐름 15 · 딥링크 9 · 모바일 10 · 접근성 20).
 - 남은 한계: Control Tower LCP(CPU 4×) 2.96 s — 목표 1.8 s 미달. 공통 번들 축소 또는 첫 화면 사전 렌더(정적 export 구조 변경)가 필요.
+
+## 14. 개선 3차 (2026-11-12) — 저장된 보기 · Copilot 스트리밍 · 첫 화면 선요청
+
+| 영역 | 변경 | 결정·이유 |
+|---|---|---|
+| 저장된 보기 | settings `saved_views` 키 (화면 key + URL 쿼리), `/api/views` | 스키마 변경 없이 재사용. `settings_revision` 에서 제외(`NON_CALC_SETTINGS`) — 계산 캐시 보존 |
+| Copilot | `agent.run_events` 이벤트 생성기, `POST /api/copilot/chat/stream` (SSE) | `run()` 은 같은 생성기를 비스트리밍 소비 → 기존 동작 보존. SSE 는 GZip 제외(Starlette 기본). 호출 예산은 서버 메모리(세션 uid) |
+| 번들 | recharts·달력·cmdk 를 `next/dynamic` | 첫 화면에 안 보이는 기능은 쓸 때 불러온다. 번들 가드 410 kB |
+| 선요청 | `<head>` 인라인 `preloadScript` → `window.__lrPre`, `takePreload()` 가 한 번만 소비 | SSR 없이 데이터 대기를 JS 다운로드와 겹침. URL 이 바뀌면 사용 안 함, 실패 시 평소 요청 |
+
+- 남은 한계: Control Tower LCP(CPU 4×) ≈ 2.4 s — 클라이언트 렌더가 병목. 목표 1.8 s 는 첫 화면 서버 렌더가 필요.

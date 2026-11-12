@@ -8,7 +8,7 @@ import { gzipSync } from "node:zlib";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const next = join(root, ".next");
-const BUDGET_KB = Number(process.env.BUNDLE_BUDGET_KB ?? 440); // 라우트당 첫 로딩 JS (gzip)
+const BUDGET_KB = Number(process.env.BUNDLE_BUDGET_KB ?? 410); // 라우트당 첫 로딩 JS (gzip)
 
 const manifest = JSON.parse(readFileSync(join(next, "app-build-manifest.json"), "utf8")).pages;
 const gz = new Map();

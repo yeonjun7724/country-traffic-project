@@ -49,7 +49,7 @@ streamlit run streamlit_app.py
 - 프런트: `cd frontend && npm run typecheck && npx eslint . && npm test`, 화면 변경 시 `npm run build` 후 E2E(`npm run test:e2e`)로
   **실제 브라우저 스크린샷을 직접 확인**한다 (테스트 통과만으로 화면 정상을 단정하지 않는다).
 - API 스키마 변경 시 `npm run gen:api` 로 프런트 타입 재생성.
-- 빌드 후 `npm run check:bundle` — 라우트당 첫 로딩 JS(gzip) 440kB 예산, 지도(maplibre)는 첫 로딩 금지(`next/dynamic` 으로만).
+- 빌드 후 `npm run check:bundle` — 라우트당 첫 로딩 JS(gzip) 410kB 예산, 지도(maplibre)는 첫 로딩 금지(`next/dynamic` 으로만).
   성능 회귀는 `tests/test_perf_guard.py`(pytest)와 `python scripts/bench.py` 로 확인한다. 기준값은 `docs/IMPROVEMENT_PLAN.md`.
 - 색은 `globals.css` 토큰만(차트 `var(--토큰)`, 지도는 `lib/colors.cssColor`), 외부 지표는 보라 계열(`--external`·`--ext-*`).
   글자 크기는 7단계 유틸리티(`text-caption…text-display`)만 쓴다 — `text-[Npx]` 금지.

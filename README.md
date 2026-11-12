@@ -16,7 +16,7 @@
 | 04 | Demand & Inventory | 안전재고·재주문점·보충 추천(근거), 수요예측 모델 백테스트(WAPE/MAE/Bias/MAPE) |
 | 05 | Fuel & Risk | 경유가 민감도(기업 연료비), 외부 유가·예측(재가중, 최신성 경고), 기준 이벤트 전후 교통량, 데이터 감사 |
 | 06 | Scenario Lab | Baseline/A/B 비교, 원인 기여도, 민감도, 센터 중단, 저장·복제·승인·Excel |
-| 07 | AI Copilot | OpenAI 도구 호출(읽기 전용) + 키 없음·오류 시 규칙 기반 폴백, 근거 도구 결과 표시 |
+| 07 | AI Copilot | OpenAI 도구 호출(읽기 전용, 답변 스트리밍) + 키 없음·오류 시 규칙 기반 폴백, 근거 도구 결과 표시 |
 | 08 | Data Hub | CSV/Excel 업로드, 자동 컬럼 매핑, 검증·오류 행 다운로드, 원자적 저장, 버전·롤백, 품질 |
 | 09 | Reports & Alerts | Excel 리포트, 경영진 요약(HTML→PDF 인쇄), 알림 규칙, 조치 워크플로 |
 | 10 | Settings | KPI 목표, 역할·권한, 시스템 상태, 감사 로그 |
@@ -57,11 +57,11 @@ streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ## 테스트
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q                      # 계산·검증·저장·권한·API·마이그레이션·성능 가드(171)
-cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위(27, Windows 는 PowerShell 에서)
+python -m pytest -q                      # 계산·검증·저장·권한·API·마이그레이션·성능 가드·스트리밍(178)
+cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위(31, Windows 는 PowerShell 에서)
 npm run build && (cd .. && python -m uvicorn backend.main:app --port 8600 &) && npm run test:e2e
-# E2E 94: 화면 40(샘플/빈 × 라이트/다크) + 흐름 15 + 화면 간 딥링크 9 + 모바일 390px 10 + 접근성(axe) 20
-# 번들 가드: npm run build && npm run check:bundle (라우트당 첫 로딩 JS 440kB gzip, 지도 라이브러리 첫 로딩 금지)
+# E2E 95: 화면 40(샘플/빈 × 라이트/다크) + 흐름 15 + 화면 간 딥링크·저장된 보기 10 + 모바일 390px 10 + 접근성(axe) 20
+# 번들 가드: npm run build && npm run check:bundle (라우트당 첫 로딩 JS 410kB gzip, 지도 라이브러리 첫 로딩 금지)
 # 스크린샷은 frontend/e2e-screens/ (mobile/ 포함). 성능 측정: python scripts/bench.py [--api http://127.0.0.1:8600]
 ```
 검증·KPI(손계산)·운송비·경로 제약·재고 공식·외부 산출물 재현성·권한/워크스페이스 격리·원자적 롤백·
