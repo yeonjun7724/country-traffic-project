@@ -2,7 +2,7 @@
 
 import { ChevronsUpDown, LogOut, Monitor, Moon, Sun } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 
 import {
@@ -43,6 +43,9 @@ const CARRY = ["start", "end", "warehouses", "regions", "carriers", "vehicles", 
 export function AppSidebar() {
   const pathname = usePathname();
   const sp = useSearchParams();
+  const router = useRouter();
+  // 화면에 보이는 링크 전부를 미리 받지 않는다(모든 화면 진입 시 JS ~2.7MB 다운로드의 원인). 의도가 보일 때만 프리페치.
+  const intent = (href: string) => ({ prefetch: false, onMouseEnter: () => router.prefetch(href), onFocus: () => router.prefetch(href) });
   const carry = new URLSearchParams();
   sp.forEach((v, k) => CARRY.includes(k) && carry.append(k, v));
   const qs = carry.toString();
@@ -50,7 +53,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" variant="sidebar">
       <SidebarHeader className="h-14 justify-center border-b border-sidebar-border px-3">
-        <Link href={`/control-tower/${qs ? `?${qs}` : ""}`} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
+        <Link href={`/control-tower/${qs ? `?${qs}` : ""}`} {...intent("/control-tower/")} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Brand />
         </Link>
       </SidebarHeader>
@@ -72,7 +75,7 @@ export function AppSidebar() {
                       tooltip={it.ready ? it.title : `${it.title} · 준비 중`}
                       className="relative h-8 gap-2.5 text-[13px] font-medium before:absolute before:inset-y-1.5 before:-left-2 before:w-[3px] before:rounded-r-full before:bg-transparent data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground data-[active=true]:before:bg-primary group-data-[collapsible=icon]:before:hidden"
                     >
-                      <Link href={`${it.href}${qs ? `?${qs}` : ""}`} aria-current={active ? "page" : undefined}>
+                      <Link href={`${it.href}${qs ? `?${qs}` : ""}`} {...intent(it.href)} aria-current={active ? "page" : undefined}>
                         <Icon className={active ? "text-primary" : "text-subtle-foreground"} />
                         <span className={it.ready ? "" : "text-subtle-foreground"}>{it.title}</span>
                       </Link>
