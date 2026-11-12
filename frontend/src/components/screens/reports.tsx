@@ -43,7 +43,7 @@ export function ReportsScreen() {
             v: "actions",
             label: (
               <span className="inline-flex items-center gap-1.5">
-                조치 워크플로{open > 0 && <span className="rounded-full bg-warning/15 px-1.5 text-[11px] font-semibold text-warning tabular">{open}</span>}
+                조치 워크플로{open > 0 && <span className="rounded-full bg-warning/10 px-1.5 text-[11px] font-semibold text-warning tabular">{open}</span>}
               </span>
             ),
           },
