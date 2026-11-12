@@ -5,6 +5,9 @@
 """
 from __future__ import annotations
 
+import threading
+import weakref
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import date
 
@@ -128,20 +131,68 @@ def build_fact(frames: dict[str, pd.DataFrame]) -> pd.DataFrame | None:
     return f
 
 
-def apply_filters(fact: pd.DataFrame, flt: Filters, date_col: str = "ship_date") -> pd.DataFrame:
-    x = fact
+# ── 필터 결과 캐시 ────────────────────────────────────────────────────
+# 한 화면이 같은 필터로 여러 API(요약·일별·지도·원장 …)를 부르면 같은 팩트를 매번 다시 거른다.
+# 거른 '행 위치'만 캐시하고 매 호출 새 DataFrame 을 돌려준다 (호출자가 결과를 바꿔도 캐시가 오염되지 않음).
+# 키는 팩트 객체 자체(약한 참조) — Workbench 가 데이터 버전마다 새 팩트를 만들므로 무효화가 자동이다.
+_POS_CACHE: dict[int, tuple] = {}
+_POS_LOCK = threading.Lock()
+_POS_PER_FRAME = 32
+
+
+def _filter_key(flt: Filters, date_col: str) -> tuple:
+    return (date_col, flt.start, flt.end, *(tuple(sorted(v)) for v in (
+        flt.warehouses, flt.regions, flt.carriers, flt.vehicles, flt.stores, flt.categories)))
+
+
+def _filter_positions(fact: pd.DataFrame, flt: Filters, date_col: str) -> np.ndarray | None:
+    """필터 조건을 하나의 마스크로 합쳐 통과 행 위치를 계산. 조건이 없으면 None(전체)."""
+    mask = None
+
+    def both(m):
+        nonlocal mask
+        mask = m if mask is None else (mask & m)
+
     if flt.start:
-        x = x[x[date_col] >= pd.Timestamp(flt.start)]
+        both((fact[date_col] >= pd.Timestamp(flt.start)).to_numpy())
     if flt.end:
-        x = x[x[date_col] <= pd.Timestamp(flt.end)]
+        both((fact[date_col] <= pd.Timestamp(flt.end)).to_numpy())
     for col, vals in (("warehouse_id", flt.warehouses), ("region", flt.regions), ("carrier", flt.carriers),
                       ("vehicle_id", flt.vehicles), ("store_id", flt.stores)):
-        if vals and col in x.columns:
-            x = x[x[col].isin(vals)]
-    if flt.categories and "categories" in x.columns:
-        pat = x["categories"].fillna("").str.split("|")
-        x = x[pat.apply(lambda cs: bool(set(cs) & set(flt.categories)))]
-    return x
+        if vals and col in fact.columns:
+            both(fact[col].isin(vals).to_numpy())
+    if flt.categories and "categories" in fact.columns:
+        want = set(flt.categories)
+        both(fact["categories"].fillna("").str.split("|").map(lambda cs: bool(set(cs) & want)).to_numpy(dtype=bool))
+    return None if mask is None else np.flatnonzero(mask)
+
+
+def _forget(fid: int):
+    with _POS_LOCK:
+        _POS_CACHE.pop(fid, None)
+
+
+def apply_filters(fact: pd.DataFrame, flt: Filters, date_col: str = "ship_date") -> pd.DataFrame:
+    key = _filter_key(flt, date_col)
+    fid = id(fact)
+    with _POS_LOCK:
+        ent = _POS_CACHE.get(fid)
+        if ent is not None and ent[0]() is not fact:  # 같은 id 를 재사용한 다른 객체
+            ent = None
+        pos = ent[1].get(key, False) if ent else False
+        if pos is not False:
+            ent[1].move_to_end(key)
+    if pos is False:
+        pos = _filter_positions(fact, flt, date_col)
+        with _POS_LOCK:
+            ent = _POS_CACHE.get(fid)
+            if ent is None or ent[0]() is not fact:
+                ent = (weakref.ref(fact, lambda _r, i=fid: _forget(i)), OrderedDict())
+                _POS_CACHE[fid] = ent
+            ent[1][key] = pos
+            while len(ent[1]) > _POS_PER_FRAME:
+                ent[1].popitem(last=False)
+    return fact if pos is None else fact.iloc[pos]
 
 
 def _filter_orders(frames: dict[str, pd.DataFrame], flt: Filters, fact: pd.DataFrame | None = None) -> pd.DataFrame | None:

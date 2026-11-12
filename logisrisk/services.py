@@ -28,6 +28,18 @@ class Workbench:
     versions: dict[str, dict] = field(default_factory=dict)
     targets: dict = field(default_factory=dict)
     rules: dict = field(default_factory=dict)
+    # 데이터 버전·설정마다 새 Workbench 가 만들어지므로(백엔드 캐시 키) 여기 담긴 결과는 무효화가 필요 없다
+    _memo: dict = field(default_factory=dict, repr=False, compare=False)
+
+    def alert_inventory(self) -> dict | None:
+        """알림 평가용 기본 보충 판정 (서비스 수준 95%·28일·검토 7일). 필터와 무관해 Workbench 당 1회 계산.
+        반환값은 공유되므로 읽기 전용으로 쓴다."""
+        if "inventory" not in self.frames:
+            return None
+        if "alert_inventory" not in self._memo:
+            from .analytics import inventory
+            self._memo["alert_inventory"] = inventory.replenishment(self.frames)
+        return self._memo["alert_inventory"]
 
     @classmethod
     def load(cls, store: Store, ctx: UserContext, ext: ExternalData) -> "Workbench":

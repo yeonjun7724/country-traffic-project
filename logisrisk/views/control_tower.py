@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from ..analytics import alerts, inventory, kpi
+from ..analytics import alerts, kpi
 from ..services import Workbench
 from .serialize import jsonable, metric, records
 
@@ -26,7 +26,7 @@ def default_filters(wb: Workbench) -> kpi.Filters:
 
 def overview(wb: Workbench, flt: kpi.Filters) -> dict:
     ms = kpi.compute_with_comparison(wb.frames, wb.fact, flt, wb.targets)
-    inv = inventory.replenishment(wb.frames) if "inventory" in wb.frames else None
+    inv = wb.alert_inventory()
     al = alerts.evaluate(ms, wb.rules, wb.versions, inv, period_days=flt.days)
     return {"kpis": [metric(ms[k]) for k in KPI_KEYS if k in ms], "alerts": jsonable(al),
             "period": flt.describe()}

@@ -88,7 +88,7 @@ def report_preview(wb: Workbench, flt: kpi.Filters, sections: list[str]) -> list
 
 def current_alerts(wb: Workbench, flt: kpi.Filters) -> list[dict]:
     ms = kpi.compute_with_comparison(wb.frames, wb.fact, flt, wb.targets)
-    inv = inventory.replenishment(wb.frames) if "inventory" in wb.frames else None
+    inv = wb.alert_inventory()
     return alerts.evaluate(ms, wb.rules, wb.versions, inv, period_days=flt.days)
 
 

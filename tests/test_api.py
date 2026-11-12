@@ -301,3 +301,61 @@ def test_hashed_static_assets_are_immutable(tmp_path, monkeypatch, demo_store):
         monkeypatch.delenv("LOGISRISK_FRONTEND_DIR")
         importlib.reload(main_mod)
         deps.reset_singletons(None)
+
+
+# ── 직렬화 벡터화 (P5) ───────────────────────────────────────────────────────
+def _records_reference(df, cols=None, limit=None):
+    """벡터화 이전 구현 (셀 단위 jsonable) — 결과 동등성 기준."""
+    from logisrisk.views.serialize import jsonable
+    d = df[[c for c in cols if c in df.columns]] if cols else df
+    if limit is not None:
+        d = d.head(limit)
+    return [{k: jsonable(v) for k, v in row.items()} for row in d.to_dict(orient="records")]
+
+
+def test_records_vectorized_matches_cellwise(demo_wb):
+    import numpy as np
+    import pandas as pd
+
+    from logisrisk.views.serialize import records
+    edge = pd.DataFrame({
+        "f": [1.5, np.nan, np.inf, -np.inf], "i": np.array([1, 2, 3, 4], dtype="int64"),
+        "b": [True, False, True, False], "ni": pd.array([1, None, 3, None], dtype="Int64"),
+        "d": pd.to_datetime(["2026-01-01", None, "2026-01-02 13:45:00", "2026-01-03"], format="mixed"),
+        "o": ["가", None, float("nan"), {"k": np.float64(1.0)}],
+        "nb": pd.array([True, None, False, True], dtype="boolean"),
+    })
+    assert records(edge) == _records_reference(edge)
+    assert records(edge)[1]["d"] is None  # 결측 날짜는 null (이전에는 문자열 "NaT" 로 나갔음)
+    from logisrisk.views.serialize import jsonable
+    assert jsonable(pd.NaT) is None and jsonable({"x": pd.NaT}) == {"x": None}
+    assert records(edge, ["d", "f", "없는열"], limit=2) == _records_reference(edge, ["d", "f", "없는열"], limit=2)
+    assert records(demo_wb.fact) == _records_reference(demo_wb.fact)  # 실제 팩트 전 열
+    for name, fr in demo_wb.frames.items():
+        assert records(fr) == _records_reference(fr), name
+
+
+def test_apply_filters_cache_returns_fresh_equal_frames(demo_wb):
+    """캐시된 필터 결과: 매번 새 객체, 결과 동일, 호출자가 바꿔도 다음 결과에 영향 없음, 다른 팩트와 섞이지 않음."""
+    from logisrisk.analytics import kpi
+    from logisrisk.views.control_tower import default_filters
+    flt = default_filters(demo_wb)
+    flt.warehouses = ["WH-A", "WH-B"]
+    a = kpi.apply_filters(demo_wb.fact, flt)
+    b = kpi.apply_filters(demo_wb.fact, flt)
+    assert a is not b and a.equals(b) and 0 < len(a) < len(demo_wb.fact)
+    a = a.copy()
+    a["late_flag_test"] = 1  # 호출자 변경 (복사본)
+    a2 = kpi.apply_filters(demo_wb.fact, flt)
+    a2.loc[a2.index[0], "warehouse_id"] = "변조"  # 반환 프레임 직접 변경
+    fresh = kpi.apply_filters(demo_wb.fact, flt)
+    assert "late_flag_test" not in fresh.columns and "변조" not in set(fresh["warehouse_id"])
+    assert "변조" not in set(demo_wb.fact["warehouse_id"])  # 원본 팩트도 그대로
+    other = demo_wb.fact.head(10).copy()
+    assert len(kpi.apply_filters(other, flt)) <= 10
+    # 순서만 다른 같은 조건은 같은 결과
+    flt2 = default_filters(demo_wb)
+    flt2.warehouses = ["WH-B", "WH-A"]
+    assert kpi.apply_filters(demo_wb.fact, flt2).equals(b)
+    # 조건이 없으면 원본 그대로 (기존 동작)
+    assert kpi.apply_filters(demo_wb.fact, kpi.Filters()) is demo_wb.fact
