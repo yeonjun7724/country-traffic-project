@@ -7,6 +7,7 @@ import { useState } from "react";
 import { PageHeader } from "@/components/common/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { navByKey } from "@/lib/nav";
+import { replaceQuery } from "@/lib/url-state";
 import { useEntities } from "@/lib/queries";
 import { useWorkspace } from "@/lib/workspace";
 
@@ -29,12 +30,11 @@ export function DataHub() {
   const router = useRouter();
   const pathname = usePathname();
   const tab = TABS.some((t) => t.v === sp.get("tab")) ? sp.get("tab")! : "upload";
-  const setTab = (v: string) => {
-    const q = new URLSearchParams(sp.toString());
-    if (v === "upload") q.delete("tab");
-    else q.set("tab", v);
-    router.replace(`${pathname}${q.toString() ? `?${q}` : ""}`, { scroll: false });
-  };
+  const setTab = (v: string) =>
+    replaceQuery(router, pathname, sp.toString(), (q) => {
+      if (v === "upload") q.delete("tab");
+      else q.set("tab", v);
+    });
 
   return (
     <>

@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import dynamic from "next/dynamic";
 
 import { DataTable } from "@/components/common/data-table";
+import { Deferred } from "@/components/common/deferred";
 import { Section } from "@/components/common/section";
 import { ErrorState } from "@/components/common/states";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -97,7 +98,19 @@ export function NetworkSection({
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
-          <NetworkMap stores={d.stores} idle={d.idle_stores} warehouses={d.warehouses} selected={selected} onToggle={toggle} />
+          {/* 지도(maplibre)는 첫 화면 메인 스레드 비용의 대부분(~650ms) → 절반 이상 보일 때 불러온다 */}
+          <Deferred
+            minHeight={460}
+            threshold={0.5}
+            label="지도"
+            placeholder={
+              <div className="flex h-[460px] items-center justify-center rounded-lg border border-dashed border-border bg-muted/30 text-[12.5px] text-muted-foreground">
+                지도를 불러오는 중…
+              </div>
+            }
+          >
+            <NetworkMap stores={d.stores} idle={d.idle_stores} warehouses={d.warehouses} selected={selected} onToggle={toggle} />
+          </Deferred>
           <DataTable
             data={d.stores}
             columns={COLUMNS}

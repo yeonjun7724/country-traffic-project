@@ -1,6 +1,7 @@
 import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
+import { revealAll } from "./reveal";
 
 /**
  * 실제 클릭 흐름 검증 (라이트 테마 1회). 샘플 워크스페이스 기준.
@@ -53,6 +54,7 @@ test("운송사 필터를 바꾸면 URL 과 KPI 가 함께 바뀐다", async ({ 
 test("배송지 표에서 선택하면 원장이 좁혀진다", async ({ page }) => {
   await ws(page, "demo");
   await page.goto("/control-tower/");
+  await revealAll(page);
   const table = page.getByRole("region", { name: "배송지 목록" });
   await table.getByRole("checkbox", { name: "행 선택" }).first().click();
   await expect(page.getByRole("button", { name: /배송지 1곳 선택됨/ })).toBeVisible();

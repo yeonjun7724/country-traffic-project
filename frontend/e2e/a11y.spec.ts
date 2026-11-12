@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { revealAll } from "./reveal";
 
 /**
  * 접근성 자동 검사 (axe-core, WCAG 2.1 A·AA) — 10개 화면 × 라이트/다크, 샘플 워크스페이스.
@@ -13,6 +14,7 @@ for (const r of ROUTES) {
     await page.addInitScript(() => window.localStorage.setItem("lr.workspace", "demo"));
     await page.goto(`/${r}/`);
     await expect(page.locator("main h1")).toBeVisible();
+    await revealAll(page); // 지연 렌더 영역까지 검사
     await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 45_000 });
     await page.waitForTimeout(1000);
     const res = await new AxeBuilder({ page })

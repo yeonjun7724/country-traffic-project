@@ -33,11 +33,24 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [needLogin, router]);
 
-  if (auth.isError) return <BootError onRetry={() => auth.refetch()} />;
-  if (!auth.data || needLogin) return <BootSplash />;
-
+  // WorkspaceProvider(/api/me)는 인증 확인과 병렬로 시작한다 — 직렬이면 느린 기기에서 첫 화면이 ~0.6초 늦어짐.
+  // 접근 코드가 필요한 배포에서는 /api/me 가 401 로 끝나고(재시도 없음) 아래 분기가 로그인으로 보낸다.
   return (
     <WorkspaceProvider>
+      {auth.isError ? (
+        <BootError onRetry={() => auth.refetch()} />
+      ) : !auth.data || needLogin ? (
+        <BootSplash />
+      ) : (
+        <Shell>{children}</Shell>
+      )}
+    </WorkspaceProvider>
+  );
+}
+
+function Shell({ children }: { children: ReactNode }) {
+  return (
+    <>
       <SidebarProvider>
         <Suspense>
           <AppSidebar />
@@ -49,7 +62,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </main>
         </SidebarInset>
       </SidebarProvider>
-    </WorkspaceProvider>
+    </>
   );
 }
 
@@ -120,10 +133,11 @@ function ThemeButton() {
 /** 샘플 워크스페이스 안내 — 모든 화면 상단에 항상 표시 (실제 성과로 오인 방지) */
 function SampleBanner() {
   const { me, switchWorkspace } = useWorkspace();
-  if (!me?.is_demo) return null;
-  const mine = me.workspaces.find((w) => !w.is_demo);
+  if (me && !me.is_demo) return null;
+  const mine = me?.workspaces.find((w) => !w.is_demo);
   return (
-    <div className="flex items-center gap-2 border-t border-kind-demo/20 bg-kind-demo/[0.07] px-4 py-1.5 text-[12px] text-foreground/80">
+    // me 응답 전에는 html[data-demo] (첫 페인트 전 인라인 스크립트)로 자리만 결정 → 배너가 늦게 끼어들며 본문이 밀리지 않음
+    <div className="sample-banner flex h-[30px] items-center gap-2 border-t border-kind-demo/20 bg-kind-demo/[0.07] px-4 text-[12px] text-foreground/80">
       <FlaskConical className="size-3.5 shrink-0 text-kind-demo" />
       <span className="truncate">
         <b className="font-semibold text-kind-demo">샘플 워크스페이스</b> · 화면의 운영 수치는 시연용 가상 데이터로 계산한 값이며 실제 성과가 아닙니다.

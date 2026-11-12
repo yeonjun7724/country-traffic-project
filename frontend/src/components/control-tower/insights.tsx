@@ -6,6 +6,7 @@ import type { Metric } from "@/lib/api";
 import type { Filters } from "@/lib/filters";
 import { deltaText, isNum, metricText, pct } from "@/lib/format";
 import { useCostToServe } from "@/lib/queries";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 type Insight = { icon: typeof Target; tone: "good" | "bad" | "neutral"; title: string; body: string };
@@ -13,7 +14,7 @@ type Insight = { icon: typeof Target; tone: "good" | "bad" | "neutral"; title: s
 /** 이번 기간 요약 — 계산된 KPI·집계에서 규칙으로 만든 문장 (추정·생성 없음) */
 export function Insights({ kpis, filters }: { kpis: Metric[] | undefined; filters: Filters }) {
   const region = useCostToServe(filters, "region");
-  if (!kpis) return null;
+  if (!kpis) return <InsightsSkeleton />;
   const by = new Map(kpis.map((k) => [k.key, k]));
   const out: Insight[] = [];
 
@@ -57,7 +58,7 @@ export function Insights({ kpis, filters }: { kpis: Metric[] | undefined; filter
         <div
           key={i.title}
           className={cn(
-            "relative overflow-hidden rounded-xl border bg-card px-4 py-3.5 shadow-card",
+            "relative min-h-[69px] overflow-hidden rounded-xl border bg-card px-4 py-3.5 shadow-card",
             i.tone === "bad" ? "border-danger/20" : i.tone === "good" ? "border-success/25" : "border-border",
           )}
         >
@@ -82,5 +83,16 @@ export function Insights({ kpis, filters }: { kpis: Metric[] | undefined; filter
         </div>
       ))}
     </section>
+  );
+}
+
+/** KPI 응답 전 자리 (카드 높이 69px = 실제 카드) — 요약이 늦게 끼어들며 아래가 밀리던 CLS 방지 */
+function InsightsSkeleton() {
+  return (
+    <div className="mb-4 grid gap-3 md:grid-cols-3" aria-hidden>
+      {[0, 1, 2].map((i) => (
+        <Skeleton key={i} className="h-[69px] rounded-xl" />
+      ))}
+    </div>
   );
 }

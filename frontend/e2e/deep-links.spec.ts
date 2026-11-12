@@ -1,3 +1,4 @@
+import { revealAll } from "./reveal";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -23,6 +24,7 @@ test("알림 '결품 SKU 보기' → Inventory 가 결품만 필터한 상태로
 test("알림 '지연 원장 보기' → 같은 화면의 원장 '지연 배송' 탭으로 스크롤된다", async ({ page }) => {
   await ws(page, "demo");
   await page.goto("/control-tower/");
+  await revealAll(page);
   // 사용자가 다른 탭을 보고 있어도 링크가 탭을 지정한다
   await page.getByRole("tab", { name: /전체 원장/ }).click();
   await expect(page).toHaveURL(/ledger=all/);
@@ -92,4 +94,15 @@ test("알림에서 만든 조치는 근거 알림의 원인 화면으로, 시나
   await expect(sheet.getByText(title)).toBeVisible();
   const linked = await (await request.get(`/api/actions?ref_type=scenario&ref_id=${sid}`, { headers: { "X-Workspace": "demo" } })).json();
   expect(linked.some((a: { title: string }) => a.title === title)).toBe(true);
+});
+
+test("입력을 바꾼 직후 탭을 눌러도 탭이 되돌아가지 않는다 (URL 동기화 경합)", async ({ page }) => {
+  await ws(page, "demo");
+  await page.goto("/scenario-lab/");
+  await expect(page.locator("#dA")).toBeVisible();
+  await page.locator("#dA").fill("17");
+  await page.getByRole("tab", { name: "저장된 시나리오 · 승인" }).click(); // 입력 동기화(350ms 지연)보다 먼저
+  await page.waitForTimeout(1200);
+  await expect(page).toHaveURL(/tab=saved/);
+  await expect(page.getByRole("tab", { name: "저장된 시나리오 · 승인" })).toHaveAttribute("aria-selected", "true");
 });

@@ -12,6 +12,8 @@
 - 로컬 API 호출·측정은 `127.0.0.1` 을 쓴다. `localhost` 는 IPv6 폴백 때문에 요청마다 ~2초가 더해진다 (브라우저는 영향 없음).
 - Node 24 / npm 11. `frontend/node_modules` 가 없으면 `npm ci`. E2E 는 설치된 Edge 사용(`channel: msedge`, 브라우저 다운로드 불필요):
   `cd frontend && npm run build` → (루트) `.venv/Scripts/python.exe -m uvicorn backend.main:app --port 8600` → `npx playwright test`.
+- 프런트 단위 테스트(vitest)는 **PowerShell 에서** 실행한다 (`npx vitest run`). Git Bash 에서는 파일 구성에 따라
+  'Cannot read properties of undefined (reading 'config')' 로 모든 파일이 실패하는 환경 문제가 있다 (코드 문제 아님).
 - 성능 측정: `.venv/Scripts/python.exe scripts/bench.py` (API·대용량 계산 시간). 기준값과 목표는 `docs/IMPROVEMENT_PLAN.md`.
 - 이 PC 에는 Docker 가 없다 — `Dockerfile.web` 은 `requirements-api.txt` 만 설치한 venv 로 기동 검증.
 

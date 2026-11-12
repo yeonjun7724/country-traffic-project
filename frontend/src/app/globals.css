@@ -234,3 +234,8 @@
 .maplibregl-popup-tip {
   display: none;
 }
+
+/* 샘플 배너: /api/me 전에는 마지막으로 확인한 샘플 여부(html[data-demo])로 표시 — app/layout.tsx 참고 */
+html[data-demo="0"] .sample-banner {
+  display: none;
+}

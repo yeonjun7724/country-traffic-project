@@ -117,7 +117,7 @@ function UserMenu() {
               </span>
               <div className="grid flex-1 text-left leading-tight">
                 <span className="truncate text-[13px] font-medium text-foreground">{me?.display_name ?? "—"}</span>
-                <span className="truncate text-[11px] text-subtle-foreground">{me?.role_label ?? ""}</span>
+                <span className="truncate text-[11px] text-subtle-foreground">{me?.role_label ?? " "}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4 text-subtle-foreground" />
             </SidebarMenuButton>

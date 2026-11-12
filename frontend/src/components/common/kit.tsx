@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { download } from "@/lib/api";
 import { cn } from "@/lib/utils";
+import { replaceQuery } from "@/lib/url-state";
 import { useWorkspace } from "@/lib/workspace";
 
 // ── 지표 타일 ─────────────────────────────────────────────────────────
@@ -96,12 +97,11 @@ export function useUrlTab(tabs: string[], key = "tab") {
   const pathname = usePathname();
   const cur = sp.get(key);
   const tab = cur && tabs.includes(cur) ? cur : tabs[0];
-  const set = (v: string) => {
-    const q = new URLSearchParams(sp.toString());
-    if (v === tabs[0]) q.delete(key);
-    else q.set(key, v);
-    router.replace(`${pathname}${q.toString() ? `?${q}` : ""}`, { scroll: false });
-  };
+  const set = (v: string) =>
+    replaceQuery(router, pathname, sp.toString(), (q) => {
+      if (v === tabs[0]) q.delete(key);
+      else q.set(key, v);
+    });
   return [tab, set] as const;
 }
 

@@ -1,3 +1,4 @@
+import { revealAll } from "./reveal";
 import { expect, test, type Page } from "@playwright/test";
 
 /**
@@ -42,6 +43,7 @@ for (const ws of ["demo", "default"] as const) {
         await useWorkspace(page, ws);
         await page.goto(`/${r}/`);
         await expect(page.locator("main h1")).toBeVisible();
+        await revealAll(page); // 지연 렌더 영역(지도·차트·원장)까지 촬영
         // 스켈레톤이 모두 사라질 때까지 (데이터 로딩 완료)
         await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 45_000 });
         if (r === "control-tower" && ws === "demo") {

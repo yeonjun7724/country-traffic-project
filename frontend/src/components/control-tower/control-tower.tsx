@@ -4,13 +4,14 @@ import { Database, FlaskConical } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { Deferred } from "@/components/common/deferred";
 import { FilterBar } from "@/components/common/filter-bar";
 import { PageHeader } from "@/components/common/page-header";
 import { Section } from "@/components/common/section";
 import { EmptyState, ErrorState } from "@/components/common/states";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useFilters } from "@/lib/filters";
+import { useFilters, type Filters } from "@/lib/filters";
 import { navByKey } from "@/lib/nav";
 import { useDaily, useOverview, type CtsDim } from "@/lib/queries";
 import { useWorkspace } from "@/lib/workspace";
@@ -32,7 +33,6 @@ export function ControlTower() {
   const [selected, setSelected] = useState<string[]>([]);
   const [dim, setDim] = useState<CtsDim>("carrier");
   const overview = useOverview(filters);
-  const daily = useDaily(filters);
 
   // 워크스페이스가 바뀌면 지도·표 선택 초기화
   const ws = me?.workspace.id;
@@ -65,29 +65,42 @@ export function ControlTower() {
         <NetworkSection filters={filters} selected={selected} onSelected={setSelected} />
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-12">
-        <div className="lg:col-span-7">
-          <Section title="일별 운송비 · 지연율" description="막대: 운송비(좌) · 선: 지연율(우, 판정 가능한 배송 기준)" actions={<DailyLegend />} className="h-full">
-            {daily.isError ? (
-              <ErrorState error={daily.error} onRetry={() => daily.refetch()} />
-            ) : daily.isLoading ? (
-              <Skeleton className="h-[260px]" />
-            ) : (daily.data ?? []).length === 0 ? (
-              <p className="py-20 text-center text-[13px] text-muted-foreground">해당 기간에 출고된 배송이 없습니다.</p>
-            ) : (
-              <DailyChart data={daily.data!} />
-            )}
-          </Section>
+      {/* 첫 화면 아래 영역은 가까워질 때 렌더 (차트·원장 API 4건과 렌더 비용을 첫 화면에서 제외). 높이는 실제 렌더 높이 */}
+      <Deferred minHeight={359} className="mt-4" label="일별 추이·Cost-to-Serve">
+        <div className="mt-4 grid gap-4 lg:grid-cols-12">
+          <div className="lg:col-span-7">
+            <DailySection filters={filters} />
+          </div>
+          <div className="lg:col-span-5">
+            <CostToServe filters={filters} dim={dim} onDim={setDim} />
+          </div>
         </div>
-        <div className="lg:col-span-5">
-          <CostToServe filters={filters} dim={dim} onDim={setDim} />
-        </div>
-      </div>
+      </Deferred>
 
       <div className="mt-4">
-        <Ledger filters={filters} selected={selected} onClearSelection={() => setSelected([])} />
+        <Deferred id="ledger" minHeight={563} label="예외·배송 원장">
+          <Ledger filters={filters} selected={selected} onClearSelection={() => setSelected([])} />
+        </Deferred>
       </div>
     </>
+  );
+}
+
+/** 일별 추이 — Deferred 안에서만 마운트되므로 화면에 가까워질 때 API 를 부른다 */
+function DailySection({ filters }: { filters: Filters }) {
+  const daily = useDaily(filters);
+  return (
+    <Section title="일별 운송비 · 지연율" description="막대: 운송비(좌) · 선: 지연율(우, 판정 가능한 배송 기준)" actions={<DailyLegend />} className="h-full">
+      {daily.isError ? (
+        <ErrorState error={daily.error} onRetry={() => daily.refetch()} />
+      ) : daily.isLoading ? (
+        <Skeleton className="h-[260px]" />
+      ) : (daily.data ?? []).length === 0 ? (
+        <p className="py-20 text-center text-[13px] text-muted-foreground">해당 기간에 출고된 배송이 없습니다.</p>
+      ) : (
+        <DailyChart data={daily.data!} />
+      )}
+    </Section>
   );
 }
 

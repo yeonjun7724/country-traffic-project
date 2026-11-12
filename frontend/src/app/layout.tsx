@@ -22,6 +22,13 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko" suppressHydrationWarning>
       <head>
+        {/* 첫 페인트 전: 마지막으로 확인한 '샘플 워크스페이스 여부'로 배너 자리를 미리 잡는다 (배너가 늦게 끼어들며 화면이 밀리던 CLS).
+            값이 없으면 서버 기본 워크스페이스(샘플)로 가정. 실제 표시는 /api/me 응답이 최종 결정한다. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var w=localStorage.getItem("lr.workspace")||"_default";var m=JSON.parse(localStorage.getItem("lr.demoByWs")||"{}");document.documentElement.dataset.demo=(w in m?m[w]:true)?"1":"0"}catch(e){document.documentElement.dataset.demo="1"}`,
+          }}
+        />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
           rel="stylesheet"

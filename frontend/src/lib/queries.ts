@@ -15,21 +15,41 @@ function useWs() {
 type Q = Record<string, string | string[]>;
 const q = (f: Filters, extra?: Q) => ({ ...filterQuery(f), ...(extra ?? {}) }) as never;
 
-export function useFilterMeta() {
-  const ws = useWs();
-  return useQuery({
+// ── 쿼리 정의 (훅과 프리페치가 같은 키·요청을 쓰도록 공용) ──
+export const queryDefs = {
+  filterMeta: (ws: string | undefined) => ({
     queryKey: ["filters", ws],
     queryFn: () => unwrap(client.GET("/api/filters")),
-    enabled: !!ws,
     staleTime: 60_000,
-  });
+  }),
+  overview: (ws: string | undefined, f: Filters) => ({
+    queryKey: ["ct", "overview", ws, f],
+    queryFn: () => unwrap(client.GET("/api/control-tower/overview", { params: { query: q(f) } })),
+  }),
+  network: (ws: string | undefined, f: Filters) => ({
+    queryKey: ["ct", "network", ws, f],
+    queryFn: () => unwrap(client.GET("/api/control-tower/network", { params: { query: q(f) } })),
+  }),
+  cts: (ws: string | undefined, f: Filters, dim: CtsDim) => ({
+    queryKey: ["ct", "cts", ws, f, dim],
+    queryFn: () => unwrap(client.GET("/api/control-tower/cost-to-serve", { params: { query: q(f, { dim }) } })),
+  }),
+  external: (ws: string | undefined) => ({
+    queryKey: ["ct", "external", ws],
+    queryFn: () => unwrap(client.GET("/api/control-tower/external")),
+    staleTime: 10 * 60_000,
+  }),
+};
+
+export function useFilterMeta() {
+  const ws = useWs();
+  return useQuery({ ...queryDefs.filterMeta(ws), enabled: !!ws });
 }
 
 export function useOverview(f: Filters) {
   const ws = useWs();
   return useQuery({
-    queryKey: ["ct", "overview", ws, f],
-    queryFn: () => unwrap(client.GET("/api/control-tower/overview", { params: { query: q(f) } })),
+    ...queryDefs.overview(ws, f),
     enabled: !!ws,
     placeholderData: keepPreviousData,
   });
@@ -48,8 +68,7 @@ export function useDaily(f: Filters) {
 export function useNetwork(f: Filters) {
   const ws = useWs();
   return useQuery({
-    queryKey: ["ct", "network", ws, f],
-    queryFn: () => unwrap(client.GET("/api/control-tower/network", { params: { query: q(f) } })),
+    ...queryDefs.network(ws, f),
     enabled: !!ws,
     placeholderData: keepPreviousData,
   });
@@ -59,8 +78,7 @@ export type CtsDim = "carrier" | "warehouse_id" | "region" | "customer_group";
 export function useCostToServe(f: Filters, dim: CtsDim) {
   const ws = useWs();
   return useQuery({
-    queryKey: ["ct", "cts", ws, f, dim],
-    queryFn: () => unwrap(client.GET("/api/control-tower/cost-to-serve", { params: { query: q(f, { dim }) } })),
+    ...queryDefs.cts(ws, f, dim),
     enabled: !!ws,
     placeholderData: keepPreviousData,
   });
@@ -84,12 +102,7 @@ export function useLedger(f: Filters, kind: LedgerKind, selected: string[], limi
 
 export function useExternal() {
   const ws = useWs();
-  return useQuery({
-    queryKey: ["ct", "external", ws],
-    queryFn: () => unwrap(client.GET("/api/control-tower/external")),
-    enabled: !!ws,
-    staleTime: 10 * 60_000,
-  });
+  return useQuery({ ...queryDefs.external(ws), enabled: !!ws });
 }
 
 export function useSearch(text: string) {

@@ -1,3 +1,4 @@
+import { revealAll } from "./reveal";
 import { expect, test } from "@playwright/test";
 
 /**
@@ -14,6 +15,7 @@ for (const r of ROUTES) {
     await page.addInitScript(() => window.localStorage.setItem("lr.workspace", "demo"));
     await page.goto(`/${r}/`);
     await expect(page.locator("main h1")).toBeVisible();
+    await revealAll(page);
     await expect(page.locator('[data-slot="skeleton"]')).toHaveCount(0, { timeout: 45_000 });
     await page.waitForTimeout(800);
     // isMobile 에서는 내용이 넓으면 브라우저가 레이아웃 뷰포트 자체를 넓힌다 → innerWidth 가 아니라 기기 폭(390)과 비교

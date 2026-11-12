@@ -28,7 +28,7 @@ export function KpiGroups({ kpis, loading }: { kpis: Metric[] | undefined; loadi
               {g.keys.map((k) => {
                 const m = by.get(k);
                 return loading || !m ? (
-                  <div key={k} className="flex items-center justify-between px-4 py-3.5">
+                  <div key={k} className="flex h-[71px] items-center justify-between px-4">
                     <Skeleton className="h-4 w-20" />
                     <Skeleton className="h-6 w-24" />
                   </div>

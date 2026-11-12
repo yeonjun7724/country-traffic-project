@@ -32,6 +32,7 @@ import { useWorkspace } from "@/lib/workspace";
 import { SimpleTable } from "@/components/common/simple-table";
 import { niceCeil, waterfallSteps, type WaterfallStep } from "@/lib/waterfall";
 import { decodeScenario, encodeScenario, outageLink, savedScenarioLink, scenarioLink } from "@/lib/scenario-url";
+import { replaceQuery } from "@/lib/url-state";
 
 const NAV = navByKey("scenario-lab");
 const PRESETS: Record<string, Partial<ScenarioInput>> = {
@@ -58,15 +59,13 @@ function useUrlParams() {
   const pathname = usePathname();
   const cur = sp.toString();
   const patch = useCallback(
-    (p: Record<string, string | null>) => {
-      const q = new URLSearchParams(cur);
-      for (const [k, v] of Object.entries(p)) {
-        if (v === null || v === "") q.delete(k);
-        else q.set(k, v);
-      }
-      const next = q.toString();
-      if (next !== cur) router.replace(`${pathname}${next ? `?${next}` : ""}`, { scroll: false });
-    },
+    (p: Record<string, string | null>) =>
+      replaceQuery(router, pathname, cur, (q) => {
+        for (const [k, v] of Object.entries(p)) {
+          if (v === null || v === "") q.delete(k);
+          else q.set(k, v);
+        }
+      }),
     [cur, router, pathname],
   );
   return { get: (k: string) => sp.get(k), patch };

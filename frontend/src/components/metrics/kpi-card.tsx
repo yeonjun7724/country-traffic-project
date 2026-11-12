@@ -124,7 +124,7 @@ export function KpiRow({ m, onOpen }: { m: Metric; onOpen: () => void }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
+      className="group flex min-h-[71px] w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ring"
     >
       <div className="min-w-0 flex-1">
         <div className="text-[13px] font-medium text-foreground/85">{m.label}</div>
