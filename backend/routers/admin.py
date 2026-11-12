@@ -114,19 +114,29 @@ def alerts_rules(body: RulesIn, ctx: UserContext = Depends(permission("settings.
 
 
 @router.get("/actions")
-def actions_list(ctx: UserContext = Depends(permission("data.read"))):
-    return records(get_store().list_actions(ctx))
+def actions_list(ref_type: Literal["alert", "scenario"] | None = None, ref_id: str | None = Query(None, max_length=64),
+                 ctx: UserContext = Depends(permission("data.read"))):
+    """조치 목록. ref_type·ref_id 로 특정 알림·시나리오에 연결된 조치만 조회. 각 행에 근거 화면(ref_target)."""
+    return AD.actions_view(get_store(), ctx, ref_type, ref_id)
 
 
 class ActionIn(BaseModel):
     title: str = Field(min_length=1, max_length=300)
     source: str = Field("", max_length=200)
     detail: str = Field("", max_length=2000)
+    ref_type: Literal["alert", "scenario"] | None = Field(None, description="근거 유형")
+    ref_id: str | None = Field(None, max_length=64, description="알림 규칙 key 또는 저장된 시나리오 id")
 
 
 @router.post("/actions")
 def actions_create(body: ActionIn, ctx: UserContext = Depends(permission("scenario.save"))):
-    return {"id": get_store().create_action(ctx, body.title, body.source, body.detail)}
+    try:
+        aid = get_store().create_action(ctx, body.title, body.source, body.detail, body.ref_type, body.ref_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except PermissionDenied as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return {"id": aid}
 
 
 class ActionStatusIn(BaseModel):

@@ -101,3 +101,52 @@ def test_settings_scenarios_persist_across_instances(tmp_path):
     dup = s2.duplicate_scenario(c2, sid, "A copy")
     assert s2.get_scenario(c2, dup)["status"] == "draft"
     assert not s2.audit_log(c2).empty
+
+
+# ── 조치 ↔ 근거 (스키마 v2) ─────────────────────────────────────────────────
+def test_v1_database_is_migrated_additively(tmp_path):
+    """v1 DB(근거 컬럼 없음)를 열면 nullable 컬럼만 추가되고 기존 조치는 그대로 남는다. 다시 열어도 안전."""
+    import sqlalchemy as sa
+
+    from logisrisk.data import store as store_mod
+
+    url = f"sqlite:///{(tmp_path / 'v1.db').as_posix()}"
+    eng = sa.create_engine(url)
+    with eng.begin() as c:  # v1 스키마의 조치 테이블 + 메타
+        c.execute(sa.text("CREATE TABLE action_items (id INTEGER PRIMARY KEY AUTOINCREMENT, workspace_id VARCHAR(64) NOT NULL, "
+                          "title VARCHAR(300) NOT NULL, source VARCHAR(200), detail TEXT, status VARCHAR(20), owner VARCHAR(64), "
+                          "created_by VARCHAR(64), created_at DATETIME, updated_at DATETIME)"))
+        c.execute(sa.text("CREATE TABLE schema_meta (key VARCHAR(40) PRIMARY KEY, value VARCHAR(200))"))
+        c.execute(sa.text("INSERT INTO schema_meta VALUES ('schema_version', '1')"))
+        c.execute(sa.text("INSERT INTO action_items (workspace_id, title, status) VALUES ('default', '기존 조치', 'open')"))
+    eng.dispose()
+
+    s = Store(url)
+    cols = {c["name"] for c in sa.inspect(s.engine).get_columns("action_items")}
+    assert {"ref_type", "ref_id"} <= cols
+    with s.engine.connect() as c:
+        assert c.execute(sa.text("SELECT value FROM schema_meta WHERE key='schema_version'")).scalar() == str(store_mod.SCHEMA_VERSION)
+    ctx = s.context_for("local", "default")
+    old = s.list_actions(ctx)
+    assert list(old["title"]) == ["기존 조치"] and pd.isna(old.iloc[0]["ref_type"])
+    s.create_action(ctx, "새 조치", "알림:KPI", ref_type="alert", ref_id="otif")
+    s.engine.dispose()
+    s2 = Store(url)  # 두 번째 기동: 마이그레이션 재실행 없음, 데이터 유지
+    assert len(s2.list_actions(s2.context_for("local", "default"))) == 2
+
+
+def test_action_refs_are_validated_and_workspace_scoped(store):
+    mine, demo = store.context_for("local", "default"), store.context_for("local", "demo")
+    sid = store.save_scenario(demo, "데모 시나리오", "cost_scenario", {"diesel_pct": 10}, {}, [], {})
+    with pytest.raises(PermissionDenied):  # 다른 워크스페이스의 시나리오는 근거로 연결할 수 없다
+        store.create_action(mine, "x", "s", ref_type="scenario", ref_id=str(sid))
+    with pytest.raises(ValueError):
+        store.create_action(mine, "x", "s", ref_type="email", ref_id="1")
+    with pytest.raises(ValueError):
+        store.create_action(mine, "x", "s", ref_type="alert")
+    a1 = store.create_action(demo, "시나리오 조치", "s", ref_type="scenario", ref_id=str(sid))
+    store.create_action(demo, "알림 조치", "a", ref_type="alert", ref_id="stockout")
+    store.create_action(demo, "근거 없음", "-")
+    linked = store.list_actions(demo, "scenario", str(sid))
+    assert list(linked["id"]) == [a1]
+    assert len(store.list_actions(mine, "scenario", str(sid))) == 0

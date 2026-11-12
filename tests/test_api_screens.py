@@ -142,3 +142,20 @@ def test_viewer_restrictions(api):
         assert v.put("/api/settings/targets", headers=DEMO, json={"otif": 0.5}).status_code == 403
         assert v.get("/api/audit", headers=DEMO).status_code == 403
         assert v.get("/api/reports/excel", headers=DEMO).status_code == 403
+
+
+def test_actions_link_to_alert_and_scenario(api):
+    """조치 ↔ 근거: 알림 key·시나리오 id 연결, 근거별 조회, 근거 화면(ref_target), 잘못된 근거 거부."""
+    sid = api.get("/api/scenarios", headers=DEMO).json()[0]["id"]
+    a = api.post("/api/actions", headers=DEMO, json={"title": "결품 SKU 긴급 발주 검토", "source": "알림:재고",
+                                                     "ref_type": "alert", "ref_id": "stockout"}).json()["id"]
+    b = api.post("/api/actions", headers=DEMO, json={"title": "시나리오 후속", "ref_type": "scenario", "ref_id": str(sid)}).json()["id"]
+    rows = {r["id"]: r for r in api.get("/api/actions", headers=DEMO).json()}
+    assert rows[a]["ref_target"] == {"screen": "inventory", "params": {"risk": "결품"}}
+    assert rows[b]["ref_target"] == {"screen": "scenario-lab", "params": {"tab": "saved", "id": str(sid)}}
+    only = api.get("/api/actions", headers=DEMO, params={"ref_type": "scenario", "ref_id": str(sid)}).json()
+    assert b in {r["id"] for r in only} and a not in {r["id"] for r in only}
+    assert api.post("/api/actions", headers=DEMO, json={"title": "x", "ref_type": "scenario", "ref_id": "999999"}).status_code == 404
+    assert api.post("/api/actions", headers=MINE, json={"title": "x", "ref_type": "scenario", "ref_id": str(sid)}).status_code == 404
+    assert api.post("/api/actions", headers=DEMO, json={"title": "x", "ref_type": "email", "ref_id": "1"}).status_code == 422
+    assert api.post("/api/actions", headers=DEMO, json={"title": "x", "ref_type": "alert"}).status_code == 422

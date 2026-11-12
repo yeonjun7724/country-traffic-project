@@ -5810,8 +5810,46 @@
   "/api/actions": {
    "get": {
     "summary": "Actions List",
+    "description": "조치 목록. ref_type·ref_id 로 특정 알림·시나리오에 연결된 조치만 조회. 각 행에 근거 화면(ref_target).",
     "operationId": "actions_list_api_actions_get",
     "parameters": [
+     {
+      "name": "ref_type",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "enum": [
+          "alert",
+          "scenario"
+         ],
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ref Type"
+      }
+     },
+     {
+      "name": "ref_id",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 64
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Ref Id"
+      }
+     },
      {
       "name": "X-Workspace",
       "in": "header",
@@ -6142,6 +6180,35 @@
       "maxLength": 2000,
       "title": "Detail",
       "default": ""
+     },
+     "ref_type": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "alert",
+         "scenario"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ref Type",
+      "description": "근거 유형"
+     },
+     "ref_id": {
+      "anyOf": [
+       {
+        "type": "string",
+        "maxLength": 64
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ref Id",
+      "description": "알림 규칙 key 또는 저장된 시나리오 id"
      }
     },
     "type": "object",

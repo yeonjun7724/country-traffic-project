@@ -97,9 +97,11 @@ def _seed_work_items(store: Store, wb: Workbench):
     ms = kpi.compute_with_comparison(wb.frames, wb.fact, flt, wb.targets)
     inv = inventory.replenishment(wb.frames) if "inventory" in wb.frames else None
     fired = alerts.evaluate(ms, wb.rules, wb.versions, inv, period_days=flt.days)
-    aids = [store.create_action(ctx, f"[{a['rule']}] {a['message']}", f"알림:{a['source']}", flt.describe())
+    aids = [store.create_action(ctx, f"[{a['rule']}] {a['message']}", f"알림:{a['source']}", flt.describe(),
+                                "alert" if a.get("key") else None, a.get("key"))
             for a in fired[:4]]
-    aids.append(store.create_action(ctx, "경유가 +10% 시나리오 기준 4분기 운송 예산 재검토", "시나리오:경유가 +10%"))
+    aids.append(store.create_action(ctx, "경유가 +10% 시나리오 기준 4분기 운송 예산 재검토", "시나리오:경유가 +10%", "",
+                                    *(("scenario", str(sids[0])) if sids else (None, None))))
     for aid, (status, owner) in zip(aids, (("in_progress", "운영팀"), ("open", None), ("done", "물류기획"))):
         if status != "open":
             store.set_action_status(ctx, aid, status, owner)

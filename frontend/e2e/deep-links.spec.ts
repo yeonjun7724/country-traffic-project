@@ -70,3 +70,26 @@ test("저장된 시나리오는 ?id= 로 바로 열리고, 같은 입력값으�
   await expect(page).toHaveURL(/\/scenario-lab\/\?.*a=/);
   await expect(page.getByLabel("시나리오 A 이름")).toHaveValue(cost.name);
 });
+
+test("알림에서 만든 조치는 근거 알림의 원인 화면으로, 시나리오 조치는 시나리오 상세에 함께 보인다", async ({ page, request }) => {
+  await ws(page, "demo");
+  await page.goto("/reports/?tab=alerts");
+  const row = page.getByRole("listitem").filter({ hasText: "재고 부족(결품)" });
+  await row.getByRole("button", { name: /조치 생성/ }).click();
+  await expect(page.getByText(/조치 #\d+ 를 만들었습니다/)).toBeVisible();
+  await page.goto("/reports/?tab=actions");
+  const card = page.locator("article").filter({ hasText: "[재고 부족(결품)]" }).first();
+  await card.getByRole("link", { name: /근거 알림의 원인 보기/ }).click();
+  await expect(page).toHaveURL(/\/inventory\/\?.*risk=/);
+
+  const list = await (await request.get("/api/scenarios", { headers: { "X-Workspace": "demo" } })).json();
+  const sid = list[0].id;
+  await page.goto(`/scenario-lab/?tab=saved&id=${sid}`);
+  const sheet = page.getByRole("dialog");
+  const title = `E2E 후속 조치 ${Date.now()}`;
+  await sheet.getByLabel("후속 조치 제목").fill(title);
+  await sheet.getByRole("button", { name: "조치 추가" }).click();
+  await expect(sheet.getByText(title)).toBeVisible();
+  const linked = await (await request.get(`/api/actions?ref_type=scenario&ref_id=${sid}`, { headers: { "X-Workspace": "demo" } })).json();
+  expect(linked.some((a: { title: string }) => a.title === title)).toBe(true);
+});

@@ -1133,7 +1133,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Actions List */
+        /**
+         * Actions List
+         * @description 조치 목록. ref_type·ref_id 로 특정 알림·시나리오에 연결된 조치만 조회. 각 행에 근거 화면(ref_target).
+         */
         get: operations["actions_list_api_actions_get"];
         put?: never;
         /** Actions Create */
@@ -1230,6 +1233,16 @@ export interface components {
              * @default
              */
             detail: string;
+            /**
+             * Ref Type
+             * @description 근거 유형
+             */
+            ref_type?: ("alert" | "scenario") | null;
+            /**
+             * Ref Id
+             * @description 알림 규칙 key 또는 저장된 시나리오 id
+             */
+            ref_id?: string | null;
         };
         /** ActionStatusIn */
         ActionStatusIn: {
@@ -4384,7 +4397,10 @@ export interface operations {
     };
     actions_list_api_actions_get: {
         parameters: {
-            query?: never;
+            query?: {
+                ref_type?: ("alert" | "scenario") | null;
+                ref_id?: string | null;
+            };
             header?: {
                 "X-Workspace"?: string | null;
             };

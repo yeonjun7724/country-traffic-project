@@ -24,7 +24,7 @@ import { filterQuery, useFilters, type Filters } from "@/lib/filters";
 import { dateTimeLabel, isNum, num, pct, won } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
 import { useFilterMeta } from "@/lib/queries";
-import type { Compare, EngineResult, Outage, ScenarioDetail, ScenarioInput, ScenarioRow, Sens } from "@/lib/types";
+import type { Action, Compare, EngineResult, Outage, ScenarioDetail, ScenarioInput, ScenarioRow, Sens } from "@/lib/types";
 import { useApi, useApiMutation } from "@/lib/use-api";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
@@ -651,6 +651,7 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
                 </ul>
               </Block>
             )}
+            <ScenarioActions id={s.id} name={s.name} />
             {s.data_versions && Object.keys(s.data_versions).length > 0 && (
               <Block title="데이터 버전">
                 <div className="flex flex-wrap gap-1.5">
@@ -677,6 +678,48 @@ function ScenarioSheet({ id, onClose }: { id: number | null; onClose: () => void
         )}
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** 이 시나리오를 근거로 한 조치 (Reports 조치 워크플로와 같은 데이터) */
+function ScenarioActions({ id, name }: { id: number; name: string }) {
+  const { can } = useWorkspace();
+  const q = useApi<Action[]>("/api/actions", { query: { ref_type: "scenario", ref_id: String(id) } });
+  const [title, setTitle] = useState("");
+  const create = useApiMutation<void, { id: number }>(
+    () => ({ path: "/api/actions", body: { title, source: `시나리오:${name}`.slice(0, 200), ref_type: "scenario", ref_id: String(id) } }),
+    { success: (r) => `조치 #${r.id} 를 만들었습니다`, action: () => ({ label: "조치 워크플로", href: "/reports/?tab=actions" }) },
+  );
+  return (
+    <Block title={`관련 조치 ${q.data?.length ?? ""}`}>
+      {q.data && q.data.length > 0 ? (
+        <ul className="space-y-1.5">
+          {q.data.map((a) => (
+            <li key={a.id} className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
+              <span className="text-[11.5px] text-subtle-foreground tabular">#{a.id}</span>
+              <span className="min-w-0 flex-1 truncate text-[12.5px]">{a.title}</span>
+              <Pill tone={STATUS_LABEL[a.status].tone}>{STATUS_LABEL[a.status].label}</Pill>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[12px] text-muted-foreground">{q.data ? "이 시나리오를 근거로 만든 조치가 없습니다." : "불러오는 중"}</p>
+      )}
+      {can("scenario.save") && (
+        <form
+          className="flex gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (title.trim()) create.mutate(undefined, { onSuccess: () => setTitle("") });
+          }}
+        >
+          <Input value={title} onChange={(e) => setTitle(e.target.value.slice(0, 300))} placeholder="후속 조치 (예: 4분기 운송 예산 재검토)" className="h-8" aria-label="후속 조치 제목" />
+          <Button size="sm" variant="outline" type="submit" disabled={!title.trim() || create.isPending}>
+            조치 추가
+          </Button>
+        </form>
+      )}
+    </Block>
   );
 }
 

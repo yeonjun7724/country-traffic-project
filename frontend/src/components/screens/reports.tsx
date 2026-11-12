@@ -136,9 +136,15 @@ function AlertsTab() {
     if (q.data && !rules) setRules(q.data.rules);
   }, [q.data, rules]);
   const saveRules = useApiMutation<void, Rules>(() => ({ path: "/api/alerts/rules", method: "PUT", body: rules }), { success: "알림 규칙을 저장했습니다" });
-  const createAction = useApiMutation<Alert, { id: number }>((a) => ({ path: "/api/actions", body: { title: `[${a.rule}] ${a.message}`, source: `알림:${a.source}`, detail: q.data?.period ?? "" } }), {
-    success: (r) => `조치 #${r.id} 를 만들었습니다`,
-  });
+  const createAction = useApiMutation<Alert, { id: number }>(
+    (a) => ({
+      path: "/api/actions",
+      body: { title: `[${a.rule}] ${a.message}`, source: `알림:${a.source}`, detail: q.data?.period ?? "", ...(a.key ? { ref_type: "alert", ref_id: a.key } : {}) },
+    }),
+    {
+      success: (r) => `조치 #${r.id} 를 만들었습니다`,
+    },
+  );
   const edit = can("settings.manage");
   if (q.isError) return <ErrorState error={q.error} onRetry={() => q.refetch()} />;
   if (!q.data || !rules) return <Skeleton className="h-96" />;
@@ -268,6 +274,7 @@ function ActionsTab() {
                       <p className="mt-1 text-[11.5px] text-muted-foreground">
                         #{a.id} · {a.source || "근거 없음"} · {dateTimeLabel(a.created_at)}
                       </p>
+                      <RefLink action={a} />
                       <div className="mt-2.5 flex items-center gap-2">
                         {a.owner && <Pill>{a.owner}</Pill>}
                         {manage ? (
@@ -299,5 +306,19 @@ function ActionsTab() {
         </div>
       )}
     </div>
+  );
+}
+
+/** 조치의 근거로 이동 (알림 → 원인 화면, 시나리오 → 저장된 시나리오 상세) */
+function RefLink({ action }: { action: Action }) {
+  const { filters } = useFilters();
+  const t = action.ref_target;
+  const href = t ? screenHref(t.screen, t.params ?? {}, t.screen === "scenario-lab" ? undefined : filters) : null;
+  if (!href) return null;
+  const label = action.ref_type === "scenario" ? `근거 시나리오 #${action.ref_id}` : "근거 알림의 원인 보기";
+  return (
+    <Link href={href} className="mt-1 inline-flex items-center gap-0.5 text-[11.5px] font-medium text-primary hover:underline">
+      {label} <ArrowRight className="size-3" />
+    </Link>
   );
 }

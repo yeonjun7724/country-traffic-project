@@ -16,7 +16,7 @@ from typing import Any
 
 import pandas as pd
 from sqlalchemy import (Boolean, Column, Date, DateTime, Float, ForeignKey, Integer, MetaData, String,
-                        Table, Text, and_, create_engine, func, insert, select, update)
+                        Table, Text, and_, create_engine, func, insert, inspect, select, text, update)
 from sqlalchemy.engine import Engine
 
 from .. import CALC_VERSION
@@ -24,7 +24,8 @@ from ..config import DATABASE_URL
 from ..security import ROLES, PermissionDenied, UserContext, require
 from .schemas import ENTITIES, EntitySpec
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2  # 2: action_items.ref_type/ref_id (조치 ↔ 근거 알림·시나리오)
+ACTION_REF_TYPES = ("alert", "scenario")
 _TYPE = {"str": lambda: String(255), "int": Float, "float": Float, "date": Date,
          "bool": Boolean, "time": lambda: String(8)}
 
@@ -98,7 +99,15 @@ actions_t = Table("action_items", metadata,
                   Column("owner", String(64)),
                   Column("created_by", String(64)),
                   Column("created_at", DateTime, default=datetime.now),
-                  Column("updated_at", DateTime, default=datetime.now))
+                  Column("updated_at", DateTime, default=datetime.now),
+                  # v2: 근거 — 알림(ref_id = 규칙 key) 또는 저장된 시나리오(ref_id = 시나리오 id). 없으면 NULL
+                  Column("ref_type", String(20)),
+                  Column("ref_id", String(64)))
+
+# 기존 DB 에 없는 nullable 컬럼을 기동 시 추가 (데이터 변경 없음, 여러 번 실행해도 안전). 버전 → 추가할 (테이블, 컬럼, DDL 타입)
+MIGRATIONS: dict[int, list[tuple[str, str, str]]] = {
+    2: [("action_items", "ref_type", "VARCHAR(20)"), ("action_items", "ref_id", "VARCHAR(64)")],
+}
 
 audit_t = Table("audit_log", metadata,
                 Column("id", Integer, primary_key=True, autoincrement=True),
@@ -174,7 +183,23 @@ class Store:
             engine = create_engine(url, future=True)
         self.engine = engine
         metadata.create_all(self.engine)
+        self._migrate()
         self._bootstrap()
+
+    def _migrate(self):
+        """추가형 마이그레이션: 누락된 nullable 컬럼만 ADD COLUMN. 기존 행·컬럼은 건드리지 않는다."""
+        with self.engine.begin() as c:
+            row = c.execute(select(meta_t.c.value).where(meta_t.c.key == "schema_version")).first()
+            current = int(row[0]) if row else None
+            if current is not None and current >= SCHEMA_VERSION:
+                return
+            for ver in sorted(MIGRATIONS):
+                for table, col, ddl in MIGRATIONS[ver]:
+                    have = {x["name"] for x in inspect(c).get_columns(table)}
+                    if col not in have:
+                        c.execute(text(f'ALTER TABLE {table} ADD COLUMN {col} {ddl}'))
+            if row is not None:
+                c.execute(update(meta_t).where(meta_t.c.key == "schema_version").values(value=str(SCHEMA_VERSION)))
 
     # ── 부트스트랩: 로컬 모드 기본 워크스페이스/사용자 ─────────────────────────
     def _bootstrap(self):
@@ -437,20 +462,35 @@ class Store:
             self.log(ctx, "setting.update", key, {"value": value}, conn=c)
 
     # ── 조치(Action) ─────────────────────────────────────────────────────
-    def create_action(self, ctx: UserContext, title: str, source: str, detail: str = "") -> int:
+    def create_action(self, ctx: UserContext, title: str, source: str, detail: str = "",
+                      ref_type: str | None = None, ref_id: str | None = None) -> int:
+        """조치 항목 생성. ref_type/ref_id 로 근거(알림 규칙 key · 같은 워크스페이스의 저장된 시나리오)를 연결한다."""
         require(ctx, "scenario.save")  # 분석가도 조치 후보를 '제안' 할 수 있음
+        if (ref_type is None) != (ref_id is None):
+            raise ValueError("ref_type 과 ref_id 는 함께 지정해야 합니다.")
+        if ref_type is not None:
+            if ref_type not in ACTION_REF_TYPES:
+                raise ValueError(f"알 수 없는 근거 유형: {ref_type}")
+            ref_id = str(ref_id)[:64]
+            if ref_type == "scenario" and (not ref_id.isdigit() or self.get_scenario(ctx, int(ref_id)) is None):
+                raise PermissionDenied("근거 시나리오를 찾을 수 없습니다.")  # 다른 워크스페이스 시나리오 참조 차단
         with self.engine.begin() as c:
             aid = c.execute(insert(actions_t).values(workspace_id=ctx.workspace_id, title=title[:300], source=source,
-                                                     detail=detail, status="open", created_by=ctx.user_id)
+                                                     detail=detail, status="open", created_by=ctx.user_id,
+                                                     ref_type=ref_type, ref_id=ref_id)
                             ).inserted_primary_key[0]
-            self.log(ctx, "action.create", title[:100], {"id": aid}, conn=c)
+            self.log(ctx, "action.create", title[:100], {"id": aid, "ref_type": ref_type, "ref_id": ref_id}, conn=c)
         return int(aid)
 
-    def list_actions(self, ctx: UserContext) -> pd.DataFrame:
+    def list_actions(self, ctx: UserContext, ref_type: str | None = None, ref_id: str | None = None) -> pd.DataFrame:
         require(ctx, "data.read")
+        q = select(actions_t).where(actions_t.c.workspace_id == ctx.workspace_id)
+        if ref_type is not None:
+            q = q.where(actions_t.c.ref_type == ref_type)
+        if ref_id is not None:
+            q = q.where(actions_t.c.ref_id == str(ref_id))
         with self.engine.connect() as c:
-            rows = c.execute(select(actions_t).where(actions_t.c.workspace_id == ctx.workspace_id)
-                             .order_by(actions_t.c.id.desc())).all()
+            rows = c.execute(q.order_by(actions_t.c.id.desc())).all()
         return pd.DataFrame([dict(r._mapping) for r in rows])
 
     def set_action_status(self, ctx: UserContext, aid: int, status: str, owner: str | None = None):

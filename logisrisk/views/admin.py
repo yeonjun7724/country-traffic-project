@@ -107,3 +107,23 @@ def system_status(wb: Workbench) -> list[dict]:
 
 def permissions_table() -> list[dict]:
     return [{"permission": p, "min_role": r, "min_role_label": ROLE_LABEL[r]} for p, r in PERMISSIONS.items()]
+
+
+# ── 조치 ↔ 근거 ──────────────────────────────────────────────────────
+def action_ref_target(ref_type: str | None, ref_id: str | None) -> dict | None:
+    """조치의 근거로 이동할 화면 (알림 → 원인 화면, 시나리오 → 저장된 시나리오 상세). 근거가 없으면 None."""
+    if not ref_type or not ref_id:
+        return None
+    if ref_type == "alert":
+        return alerts.target_for(str(ref_id))
+    if ref_type == "scenario":
+        return {"screen": "scenario-lab", "params": {"tab": "saved", "id": str(ref_id)}}
+    return None
+
+
+def actions_view(store, ctx, ref_type: str | None = None, ref_id: str | None = None) -> list[dict]:
+    from .serialize import records
+    rows = records(store.list_actions(ctx, ref_type, ref_id))
+    for r in rows:
+        r["ref_target"] = action_ref_target(r.get("ref_type"), r.get("ref_id"))
+    return rows

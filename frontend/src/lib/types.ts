@@ -311,6 +311,11 @@ export type Action = {
   created_by: string;
   created_at: string;
   updated_at: string | null;
+  /** 근거: 알림(ref_id = 규칙 key) 또는 저장된 시나리오(ref_id = id) */
+  ref_type?: "alert" | "scenario" | null;
+  ref_id?: string | null;
+  /** 근거 화면 (없으면 null) */
+  ref_target?: AlertTarget | null;
 };
 export type Targets = { otif: number | null; late_rate: number | null; load_factor: number | null; cost_per_order: number | null; max_cost_per_shipment: number | null };
 export type SettingsView = {
