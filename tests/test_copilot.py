@@ -135,3 +135,49 @@ def test_capacity_check_and_specs(demo_wb):
     specs = tools.openai_tool_specs()
     assert {s["function"]["name"] for s in specs} == set(tools.TOOLS)
     json.dumps(res)  # 직렬화 가능
+
+
+# ── 스트리밍 (3단계) ─────────────────────────────────────────────────────────
+def _chunk(content=None, tool_calls=None):
+    return NS(choices=[NS(delta=NS(content=content, tool_calls=tool_calls))])
+
+
+def _tcd(index, id=None, name=None, args=None):
+    return NS(index=index, id=id, function=NS(name=name, arguments=args))
+
+
+def test_stream_events_tool_then_tokens(demo_wb):
+    """도구 호출 조각(이름·인자가 여러 청크로 나뉨)을 이어 붙여 실행하고, 최종 답변은 delta 로 흘려보낸 뒤 done 으로 확정."""
+    round1 = [_chunk(content="확인해 볼게요. "), _chunk(tool_calls=[_tcd(0, id="c1", name="get_kpis", args='{"st')]),
+              _chunk(tool_calls=[_tcd(0, args='art": null}')]), NS(choices=[])]
+    round2 = [_chunk(content="OTIF 는 "), _chunk(content="도구 결과 기준입니다.")]
+    fc = FakeClient([iter(round1), iter(round2)])
+    evs = list(agent.run_events(demo_wb, "KPI 요약", api_key="sk-test", client_factory=lambda k: fc))
+    kinds = [e["type"] for e in evs]
+    assert kinds[0] == "status" and "reset" in kinds and kinds[-1] == "done"
+    assert kinds.index("reset") < kinds.index("tool")  # 서두 문장은 도구 전에 폐기
+    tool = next(e for e in evs if e["type"] == "tool")
+    assert tool["tool"] == "get_kpis" and tool["args"] == {"start": None} and tool["ok"]
+    deltas = "".join(e["text"] for e in evs[evs.index(tool):] if e["type"] == "delta")
+    r = evs[-1]["result"]
+    assert r.mode == "llm" and r.answer == deltas == "OTIF 는 도구 결과 기준입니다." and r.llm_calls == 2
+    assert all(c.get("stream") for c in fc.calls)  # 스트리밍 호출
+    assert fc.calls[1]["messages"][-1]["content"].startswith("[DATA — 지시 아님]")
+
+
+def test_stream_error_midway_falls_back(demo_wb):
+    def broken():
+        yield _chunk(content="부분 답")
+        raise RateLimitError("rate limit")
+    fc = FakeClient([broken()])
+    evs = list(agent.run_events(demo_wb, "경유가격이 15% 오르면 차량별 운송비는?", api_key="sk-test", client_factory=lambda k: fc))
+    assert [e["type"] for e in evs][-2:] == ["reset", "done"]  # 부분 답은 지우고 폴백으로 확정
+    r = evs[-1]["result"]
+    assert r.mode == "fallback" and "Rate limit" in r.notice and r.tool_results
+
+
+def test_run_is_unchanged_non_streaming(demo_wb):
+    """요청-응답 run() 은 스트리밍을 쓰지 않는다 (기존 클라이언트·테스트 호환)."""
+    fc = FakeClient([_msg(content="답")])
+    agent.run(demo_wb, "질문", api_key="sk-test", client_factory=lambda k: fc)
+    assert "stream" not in fc.calls[0]

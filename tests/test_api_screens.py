@@ -1,4 +1,6 @@
 """P1/P2 화면 API: Network·Transportation·Inventory·Fuel·Scenario·Copilot·Reports·Settings."""
+import json
+
 import pytest
 
 pytest.importorskip("fastapi")
@@ -169,3 +171,37 @@ def test_saved_views_api(api):
     assert api.post("/api/views", headers=MINE, json={"name": "x", "screen": "없는화면", "query": ""}).status_code == 422
     assert api.delete(f"/api/views/{vid}", headers=MINE).status_code == 200
     assert api.delete(f"/api/views/{vid}", headers=MINE).status_code == 404
+
+
+def test_copilot_stream_endpoint_sse(api, monkeypatch):
+    """SSE: 키 없음 → 규칙 기반 답변이 done 이벤트로 온다. 호출 예산은 서버 측 세션 집계."""
+    monkeypatch.setattr("logisrisk.copilot.agent.openai_api_key", lambda: None)
+    with api.stream("POST", "/api/copilot/chat/stream", headers=DEMO, json={"message": "경유가격이 10% 오르면?"}) as r:
+        assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
+        assert "content-encoding" not in r.headers  # SSE 는 압축하지 않음 (버퍼링 방지)
+        events = [json.loads(line[6:]) for line in r.iter_lines() if line.startswith("data: ")]
+    done = events[-1]
+    assert done["type"] == "done" and done["mode"] == "fallback" and done["answer"] and done["calls_max"]
+    assert api.get("/api/copilot/meta", headers=DEMO).json()["calls_used"] == done["calls_used"]
+
+
+def test_copilot_stream_endpoint_llm_path_streams_tokens(api, monkeypatch):
+    """LLM 경로(가짜 스트리밍 클라이언트): 도구 실행 이벤트 → 답변 조각 delta 여러 개 → done(조각을 이은 답변)."""
+    from types import SimpleNamespace as NS
+
+    def chunk(content=None, tool_calls=None):
+        return NS(choices=[NS(delta=NS(content=content, tool_calls=tool_calls))])
+
+    script = [
+        iter([chunk(tool_calls=[NS(index=0, id="c1", function=NS(name="get_kpis", arguments="{}"))])]),
+        iter([chunk(content="첫 조각 "), chunk(content="둘째 조각")]),
+    ]
+    client = NS(chat=NS(completions=NS(create=lambda **kw: script.pop(0))))
+    monkeypatch.setattr("logisrisk.copilot.agent.openai_api_key", lambda: "sk-test")
+    monkeypatch.setattr("logisrisk.copilot.agent._default_client", lambda key: client)
+    with api.stream("POST", "/api/copilot/chat/stream", headers=DEMO, json={"message": "KPI 요약"}) as r:
+        events = [json.loads(line[6:]) for line in r.iter_lines() if line.startswith("data: ")]
+    kinds = [e["type"] for e in events]
+    assert "tool" in kinds and kinds.count("delta") == 2 and kinds[-1] == "done"
+    assert events[-1]["mode"] == "llm" and events[-1]["answer"] == "첫 조각 둘째 조각"
+    assert events[-1]["calls_used"] >= 2

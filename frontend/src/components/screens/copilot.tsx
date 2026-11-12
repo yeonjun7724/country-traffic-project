@@ -1,6 +1,5 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
 import { ArrowUp, Bot, ChevronRight, Loader2, RotateCcw, Sparkles, User, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -11,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
+import { postStream } from "@/lib/sse";
 import { navByKey } from "@/lib/nav";
 import type { ChatReply, CopilotMeta } from "@/lib/types";
 import { useApi } from "@/lib/use-api";
@@ -18,6 +18,14 @@ import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace";
 
 const NAV = navByKey("copilot");
+
+type StreamEvent =
+  | { type: "status"; text: string }
+  | { type: "tool"; tool: string; args: unknown; ok: boolean }
+  | { type: "delta"; text: string }
+  | { type: "reset" }
+  | ({ type: "done" } & ChatReply)
+  | { type: "error"; detail: string };
 const EXAMPLES = [
   "지난달 배송비가 가장 많이 증가한 거래처는?",
   "경유가격이 15% 오르면 운송사별 운송비는 얼마나 변하나?",
@@ -63,25 +71,50 @@ export function CopilotScreen() {
     end.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [msgs, key]);
 
-  const ask = useMutation({
-    mutationFn: (q: string) =>
-      apiFetch<ChatReply>("/api/copilot/chat", {
-        method: "POST",
-        body: { message: q, history: msgs.slice(-10).map((m) => ({ role: m.role, content: m.content.slice(0, 8000) })) },
-      }),
-    onSuccess: (r) => {
-      setMsgs((m) => [...m, { role: "assistant", content: r.answer, reply: r }]);
-      setBudget({ used: r.calls_used, max: r.calls_max });
-    },
-    onError: (e) => setMsgs((m) => [...m, { role: "assistant", content: `요청을 처리하지 못했습니다: ${(e as Error).message}`, reply: { answer: "", mode: "error", notice: "", steps: [], results: [], calls_used: 0, calls_max: 0 } }]),
-  });
+  // 진행 중 응답 (스트리밍): 단계 문구 · 실행한 도구 · 흘러나오는 답변
+  const [pending, setPending] = useState<{ status: string; text: string; tools: { tool: string; ok: boolean }[] } | null>(null);
+  const busy = pending !== null;
 
-  const send = (q: string) => {
+  const send = async (q: string) => {
     const t = q.trim();
-    if (!t || ask.isPending) return;
+    if (!t || busy) return;
+    const history = msgs.slice(-10).map((m) => ({ role: m.role, content: m.content.slice(0, 8000) }));
     setMsgs((m) => [...m, { role: "user", content: t }]);
     setText("");
-    ask.mutate(t);
+    setPending({ status: "질문을 보내는 중", text: "", tools: [] });
+    const finish = (r: ChatReply) => {
+      setMsgs((m) => [...m, { role: "assistant", content: r.answer, reply: r }]);
+      setBudget({ used: r.calls_used, max: r.calls_max });
+      setPending(null);
+    };
+    let got = 0;
+    let done = false;
+    try {
+      await postStream<StreamEvent>("/api/copilot/chat/stream", { message: t, history }, (e) => {
+        got += 1;
+        if (e.type === "status") setPending((p) => p && { ...p, status: e.text });
+        else if (e.type === "tool") setPending((p) => p && { ...p, tools: [...p.tools, { tool: e.tool, ok: e.ok }] });
+        else if (e.type === "delta") setPending((p) => p && { ...p, text: p.text + e.text });
+        else if (e.type === "reset") setPending((p) => p && { ...p, text: "" });
+        else if (e.type === "done") {
+          done = true;
+          finish(e);
+        } else if (e.type === "error") throw new Error(`분석 중 오류 (${e.detail})`);
+      });
+      if (!done) throw new Error("응답이 중간에 끊겼습니다.");
+    } catch (err) {
+      if (got === 0) {
+        // 스트림을 못 쓰는 환경(프록시 등) → 요청-응답 방식으로 한 번만 재시도 (이미 진행된 경우는 LLM 중복 호출 방지로 재시도 안 함)
+        try {
+          finish(await apiFetch<ChatReply>("/api/copilot/chat", { method: "POST", body: { message: t, history } }));
+          return;
+        } catch (e2) {
+          err = e2;
+        }
+      }
+      setMsgs((m) => [...m, { role: "assistant", content: `요청을 처리하지 못했습니다: ${(err as Error).message}`, reply: { answer: "", mode: "error", notice: "", steps: [], results: [], calls_used: 0, calls_max: 0 } }]);
+      setPending(null);
+    }
   };
 
   if (!can("ai.use"))
@@ -109,7 +142,7 @@ export function CopilotScreen() {
           <div className="flex-1 space-y-5 overflow-y-auto px-4 py-5 md:px-6" aria-live="polite">
             {msgs.length === 0 && (
               <div className="mx-auto max-w-xl py-8 text-center">
-                <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 text-white shadow">
+                <div className="mx-auto flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-a to-brand-b text-white shadow">
                   <Sparkles className="size-5" />
                 </div>
                 <h2 className="mt-4 text-heading font-semibold">무엇을 분석할까요?</h2>
@@ -134,11 +167,24 @@ export function CopilotScreen() {
             {msgs.map((msg, i) => (
               <Bubble key={i} msg={msg} />
             ))}
-            {ask.isPending && (
-              <div className="flex items-center gap-3">
+            {pending && (
+              <div className="flex gap-3" aria-busy="true">
                 <Avatar role="assistant" />
-                <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-body text-muted-foreground">
-                  <Loader2 className="size-3.5 animate-spin" /> 도구 실행 · 분석 중…
+                <div className="min-w-0 max-w-[88%] space-y-2">
+                  {pending.text && (
+                    <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 text-body leading-relaxed">
+                      <Markdownish text={pending.text} />
+                    </div>
+                  )}
+                  <div className="flex flex-wrap items-center gap-1.5 text-small text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    <span>{pending.status}…</span>
+                    {pending.tools.map((t, i) => (
+                      <Pill key={i} tone={t.ok ? "neutral" : "warning"}>
+                        <Wrench className="size-3" /> {t.tool}
+                      </Pill>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
@@ -166,7 +212,7 @@ export function CopilotScreen() {
                 className="max-h-40 min-h-6 flex-1 resize-none bg-transparent text-body outline-none placeholder:text-subtle-foreground"
                 aria-label="질문 입력"
               />
-              <Button type="submit" size="icon-sm" className="rounded-lg" disabled={!text.trim() || ask.isPending} aria-label="보내기">
+              <Button type="submit" size="icon-sm" className="rounded-lg" disabled={!text.trim() || busy} aria-label="보내기">
                 <ArrowUp className="size-4" />
               </Button>
             </div>
@@ -220,7 +266,7 @@ function Avatar({ role }: { role: "user" | "assistant" }) {
     <span
       className={cn(
         "flex size-7 shrink-0 items-center justify-center rounded-full",
-        role === "user" ? "bg-muted text-muted-foreground" : "bg-gradient-to-br from-blue-600 to-indigo-700 text-white",
+        role === "user" ? "bg-muted text-muted-foreground" : "bg-gradient-to-br from-brand-a to-brand-b text-white",
       )}
       aria-hidden
     >

@@ -37,9 +37,11 @@ test("Transportation: 배송 계획 대안이 자동 계산되고 승인 요청�
 test("Copilot: 예시 질문에 도구 근거와 함께 답한다", async ({ page }) => {
   await ws(page);
   await page.goto("/copilot/");
+  const streamed = page.waitForRequest((r) => r.url().includes("/api/copilot/chat/stream") && r.method() === "POST");
   await page.getByRole("button", { name: "배송 지연이 잦은 권역을 보여줘" }).click();
   await expect(page.getByText(/근거: 도구 호출 결과/)).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText("규칙 기반").first()).toBeVisible();
+  await streamed; // 스트리밍 엔드포인트로 요청 (실패 시에만 요청-응답으로 재시도)
   await page.screenshot({ path: "e2e-screens/flow-copilot.png", fullPage: true });
 });
 

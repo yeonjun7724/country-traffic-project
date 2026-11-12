@@ -1,12 +1,15 @@
 """07 AI Copilot · 09 Reports & Alerts · 10 Settings API."""
 from __future__ import annotations
 
+import json
+import secrets
+import threading
 from typing import Literal
 
 import pandas as pd
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel, Field
 
 from logisrisk.analytics.alerts import DEFAULT_RULES
@@ -26,10 +29,37 @@ XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
 # ── 07 AI Copilot ─────────────────────────────────────────────────────
+# 세션 LLM 호출 예산: 스트리밍 응답은 시작 후 쿠키를 갱신할 수 없으므로 서버 메모리에 세션 uid 별로 센다
+# (uvicorn 워커 1개 전제 — ARCHITECTURE §10. 재시작 시 초기화되는 소프트 한도).
+_AI_USAGE: dict[str, int] = {}
+_AI_LOCK = threading.Lock()
+
+
+def _session_uid(request: Request) -> str:
+    uid = request.session.get("uid")
+    if not uid:
+        uid = secrets.token_urlsafe(12)
+        request.session["uid"] = uid
+    return uid
+
+
+def _ai_used(request: Request) -> int:
+    uid = request.session.get("uid")
+    with _AI_LOCK:
+        server = _AI_USAGE.get(uid, 0) if uid else 0
+    return max(server, int(request.session.get("ai_calls", 0)))  # 이전 쿠키 기반 집계와 호환
+
+
+def _ai_add(uid: str, base: int, n: int) -> int:
+    with _AI_LOCK:
+        _AI_USAGE[uid] = max(_AI_USAGE.get(uid, 0), base) + n
+        return _AI_USAGE[uid]
+
+
 @router.get("/copilot/meta")
 def copilot_meta(request: Request, _: UserContext = Depends(permission("ai.use"))):
     return {"llm": bool(openai_api_key()), "model": OPENAI_MODEL if openai_api_key() else None,
-            "calls_used": int(request.session.get("ai_calls", 0)), "calls_max": AI_MAX_CALLS_PER_SESSION,
+            "calls_used": _ai_used(request), "calls_max": AI_MAX_CALLS_PER_SESSION,
             "tools": [{"name": k, "description": d} for k, (_, d, _) in TOOLS.items()]}
 
 
@@ -46,12 +76,40 @@ class ChatIn(BaseModel):
 @router.post("/copilot/chat")
 async def copilot_chat(body: ChatIn, request: Request, ctx: UserContext = Depends(permission("ai.use")),
                        wb: Workbench = Depends(get_workbench)):
-    used = int(request.session.get("ai_calls", 0))
+    uid = _session_uid(request)
+    used = _ai_used(request)
     r = await run_in_threadpool(agent.run, wb, body.message, [t.model_dump() for t in body.history[-10:]],
                                 calls_used=used, max_calls=AI_MAX_CALLS_PER_SESSION)
-    request.session["ai_calls"] = used + r.llm_calls
-    return jsonable({"answer": r.answer, "mode": r.mode, "notice": r.notice, "steps": r.steps,
-                     "results": r.tool_results, "calls_used": used + r.llm_calls, "calls_max": AI_MAX_CALLS_PER_SESSION})
+    total = _ai_add(uid, used, r.llm_calls)
+    request.session["ai_calls"] = total
+    return jsonable(_result_payload(r, total))
+
+
+def _result_payload(r, calls_used: int) -> dict:
+    return {"answer": r.answer, "mode": r.mode, "notice": r.notice, "steps": r.steps,
+            "results": r.tool_results, "calls_used": calls_used, "calls_max": AI_MAX_CALLS_PER_SESSION}
+
+
+@router.post("/copilot/chat/stream")
+def copilot_chat_stream(body: ChatIn, request: Request, ctx: UserContext = Depends(permission("ai.use")),
+                        wb: Workbench = Depends(get_workbench)):
+    """Server-Sent Events: status · tool · delta(답변 조각) · reset · done(최종 답변 — 화면은 이것으로 확정)."""
+    uid = _session_uid(request)  # 응답 시작 전에 세션 쿠키 확정
+    used = _ai_used(request)
+    history = [t.model_dump() for t in body.history[-10:]]
+
+    def events():
+        try:
+            for ev in agent.run_events(wb, body.message, history, calls_used=used, max_calls=AI_MAX_CALLS_PER_SESSION):
+                if ev["type"] == "done":
+                    r = ev["result"]
+                    ev = {"type": "done", **_result_payload(r, _ai_add(uid, used, r.llm_calls))}
+                yield f"data: {json.dumps(jsonable(ev), ensure_ascii=False)}\n\n"
+        except Exception as e:  # 생성기 밖 예외도 화면이 멈추지 않게 마무리
+            yield f"data: {json.dumps({'type': 'error', 'detail': type(e).__name__})}\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
 
 
 # ── 09 Reports ────────────────────────────────────────────────────────

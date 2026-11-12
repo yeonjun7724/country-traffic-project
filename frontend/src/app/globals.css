@@ -25,6 +25,8 @@
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-text: var(--primary-text);
   --color-scenario-a: var(--scenario-a);
+  --color-brand-a: var(--brand-a);
+  --color-brand-b: var(--brand-b);
   --color-scenario-b: var(--scenario-b);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -160,6 +162,9 @@
   --route-8: oklch(0.648 0.2 131.684);
   --route-9: oklch(0.646 0.222 41.116);
   --route-10: oklch(0.488 0.243 264.376);
+  /* 브랜드 그라데이션 (로고·Copilot 아이콘) — 두 테마 공통 */
+  --brand-a: oklch(0.546 0.245 262.881);       /* blue-600 */
+  --brand-b: oklch(0.457 0.24 277.023);        /* indigo-700 */
   /* 시나리오 A·B (보라는 외부 지표 전용이라 B 는 청록) */
   --scenario-a: oklch(0.546 0.245 262.881);
   --scenario-b: oklch(0.511 0.096 186.391);    /* teal-700 — 글자로도 쓰므로 흰 배경 AA */
