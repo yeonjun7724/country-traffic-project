@@ -105,8 +105,10 @@ def _args(wb):
 def scenario_compare(wb: Workbench, flt: kpi.Filters, a: cost.ScenarioParams, b: cost.ScenarioParams) -> dict:
     if wb.fact is None:
         return {"status": "missing", "reason": "Baseline 이 될 배송 실적이 없습니다."}
-    ra = cost.scenario_engine(wb.fact, flt, a, *_args(wb))
-    rb = cost.scenario_engine(wb.fact, flt, b, *_args(wb))
+    veh, fp, ed = _args(wb)
+    prep = cost.prepare_trips(wb.fact, flt, fp, ed)  # A·B 가 같은 집계를 공유
+    ra = cost.scenario_engine(wb.fact, flt, a, veh, prepared=prep)
+    rb = cost.scenario_engine(wb.fact, flt, b, veh, prepared=prep)
     if ra.get("status") != "ok":
         return {"status": ra.get("status"), "reason": ra.get("reason")}
     rows = []

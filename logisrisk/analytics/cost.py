@@ -112,23 +112,48 @@ class ScenarioParams:
         return asdict(self)
 
 
-def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, vehicles: pd.DataFrame | None,
-                    fuel_prices=None, external_diesel=None) -> dict:
-    """Baseline 대비 시나리오 비용·운행·차량 영향 (단순 가정 기반 추정)."""
+@dataclass
+class PreparedTrips:
+    """시나리오 파라미터와 무관한 준비 결과 (필터·연료 기준·운행 집계). 한 번 만들어 여러 시나리오에 재사용."""
+    trips: pd.DataFrame | None
+    n_shipments: int = 0
+    fuel_cost_sources: dict | None = None
+    shipments_without_vehicle: int = 0
+    reason: str | None = None
+
+
+def prepare_trips(fact: pd.DataFrame, flt: Filters, fuel_prices=None, external_diesel=None) -> PreparedTrips:
+    """배송 → 운행(차량×출고일) 집계. 결과는 파라미터와 무관하므로 민감도·A/B 비교에서 1회만 계산한다."""
     x = fuel_basis(apply_filters(fact, flt), fuel_prices, external_diesel)
     x = x[x["cost"].notna()].copy()
     if x.empty:
-        return {"status": "not_computable", "reason": "운송비가 입력된 배송이 없습니다."}
+        return PreparedTrips(None, reason="운송비가 입력된 배송이 없습니다.")
     x["fuel_c"] = x["fuel_cost_eff"].fillna(0.0)
     x["nonfuel_c"] = x["nonfuel_cost"].where(x["nonfuel_cost"].notna(), x["cost"] - x["fuel_c"]).clip(lower=0)
     has_trip = x["vehicle_id"].notna()
     x["trip_key"] = np.where(has_trip, x["vehicle_id"].astype(str) + "|" + x["ship_date"].astype(str),
                              "S|" + x["shipment_id"].astype(str))
-    trips = x.groupby("trip_key").agg(date=("ship_date", "first"), vehicle=("vehicle_id", "first"),
-                                      load=("load_kg_eff", lambda s: s.sum(min_count=1)),
-                                      cap=("capacity_kg", "first"),
-                                      dist=("distance_km", lambda s: s.sum(min_count=1)),
-                                      fuel=("fuel_c", "sum"), nonfuel=("nonfuel_c", "sum"))
+    g = x.groupby("trip_key")
+    trips = g.agg(date=("ship_date", "first"), vehicle=("vehicle_id", "first"),
+                  cap=("capacity_kg", "first"), fuel=("fuel_c", "sum"), nonfuel=("nonfuel_c", "sum"))
+    # 값이 하나도 없으면 NaN (용량 판정 제외) — lambda 대신 벡터화된 min_count 합계
+    trips["load"] = g["load_kg_eff"].sum(min_count=1)
+    trips["dist"] = g["distance_km"].sum(min_count=1)
+    return PreparedTrips(trips, n_shipments=len(x), fuel_cost_sources=x["fuel_cost_source"].value_counts().to_dict(),
+                         shipments_without_vehicle=int((~has_trip).sum()))
+
+
+def scenario_engine(fact: pd.DataFrame | None, flt: Filters, params: ScenarioParams, vehicles: pd.DataFrame | None,
+                    fuel_prices=None, external_diesel=None, prepared: PreparedTrips | None = None) -> dict:
+    """Baseline 대비 시나리오 비용·운행·차량 영향 (단순 가정 기반 추정).
+
+    prepared: 같은 필터로 여러 시나리오를 계산할 때 `prepare_trips` 결과를 넘기면 집계를 재사용한다.
+    """
+    if prepared is None:
+        prepared = prepare_trips(fact, flt, fuel_prices, external_diesel)
+    if prepared.trips is None:
+        return {"status": "not_computable", "reason": prepared.reason}
+    trips = prepared.trips
     d = params.demand_pct / 100
     cap_known = trips["load"].notna() & trips["cap"].notna() & (trips["cap"] > 0)
     k = pd.Series(1.0 + d, index=trips.index)  # 용량 정보 없으면 선형 비례
@@ -170,7 +195,7 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
     dist_known = trips["dist"].notna()
     res = {
         "status": "ok", "params": params.to_dict(), "kind": "assumption",
-        "n_shipments": len(x), "n_trips": len(trips),
+        "n_shipments": prepared.n_shipments, "n_trips": len(trips),
         "baseline": {**base, "trips": float(len(trips)), "distance_km": float(trips.loc[dist_known, "dist"].sum()),
                      "peak_daily_trips": int(day_need_base.max()), "fleet": None if fleet is None else fleet - params.fleet_change,
                      "days_fleet_short": base_short},
@@ -179,9 +204,9 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
         "delta_total": delta, "delta_pct": delta / base["total"] * 100 if base["total"] else None,
         "contribution": contrib,
         "data_quality": {
-            "fuel_cost_sources": x["fuel_cost_source"].value_counts().to_dict(),
+            "fuel_cost_sources": dict(prepared.fuel_cost_sources or {}),
             "trips_with_capacity": int(cap_known.sum()), "trips_total": len(trips),
-            "shipments_without_vehicle": int((~has_trip).sum())},
+            "shipments_without_vehicle": prepared.shipments_without_vehicle},
         "assumptions": [
             "결과는 업로드된 실적을 기준으로 한 단순 가정 기반 추정이며 최적화 결과가 아님.",
             "연료비는 경유가에 선형 비례, 연료 외 비용(인건·고정·통행 등)은 운송 단가 변화율에 선형 비례.",
@@ -198,10 +223,11 @@ def scenario_engine(fact: pd.DataFrame, flt: Filters, params: ScenarioParams, ve
 def sensitivity(fact, flt, vehicles, fuel_prices=None, external_diesel=None, steps=(-20, -10, 10, 20)) -> pd.DataFrame:
     """요인별 단일 변화의 총비용 영향 (토네이도 차트용)."""
     rows = []
+    prepared = prepare_trips(fact, flt, fuel_prices, external_diesel)  # 12개 시나리오가 공유 (파라미터 무관)
     for factor, key in (("경유가", "diesel_pct"), ("운송 단가", "rate_pct"), ("물동량", "demand_pct")):
         for s in steps:
             p = ScenarioParams(**{key: float(s)})
-            r = scenario_engine(fact, flt, p, vehicles, fuel_prices, external_diesel)
+            r = scenario_engine(fact, flt, p, vehicles, prepared=prepared)
             if r.get("status") == "ok":
                 rows.append({"factor": factor, "change_pct": s, "delta_total": r["delta_total"], "delta_pct": r["delta_pct"]})
     return pd.DataFrame(rows)

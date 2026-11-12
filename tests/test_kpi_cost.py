@@ -109,3 +109,59 @@ def test_warehouse_outage(mini_frames):
     assert (r["stores"]["dist_change_km"] > 0).all()
     assert not math.isnan(r["capacity"].iloc[0]["utilization_after"])
     assert cost.warehouse_outage(mini_frames, "WX")["status"] == "not_computable"
+
+
+# ── 시나리오 엔진 준비 결과 재사용 (P4) ───────────────────────────────────────
+def _approx_equal(a, b):
+    if isinstance(a, dict):
+        assert set(a) == set(b)
+        for k in a:
+            _approx_equal(a[k], b[k])
+    elif isinstance(a, float):
+        assert a == pytest.approx(b, rel=1e-9, abs=1e-9)
+    else:
+        assert a == b
+
+
+@pytest.mark.parametrize("params", [
+    {}, {"diesel_pct": 10}, {"demand_pct": 30}, {"demand_pct": -15}, {"rate_pct": 5, "fleet_change": -2},
+    {"diesel_pct": 20, "demand_pct": 50, "rate_pct": -5, "fleet_change": 3, "trips_per_vehicle_day": 2},
+])
+def test_prepared_trips_give_same_result(demo_wb, params):
+    """prepare_trips 를 재사용해도 매번 새로 계산한 결과와 같다 (DEMO 전체)."""
+    from logisrisk.views.control_tower import default_filters
+    flt = default_filters(demo_wb)
+    veh, fp, ed = demo_wb.frames.get("vehicles"), demo_wb.frames.get("fuel_prices"), demo_wb.external_diesel()
+    p = cost.ScenarioParams(**params)
+    fresh = cost.scenario_engine(demo_wb.fact, flt, p, veh, fp, ed)
+    prep = cost.prepare_trips(demo_wb.fact, flt, fp, ed)
+    reused = cost.scenario_engine(None, flt, p, veh, prepared=prep)
+    assert fresh["status"] == "ok"
+    _approx_equal(fresh, reused)
+
+
+def test_sensitivity_matches_individual_scenarios(mini_frames):
+    fact = kpi.build_fact(mini_frames)
+    sens = cost.sensitivity(fact, FLT, mini_frames["vehicles"])
+    assert len(sens) == 12
+    for row in sens.to_dict("records"):
+        key = {"경유가": "diesel_pct", "운송 단가": "rate_pct", "물동량": "demand_pct"}[row["factor"]]
+        r = cost.scenario_engine(fact, FLT, cost.ScenarioParams(**{key: float(row["change_pct"])}), mini_frames["vehicles"])
+        assert row["delta_total"] == pytest.approx(r["delta_total"])
+
+
+def test_trip_load_all_missing_stays_unknown(mini_frames):
+    """운행의 적재량이 전부 결측이면 합계 0 이 아니라 결측 → 용량 판정에서 제외 (min_count=1)."""
+    fact = kpi.build_fact(mini_frames).assign(load_kg_eff=float("nan"))
+    prep = cost.prepare_trips(fact, FLT)
+    assert prep.trips["load"].isna().all()
+    r = cost.scenario_engine(None, FLT, cost.ScenarioParams(demand_pct=200), mini_frames["vehicles"], prepared=prep)
+    assert r["data_quality"]["trips_with_capacity"] == 0
+    assert r["scenario"]["trips"] == pytest.approx(r["baseline"]["trips"] * 3)  # 용량 미상 → 선형 비례
+
+
+def test_prepare_trips_not_computable(mini_frames):
+    fact = kpi.build_fact(mini_frames).assign(cost=float("nan"))
+    prep = cost.prepare_trips(fact, FLT)
+    assert prep.trips is None and prep.reason
+    assert cost.scenario_engine(None, FLT, cost.ScenarioParams(), None, prepared=prep)["status"] == "not_computable"
