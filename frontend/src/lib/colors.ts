@@ -39,13 +39,25 @@ export function cssColor(token: string, alpha?: number): string {
   return al >= 1 ? `rgb(${r},${g},${b})` : `rgba(${r},${g},${b},${al})`;
 }
 
-/** 두 토큰 사이 선형 보간 (연속 척도: 0 → a, 1 → b) */
-export function mixColor(a: string, b: string, t: number): string {
-  const ca = rgbaOf(getComputedStyle(document.documentElement).getPropertyValue(a).trim());
-  const cb = rgbaOf(getComputedStyle(document.documentElement).getPropertyValue(b).trim());
-  const k = Math.max(0, Math.min(1, t));
-  const c = [0, 1, 2].map((i) => Math.round(ca[i] + (cb[i] - ca[i]) * k));
-  return `rgb(${c[0]},${c[1]},${c[2]})`;
+/**
+ * 여러 토큰을 한 번에 rgb 로 읽는 팔레트 (지도 점 수백 개에 색을 줄 때 점마다 스타일을 읽지 않도록).
+ * get(token) 은 미리 읽은 값을, scale(tokens, t) 는 토큰들 사이 연속 보간 색을 준다.
+ */
+export function palette(tokens: string[]) {
+  const st = getComputedStyle(document.documentElement);
+  const rgb = new Map(tokens.map((t) => [t, rgbaOf(st.getPropertyValue(t).trim() || "#808080")] as const));
+  const fmt = (c: readonly number[]) => `rgb(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])})`;
+  return {
+    get: (t: string) => fmt(rgb.get(t) ?? [128, 128, 128]),
+    /** tokens 순서대로 균등 구간 보간 (t: 0~1) */
+    scale: (stops: string[], t: number) => {
+      const x = Math.max(0, Math.min(1, t)) * (stops.length - 1);
+      const i = Math.min(stops.length - 2, Math.floor(x));
+      const a = rgb.get(stops[i]) ?? [128, 128, 128];
+      const b = rgb.get(stops[i + 1]) ?? [128, 128, 128];
+      return fmt([0, 1, 2].map((j) => a[j] + (b[j] - a[j]) * (x - i)));
+    },
+  };
 }
 
 /** 테마(라이트/다크)가 바뀔 때마다 다시 계산되는 색 집합. 첫 렌더(서버·하이드레이션)에서는 null. */

@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cssColor, mixColor } from "@/lib/colors";
+import { cssColor, palette } from "@/lib/colors";
 import { useFilters } from "@/lib/filters";
 import { num, pct } from "@/lib/format";
 import { navByKey } from "@/lib/nav";
@@ -53,12 +53,6 @@ const LISA_COLOR: Record<string, string> = Object.fromEntries(Object.entries(LIS
 const NONE = "var(--perf-none)";
 const GRADE_ORDER = ["Very High", "High", "Moderate", "Low"];
 
-/** 취약성 점수 → 보라 연속 척도 (--ext-1 → --ext-4), 지도용 rgb */
-function scoreColor(v: number, max: number) {
-  const t = Math.max(0, Math.min(1, v / (max || 1))) * 3;
-  const seg = Math.min(2, Math.floor(t));
-  return mixColor(`--ext-${seg + 1}`, `--ext-${seg + 2}`, t - seg);
-}
 
 type ColorBy = "score" | "grade" | "lisa";
 type Layer = "units" | "warehouses" | "stores";
@@ -91,13 +85,15 @@ export function NetworkScreen() {
   const shown = useMemo(() => d?.units ?? [], [d]);
   const maxScore = Math.max(0.0001, ...(d?.units ?? []).map((u) => u.score));
 
-  const unitPoints: MapPoint[] = useMemo(
-    () =>
-      shown.map((u) => ({
+  const unitPoints: MapPoint[] = useMemo(() => {
+    // 토큰 색을 한 번만 읽는다 (점 수백 개 × 스타일 조회 방지). 점수는 보라 연속 척도 --ext-1 → --ext-4
+    const pal = palette([...Object.values(GRADE_TOKEN), ...Object.values(LISA_TOKEN), "--perf-none"]);
+    const EXT = ["--ext-1", "--ext-2", "--ext-3", "--ext-4"];
+    return shown.map((u) => ({
         id: u.unitCode,
         lat: u.lat,
         lon: u.lon,
-        color: colorBy === "score" ? scoreColor(u.score, maxScore) : cssColor((colorBy === "grade" ? GRADE_TOKEN[u.grade] : LISA_TOKEN[u.lisa_cluster]) ?? "--perf-none"),
+        color: colorBy === "score" ? pal.scale(EXT, u.score / maxScore) : pal.get((colorBy === "grade" ? GRADE_TOKEN[u.grade] : LISA_TOKEN[u.lisa_cluster]) ?? "--perf-none"),
         radius: colorBy === "grade" ? (u.grade === "Very High" ? 6.5 : u.grade === "High" ? 5.5 : 4.5) : u.lisa_cluster === "High-High" ? 6.5 : 4.5,
         html: popupHtml(u.unitName, `${u.routeName} · 외부 지표`, [
           ["취약성", u.score.toFixed(3)],
@@ -105,23 +101,21 @@ export function NetworkScreen() {
           ["LISA", u.lisa_cluster],
           ["순위", `${u.rank_sim}위${u.rank_change ? ` (${u.rank_change > 0 ? "▲" : "▼"}${Math.abs(u.rank_change)})` : ""}`],
         ]),
-      })),
+      }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- theme: 토큰 색을 다시 읽기 위한 의존성
-    [shown, colorBy, maxScore, resolvedTheme],
-  );
-  const storePoints: MapPoint[] = useMemo(
-    () =>
-      (ops.data?.stores ?? []).map((s) => ({
+  }, [shown, colorBy, maxScore, resolvedTheme]);
+  const storePoints: MapPoint[] = useMemo(() => {
+    const store = cssColor("--map-store");
+    return (ops.data?.stores ?? []).map((s) => ({
         id: s.store_id,
         lat: s.lat,
         lon: s.lon,
-        color: cssColor("--map-store"),
+        color: store,
         radius: 4.5,
         html: popupHtml(s.name ?? s.store_id, `${s.region ?? ""} · 배송지`, [["배송", `${num(s.shipments)}건`]]),
-      })),
+      }));
     // eslint-disable-next-line react-hooks/exhaustive-deps -- theme
-    [ops.data, resolvedTheme],
-  );
+  }, [ops.data, resolvedTheme]);
   const mapLayers = [
     ...(layers.includes("stores") ? [{ id: "stores", points: storePoints }] : []),
     ...(layers.includes("units") ? [{ id: "units", points: unitPoints }] : []),
