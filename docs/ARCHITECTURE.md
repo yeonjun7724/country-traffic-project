@@ -179,3 +179,20 @@ streamlit_app.py ── logisrisk/ui (theme, common, nav, pages/*)
 - 검증: pytest 165 · vitest 22 · Playwright 91 (화면 40 · 흐름 15 · 딥링크 6 · 모바일 10 · 접근성 20).
 - 남은 한계(2차 후보): Control Tower 메인 스레드 비용(CPU 4× 스로틀 LCP·TBT 미개선), 공통 CLS ≈0.08,
   타이포 스케일(임의 글꼴 크기 18종)·차트 색 토큰화, 필터 결과 메모이제이션.
+
+## 13. 개선 2차 (2026-11-12) — 첫 화면·흐름·디자인 체계·회귀 가드
+
+| 영역 | 변경 | 결정·이유 |
+|---|---|---|
+| 필터 캐시 | `kpi.apply_filters` 가 통과 행 **위치**를 팩트별(약한 참조) LRU 로 캐시, 매 호출 새 DataFrame | 결과 프레임을 캐시하면 호출자 변경이 캐시를 오염. Workbench 가 데이터 버전마다 새 팩트를 만들어 무효화 자동 |
+| 직렬화 | `serialize.records` 열 단위 변환 | 셀 단위 jsonable 이 원장 직렬화의 병목. 기존 구현과 동등성 테스트. NaT → null (이전엔 문자열 "NaT") |
+| 지연 렌더 | `components/common/Deferred` (IntersectionObserver, 실제 높이 자리, `#id` 링크면 즉시) | 지도는 절반 이상 보일 때(threshold 0.5) — 첫 화면 가장자리에 걸친 상태로는 불러오지 않음 |
+| 선요청 | `/api/me` 를 인증 확인과 병렬, me queryFn 안에서 `lib/prefetch` 가 첫 화면 쿼리 시작 | 셸 렌더 동안 API 가 놀던 구간 제거. 훅과 프리페치가 `queries.queryDefs` 공유 → 같은 키 |
+| 샘플 배너 CLS | `<head>` 인라인 스크립트가 `lr.demoByWs`(마지막 확인값)로 `html[data-demo]` 설정, CSS 로 자리 | 정적 HTML 이 JS 전에 그려지므로 첫 페인트 전에 자리를 정해야 함. 최종 표시는 /api/me 가 결정 |
+| URL 상태 | 같은 화면 쿼리 갱신은 `lib/url-state.replaceQuery` | 탭·필터·시나리오 동기화가 각자 렌더 시점 쿼리로 replace 하면 서로 덮어씀(실제 결함) |
+| 색 | 데이터 색 토큰 `--perf-*`(기업 실적)·`--ext-*`/`--lisa-*`(외부, 보라)·`--route-*`·`--scenario-a/b`·`--map-*` | 지도는 CSS 변수·oklch 를 못 읽어 `lib/colors`(캔버스로 rgb 변환, 테마 전환 시 재계산) |
+| 글자 | `@utility text-caption…text-display` (11·12·13·15·18·22·24px, 크기만) | 줄 높이는 상속 유지(레이아웃 변화 최소화). `cn` 에 font-size 그룹 등록 필수 |
+| 가드 | `npm run check:bundle`(라우트당 440 kB gzip, 첫 로딩 maplibre 금지), `tests/test_perf_guard.py` | 시간 단언은 넉넉하게, 가능하면 호출 횟수로 결정적 검증 |
+
+- 검증: pytest 171 · vitest 27(PowerShell 실행) · Playwright 94 (화면 40 · 흐름 15 · 딥링크 9 · 모바일 10 · 접근성 20).
+- 남은 한계: Control Tower LCP(CPU 4×) 2.96 s — 목표 1.8 s 미달. 공통 번들 축소 또는 첫 화면 사전 렌더(정적 export 구조 변경)가 필요.

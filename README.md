@@ -57,10 +57,11 @@ streamlit run app.py                # 레거시 공모전 대시보드 (보존)
 ## 테스트
 ```bash
 pip install -r requirements-dev.txt
-python -m pytest -q                      # 계산·검증·저장·권한·API·마이그레이션(165)
-cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위
+python -m pytest -q                      # 계산·검증·저장·권한·API·마이그레이션·성능 가드(171)
+cd frontend && npm run typecheck && npx eslint . && npm test     # 타입·lint·단위(27, Windows 는 PowerShell 에서)
 npm run build && (cd .. && python -m uvicorn backend.main:app --port 8600 &) && npm run test:e2e
-# E2E 91: 화면 40(샘플/빈 × 라이트/다크) + 흐름 15 + 화면 간 딥링크 6 + 모바일 390px 10 + 접근성(axe) 20
+# E2E 94: 화면 40(샘플/빈 × 라이트/다크) + 흐름 15 + 화면 간 딥링크 9 + 모바일 390px 10 + 접근성(axe) 20
+# 번들 가드: npm run build && npm run check:bundle (라우트당 첫 로딩 JS 440kB gzip, 지도 라이브러리 첫 로딩 금지)
 # 스크린샷은 frontend/e2e-screens/ (mobile/ 포함). 성능 측정: python scripts/bench.py [--api http://127.0.0.1:8600]
 ```
 검증·KPI(손계산)·운송비·경로 제약·재고 공식·외부 산출물 재현성·권한/워크스페이스 격리·원자적 롤백·
