@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "predev": "node scripts/copy-vendor.mjs",
-    "prebuild": "node scripts/copy-vendor.mjs"
+    "prebuild": "node scripts/copy-vendor.mjs",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^7.0.3",

@@ -298,7 +298,7 @@
   filter: invert(1);
 }
 .maplibregl-ctrl-attrib {
-  @apply !bg-card/80 !text-[10px] !text-muted-foreground;
+  @apply !bg-card/80 !text-caption !text-muted-foreground;
 }
 .maplibregl-popup-content {
   @apply !rounded-lg !border !border-border !bg-popover !p-0 !text-popover-foreground !shadow-lg;
