@@ -5,6 +5,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 
 import { clearWorkspace, client, getWorkspace, setWorkspace, unwrap, type Me } from "./api";
 import { prefetchFirstScreen } from "./prefetch";
+import { takePreload } from "./preload";
 
 type Ctx = {
   me: Me | undefined;
@@ -24,7 +25,8 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const me = useQuery({
     queryKey: ["me", ws],
     queryFn: async () => {
-      const m = await unwrap(client.GET("/api/me"));
+      // 첫 진입이면 <head> 에서 미리 보낸 /api/me 를 이어받는다 (같은 워크스페이스 헤더 규칙)
+      const m = (await (takePreload<Me>("me") ?? unwrap(client.GET("/api/me")))) as Me;
       prefetchFirstScreen(qc, m); // 렌더 전에 첫 화면 데이터 요청 시작 (lib/prefetch)
       return m;
     },

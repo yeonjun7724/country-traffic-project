@@ -4,6 +4,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 
 import { client, unwrap } from "./api";
 import { filterQuery, type Filters } from "./filters";
+import { takePreload } from "./preload";
 import { useWorkspace } from "./workspace";
 
 /** 워크스페이스가 확정된 뒤에만 조회 + 키에 워크스페이스 포함 (전환 시 캐시 섞임 방지) */
@@ -19,24 +20,26 @@ const q = (f: Filters, extra?: Q) => ({ ...filterQuery(f), ...(extra ?? {}) }) a
 export const queryDefs = {
   filterMeta: (ws: string | undefined) => ({
     queryKey: ["filters", ws],
-    queryFn: () => unwrap(client.GET("/api/filters")),
+    queryFn: () => takePreload<never>("filters") ?? unwrap(client.GET("/api/filters")),
     staleTime: 60_000,
   }),
   overview: (ws: string | undefined, f: Filters) => ({
     queryKey: ["ct", "overview", ws, f],
-    queryFn: () => unwrap(client.GET("/api/control-tower/overview", { params: { query: q(f) } })),
+    queryFn: () => takePreload<never>("ct.overview") ?? unwrap(client.GET("/api/control-tower/overview", { params: { query: q(f) } })),
   }),
   network: (ws: string | undefined, f: Filters) => ({
     queryKey: ["ct", "network", ws, f],
-    queryFn: () => unwrap(client.GET("/api/control-tower/network", { params: { query: q(f) } })),
+    queryFn: () => takePreload<never>("ct.network") ?? unwrap(client.GET("/api/control-tower/network", { params: { query: q(f) } })),
   }),
   cts: (ws: string | undefined, f: Filters, dim: CtsDim) => ({
     queryKey: ["ct", "cts", ws, f, dim],
-    queryFn: () => unwrap(client.GET("/api/control-tower/cost-to-serve", { params: { query: q(f, { dim }) } })),
+    queryFn: () =>
+      (dim === "region" ? takePreload<never>("ct.cts.region") : null) ??
+      unwrap(client.GET("/api/control-tower/cost-to-serve", { params: { query: q(f, { dim }) } })),
   }),
   external: (ws: string | undefined) => ({
     queryKey: ["ct", "external", ws],
-    queryFn: () => unwrap(client.GET("/api/control-tower/external")),
+    queryFn: () => takePreload<never>("ct.external") ?? unwrap(client.GET("/api/control-tower/external")),
     staleTime: 10 * 60_000,
   }),
 };

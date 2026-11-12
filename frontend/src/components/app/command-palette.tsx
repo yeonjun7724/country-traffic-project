@@ -1,57 +1,24 @@
 "use client";
 
-import { Bookmark, Monitor, Moon, Search, Sun } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useTheme } from "next-themes";
+import { Search } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import {
-  CommandDialog,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-  CommandSeparator,
-  CommandShortcut,
-} from "@/components/ui/command";
-import { Command } from "@/components/ui/command";
-import { ALL_NAV } from "@/lib/nav";
-import { useSearch } from "@/lib/queries";
 
-import { useSavedViews, viewHref } from "./saved-views";
-
-/** 검색 결과 → 이동할 화면·필터 (상세 화면이 아직 없는 유형은 선택 불가로 표시) */
-const TARGET: Record<string, ((id: string) => string) | undefined> = {
-  stores: (id) => `/control-tower/?stores=${encodeURIComponent(id)}`,
-  warehouses: (id) => `/control-tower/?warehouses=${encodeURIComponent(id)}`,
-  vehicles: (id) => `/control-tower/?vehicles=${encodeURIComponent(id)}`,
-};
-
-function useDebounced<T>(v: T, ms = 200) {
-  const [d, setD] = useState(v);
-  useEffect(() => {
-    const t = setTimeout(() => setD(v), ms);
-    return () => clearTimeout(t);
-  }, [v, ms]);
-  return d;
-}
+// 검색 대화상자(cmdk ~43kB)는 첫 화면에 필요 없으므로 처음 열 때 불러온다. 버튼에 마우스·포커스가 오면 미리 받아 둔다.
+const loadDialog = () => import("./palette-dialog");
+const PaletteDialog = dynamic(() => loadDialog().then((m) => m.PaletteDialog), { ssr: false });
 
 export function CommandPalette() {
   const [open, setOpen] = useState(false);
-  const [text, setText] = useState("");
-  const q = useDebounced(text);
-  const router = useRouter();
-  const { setTheme } = useTheme();
-  const res = useSearch(q);
-  const views = useSavedViews();
-  const viewHits = (views.data ?? []).filter((v) => !text.trim() || v.name.toLowerCase().includes(text.trim().toLowerCase()));
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
+        setMounted(true);
         setOpen((o) => !o);
       }
     };
@@ -59,17 +26,16 @@ export function CommandPalette() {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  const go = (href: string) => {
-    setOpen(false);
-    setText("");
-    router.push(href);
-  };
-
   return (
     <>
       <Button
         variant="outline"
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          setMounted(true);
+          setOpen(true);
+        }}
+        onMouseEnter={() => void loadDialog()}
+        onFocus={() => void loadDialog()}
         className="h-8 w-8 justify-center gap-2 rounded-md bg-card px-0 font-normal text-muted-foreground shadow-none sm:w-full sm:justify-start sm:px-2.5"
       >
         <Search className="size-4" />
@@ -78,78 +44,7 @@ export function CommandPalette() {
           Ctrl K
         </kbd>
       </Button>
-      <CommandDialog open={open} onOpenChange={setOpen} title="검색" description="화면 이동과 데이터 검색" className="sm:max-w-xl">
-        <Command shouldFilter={false}>
-          <CommandInput placeholder="화면 이름, 배송지·센터·차량·주문·영업소 검색…" value={text} onValueChange={setText} />
-          <CommandList className="max-h-[60vh]">
-            <CommandEmpty>{q ? (res.isFetching ? "검색 중…" : `'${q}'에 대한 결과가 없습니다.`) : "검색어를 입력하세요."}</CommandEmpty>
-            {(res.data ?? []).map((g) => (
-              <CommandGroup key={g.entity} heading={`${g.label} · ${g.total.toLocaleString()}건`}>
-                {g.items.map((it) => {
-                  const to = TARGET[g.entity];
-                  return (
-                    <CommandItem
-                      key={`${g.entity}-${String(it.id)}`}
-                      value={`${g.entity}-${String(it.id)}`}
-                      disabled={!to}
-                      onSelect={() => to && go(to(String(it.id)))}
-                    >
-                      <div className="grid min-w-0 flex-1">
-                        <span className="truncate">{it.title}</span>
-                        <span className="truncate text-xs text-muted-foreground">
-                          {String(it.id)}
-                          {it.subtitle ? ` · ${String(it.subtitle)}` : ""}
-                        </span>
-                      </div>
-                      <CommandShortcut className="tracking-normal">{to ? "필터 적용" : "상세 화면 준비 중"}</CommandShortcut>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            ))}
-            {viewHits.length > 0 && (
-              <CommandGroup heading="저장된 보기">
-                {viewHits.slice(0, 8).map((v) => {
-                  const href = viewHref(v);
-                  return (
-                    <CommandItem key={v.id} value={`view-${v.id}`} disabled={!href} onSelect={() => href && go(href)}>
-                      <Bookmark className="size-4" />
-                      <span>{v.name}</span>
-                      <span className="text-xs text-muted-foreground">{ALL_NAV.find((n) => n.key === v.screen)?.title}</span>
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            )}
-            {!q && (
-                <>
-                  <CommandGroup heading="화면">
-                    {ALL_NAV.map((n) => (
-                      <CommandItem key={n.key} value={n.title} onSelect={() => go(n.href)}>
-                        <n.icon className="size-4" />
-                        <span>{n.title}</span>
-                        <span className="text-xs text-muted-foreground">{n.subtitle}</span>
-                        {!n.ready && <CommandShortcut className="tracking-normal">준비 중</CommandShortcut>}
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                  <CommandSeparator />
-                  <CommandGroup heading="테마">
-                    <CommandItem value="theme-light" onSelect={() => (setTheme("light"), setOpen(false))}>
-                      <Sun className="size-4" /> 라이트 모드
-                    </CommandItem>
-                    <CommandItem value="theme-dark" onSelect={() => (setTheme("dark"), setOpen(false))}>
-                      <Moon className="size-4" /> 다크 모드
-                    </CommandItem>
-                    <CommandItem value="theme-system" onSelect={() => (setTheme("system"), setOpen(false))}>
-                      <Monitor className="size-4" /> 시스템 설정 따르기
-                    </CommandItem>
-                  </CommandGroup>
-                </>
-              )}
-          </CommandList>
-        </Command>
-      </CommandDialog>
+      {mounted && <PaletteDialog open={open} setOpen={setOpen} />}
     </>
   );
 }

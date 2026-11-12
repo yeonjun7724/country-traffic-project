@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import { Providers } from "@/components/providers";
+import { preloadScript } from "@/lib/preload";
 
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./globals.css";
@@ -29,6 +30,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             __html: `try{var w=localStorage.getItem("lr.workspace")||"_default";var m=JSON.parse(localStorage.getItem("lr.demoByWs")||"{}");document.documentElement.dataset.demo=(w in m?m[w]:true)?"1":"0"}catch(e){document.documentElement.dataset.demo="1"}`,
           }}
         />
+        {/* 첫 화면 데이터 선요청 (lib/preload) — JS 를 받는 동안 API 를 미리 부른다 */}
+        <script dangerouslySetInnerHTML={{ __html: preloadScript(process.env.NEXT_PUBLIC_API_BASE ?? "") }} />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="anonymous" />
         <link
           rel="stylesheet"

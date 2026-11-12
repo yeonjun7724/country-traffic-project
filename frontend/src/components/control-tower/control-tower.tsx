@@ -1,6 +1,7 @@
 "use client";
 
 import { Database, FlaskConical } from "lucide-react";
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -18,7 +19,7 @@ import { useWorkspace } from "@/lib/workspace";
 
 import { AlertsPanel } from "./alerts-panel";
 import { CostToServe } from "./cost-to-serve";
-import { DailyChart, DailyLegend } from "./daily-chart";
+import { DailyLegend } from "./daily-legend";
 import { ExternalPanel } from "./external-panel";
 import { Insights } from "./insights";
 import { KpiGroups } from "./kpi-groups";
@@ -27,6 +28,11 @@ import { NetworkSection } from "./network-section";
 import { Onboarding } from "./onboarding";
 
 const NAV = navByKey("control-tower");
+// recharts(~120kB)는 첫 화면 아래 일별 차트에만 쓰임 → 화면 번들에서 빼고 차트가 렌더될 때 불러온다
+const DailyChart = dynamic(() => import("./daily-chart").then((m) => m.DailyChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[260px]" />,
+});
 
 export function ControlTower() {
   const { me } = useWorkspace();
@@ -64,7 +70,10 @@ export function ControlTower() {
       </div>
 
       <div className="mt-4">
-        <NetworkSection filters={filters} selected={selected} onSelected={setSelected} />
+        {/* 첫 화면 아래 가장자리(1440×900 에서 y≈860) — 표·지도는 가까워질 때 렌더 (느린 기기 첫 화면 메인 스레드 ~0.8s 절약) */}
+        <Deferred minHeight={561} rootMargin="0px" label="배송 네트워크">
+          <NetworkSection filters={filters} selected={selected} onSelected={setSelected} />
+        </Deferred>
       </div>
 
       {/* 첫 화면 아래 영역은 가까워질 때 렌더 (차트·원장 API 4건과 렌더 비용을 첫 화면에서 제외). 높이는 실제 렌더 높이 */}

@@ -1,12 +1,11 @@
 "use client";
 
-import { ko } from "date-fns/locale";
 import { CalendarDays, ListFilter, RotateCcw } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState } from "react";
 import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { dateLabel } from "@/lib/format";
@@ -15,6 +14,12 @@ import { useFilterMeta } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 import { MultiSelect } from "./multi-select";
+
+// 달력(react-day-picker·date-fns 로캘 ~28kB)은 기간 선택을 열 때만 필요 → 동적 로딩
+const RangeCalendar = dynamic(() => import("./range-calendar").then((m) => m.RangeCalendar), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[300px] w-[540px]" />,
+});
 
 const PRIMARY: MultiKey[] = ["warehouses", "regions", "carriers"];
 const MORE: MultiKey[] = ["vehicles", "categories", "stores"];
@@ -167,16 +172,12 @@ function DateRangeButton({
           ))}
         </div>
         <div className="p-2">
-          <Calendar
-            mode="range"
-            locale={ko}
-            numberOfMonths={2}
+          <RangeCalendar
             defaultMonth={parse(addDays(end, -32))}
             selected={draft}
             onSelect={setDraft}
-            disabled={{ before: parse(min), after: parse(max) }}
-            startMonth={parse(min)}
-            endMonth={parse(max)}
+            min={parse(min)}
+            max={parse(max)}
           />
           <div className="flex items-center justify-between gap-2 border-t border-border px-2 pt-2">
             <p className="text-small text-muted-foreground">

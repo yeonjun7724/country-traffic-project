@@ -58,18 +58,6 @@ export function DailyChart({ data, height = 260 }: { data: Point[]; height?: num
   );
 }
 
-export function DailyLegend() {
-  return (
-    <div className="flex items-center gap-3 text-small text-muted-foreground">
-      <span className="flex items-center gap-1.5">
-        <span className="size-2.5 rounded-sm bg-chart-1/75" /> 운송비
-      </span>
-      <span className="flex items-center gap-1.5">
-        <span className="h-0.5 w-3 rounded bg-chart-2" /> 지연율
-      </span>
-    </div>
-  );
-}
 
 function Tip({ active, payload }: { active?: boolean; payload?: { payload: Point }[] }) {
   if (!active || !payload?.length) return null;
